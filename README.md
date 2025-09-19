@@ -23,5 +23,5 @@
 
    DB_PASSWORD=任意のパスワード
    ```
-> [!Note]
+> [!Warning]
 > compose.yamlのMYSQL_DATABASE,MYSQL_USERNAME,MYSQL_PASSWORDと合わせること
