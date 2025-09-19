@@ -13,6 +13,8 @@ services:
     build: ./docker/php
     volumes:
       - ./src:/var/www/
+    user: 
+      - "1000:1000"
 
   mysql:
     image: mysql:8.0.37
@@ -37,4 +39,4 @@ services:
     depends_on:
       - mysql
     ports:
-      - 8080:80
+      - "8080:80"
