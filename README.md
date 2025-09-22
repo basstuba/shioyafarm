@@ -1,4 +1,4 @@
-# custom-laravel
+# ShioyaFarm
 ## .env変更部分
  ```
    APP_NAME=プロジェクト名
