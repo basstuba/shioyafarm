@@ -13,16 +13,15 @@ services:
     build: ./docker/php
     volumes:
       - ./src:/var/www/
-    user: 
-      - "1000:1000"
+    user: "1000:1000"
 
   mysql:
     image: mysql:8.0.37
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: laravel_db
-      MYSQL_USER: laravel_user
-      MYSQL_PASSWORD: laravel_pass
+      MYSQL_DATABASE: sf_db
+      MYSQL_USER: sf_user
+      MYSQL_PASSWORD: sf_pass
     command:
       mysqld --default-authentication-plugin=mysql_native_password
     volumes:
@@ -34,8 +33,8 @@ services:
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=mysql
-      - PMA_USER=laravel_user
-      - PMA_PASSWORD=laravel_pass
+      - PMA_USER=sf_user
+      - PMA_PASSWORD=sf_pass
     depends_on:
       - mysql
     ports:
