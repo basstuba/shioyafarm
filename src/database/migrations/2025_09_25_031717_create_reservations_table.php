@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('item_id')->constrained()->cascadeOnDelete();
+            $table->string('delivery_name');
+            $table->string('delivery_prefecture');
+            $table->string('delivery_city');
+            $table->string('delivery_tell');
+            $table->integer('quantity');
+            $table->integer('price');
+            $table->integer('subtotal');
+            $table->string('payment_method');
             $table->timestamps();
         });
     }
