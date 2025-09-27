@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('purchase_history_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('purchase_history_id')->constrained('purchase_histories')->cascadeOnDelete();
+            $table->foreignId('item_id')->constrained()->cascadeOnDelete();
+            $table->integer('quantity');
+            $table->integer('price');
+            $table->integer('subtotal');
             $table->timestamps();
         });
     }

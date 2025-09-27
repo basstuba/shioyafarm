@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('items', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->integer('weight');
+            $table->integer('price');
+            $table->string('img_url');
+            $table->text('detail');
+            $table->boolean('recommend');
+            $table->boolean('is_reserved_only');
+            $table->integer('reservation_limit')->nullable();
             $table->timestamps();
         });
     }
