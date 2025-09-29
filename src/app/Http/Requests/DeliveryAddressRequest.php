@@ -11,7 +11,7 @@ class DeliveryAddressRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,17 @@ class DeliveryAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'delivery_prefecture' => 'required',
+            'delivery_city' => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'delivery_prefecture.required' => '都道府県を選択してください',
+            'delivery_city.required' => '住所を入力してください',
+            'delivery_city.string' => '住所は正しい形式で入力してください',
         ];
     }
 }
