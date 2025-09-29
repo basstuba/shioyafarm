@@ -11,7 +11,7 @@ class CartRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,16 @@ class CartRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'item_id' => 'required|exists:items,id',
+            'quantity' => 'required|integer|min:1',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'quantity.required' => '商品の数を入力してください',
+            'quantity.min' => '商品の数は１個以上にしてください',
         ];
     }
 }
