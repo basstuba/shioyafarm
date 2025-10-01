@@ -11,7 +11,7 @@ class NoticeRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,18 @@ class NoticeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'title' => 'required|string',
+            'text' => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'お知らせタイトルを入力してください',
+            'title.string' => 'お知らせタイトルは文字で入力してください',
+            'text.required' => 'お知らせ内容を入力してください',
+            'text.string' => 'お知らせ内容は文章で入力してください',
         ];
     }
 }
