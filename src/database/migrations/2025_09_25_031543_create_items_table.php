@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('items', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name', 255);
             $table->integer('weight');
             $table->integer('price');
-            $table->string('img_url');
+            $table->string('img_url', 255);
             $table->text('detail');
             $table->boolean('recommend');
             $table->boolean('is_reserved_only');

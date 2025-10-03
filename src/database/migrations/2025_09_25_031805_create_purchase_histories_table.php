@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('purchase_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('delivery_name');
-            $table->string('delivery_prefecture');
-            $table->string('delivery_city');
-            $table->string('delivery_tell');
-            $table->string('payment_method');
+            $table->string('delivery_name', 255);
+            $table->string('delivery_prefecture', 255);
+            $table->string('delivery_city', 255);
+            $table->string('delivery_tell', 15);
+            $table->string('payment_method', 25);
             $table->timestamps();
         });
     }

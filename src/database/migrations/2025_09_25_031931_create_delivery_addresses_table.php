@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('delivery_addresses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('delivery_prefecture');
-            $table->string('delivery_city');
+            $table->string('delivery_prefecture', 255);
+            $table->string('delivery_city', 255);
             $table->timestamps();
         });
     }
