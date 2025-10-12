@@ -22,7 +22,7 @@ class ExportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'keyword' => 'nullable|string',
+            'keyword' => 'nullable|string|max:255',
             'updated_at' => 'nullable|date',
         ];
     }

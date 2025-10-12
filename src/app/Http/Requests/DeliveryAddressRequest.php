@@ -22,8 +22,8 @@ class DeliveryAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'delivery_prefecture' => 'required',
-            'delivery_city' => 'required|string',
+            'delivery_prefecture' => 'required|exists:areas,prefecture',
+            'delivery_city' => 'required|string|max:255',
         ];
     }
 
@@ -33,6 +33,7 @@ class DeliveryAddressRequest extends FormRequest
             'delivery_prefecture.required' => '都道府県を選択してください',
             'delivery_city.required' => '住所を入力してください',
             'delivery_city.string' => '住所は正しい形式で入力してください',
+            'delivery_city.max' => '住所は255文字以内で入力してください',
         ];
     }
 }

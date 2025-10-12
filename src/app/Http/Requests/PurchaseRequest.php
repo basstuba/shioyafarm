@@ -22,12 +22,12 @@ class PurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_id' => 'required',
-            'quantity' => 'required|integer|min:1',
-            'delivery_name' => 'required|string',
+            'item_id' => 'required|exists:items,id',
+            'quantity' => 'required|integer|min:1|max:10',
+            'delivery_name' => 'required|string|max:255',
             'address_id' => 'required|string|regex:/^(user|delivery)_[0-9]+$/',
-            'delivery_tell' => 'required|digits_between:10,11',
-            'payment_method' => 'required',
+            'delivery_tell' => 'required|digits_between:10,11|max:15',
+            'payment_method' => 'required|string|max:25|in:card,customer_balance,cod',
         ];
     }
 
@@ -36,11 +36,14 @@ class PurchaseRequest extends FormRequest
         return [
             'quantity.required' => '商品の数を入力してください',
             'quantity.min' => '商品の数は1個以上にしてください',
+            'quantity.max' => '商品の数は10個以下にしてください',
             'delivery_name.required' => 'お届け先氏名を入力してください',
             'delivery_name.string' => 'お届け先氏名は文字で入力してください',
+            'delivery_name.max' => 'お届け先氏名は255文字以内で入力してください',
             'address_id.required' => 'お届け先住所を選択してください',
             'delivery_tell.required' => 'お届け先電話番号を入力してください',
             'delivery_tell.digits_between' => 'お届け先電話番号はハイフンなしの数字のみで10〜11桁で入力してください',
+            'delivery_tell.max' => 'お届け先電話番号は15文字以内で入力してください',
             'payment_method.required' => 'お支払い方法を選択してください',
         ];
     }
