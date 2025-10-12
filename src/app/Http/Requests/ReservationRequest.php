@@ -22,12 +22,12 @@ class ReservationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_id' => 'required',
-            'quantity' => 'required|integer|min:1',
-            'delivery_name' => 'required|string',
+            'item_id' => 'required|exists:items,id',
+            'quantity' => 'required|integer|min:1|max:10',
+            'delivery_name' => 'required|string|max:255',
             'address_id' => 'required|string|regex:/^(user|delivery)_[0-9]+$/',
-            'delivery_tell' => 'required|digits_between:10,11',
-            'payment_method' => 'required',
+            'delivery_tell' => 'required|digits_between:10,11|max:15',
+            'payment_method' => 'required|string|max:25|in:card,customer_balance,cod',
         ];
     }
 

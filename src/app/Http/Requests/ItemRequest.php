@@ -22,13 +22,13 @@ class ItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string',
-            'weight' => 'required',
+            'name' => 'required|string|max:255',
+            'weight' => 'required|in:2,5,10',
             'price' => 'required|integer',
-            'img_url' => 'required',
+            'img_url' => 'required|max:255',
             'detail' => 'required|string',
-            'recommend' => 'required',
-            'is_reserved_only' => 'required',
+            'recommend' => 'required|boolean',
+            'is_reserved_only' => 'required|boolean',
             'reservation_limit' => 'nullable|integer',
         ];
     }
@@ -38,6 +38,7 @@ class ItemRequest extends FormRequest
         return [
             'name.required' => '商品名を入力してください',
             'name.string' => '商品名は文字で入力してください',
+            'name.max' => '商品名は255文字以内で入力してください',
             'weight.required' => '商品重量を選択してください',
             'price.required' => '商品価格を入力してください',
             'price.integer' => '商品価格は整数で入力してください',

@@ -22,7 +22,7 @@ class MailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string',
+            'title' => 'required|string|max:255',
             'text' => 'required|string',
         ];
     }
@@ -32,6 +32,7 @@ class MailRequest extends FormRequest
         return [
             'title.required' => 'タイトルを入力してください',
             'title.string' => 'タイトルは文字で入力してください',
+            'title.max' => 'タイトルは255文字以内で入力してください',
             'text.required' => '本文を入力してください',
             'text.string' => '本文は文章で入力してください',
         ];
