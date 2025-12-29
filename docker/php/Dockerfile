@@ -1,5 +1,8 @@
 FROM php:8.2.19-fpm
 
+RUN groupadd -g 1000 appuser \
+    && useradd -m -u 1000 -g 1000 appuser
+
 COPY php.ini /usr/local/etc/php/
 
 RUN apt-get update \
@@ -25,3 +28,5 @@ RUN curl -sS https://getcomposer.org/installer | php \
     && composer self-update
 
 WORKDIR /var/www
+
+USER appuser
