@@ -3,6 +3,7 @@
     "appuser",
     "dont",
     "EHLO",
+    "endsection",
     "fakerphp",
     "freetype",
     "imagick",

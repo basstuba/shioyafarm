@@ -12,6 +12,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400;500&family=Noto+Sans+Hebrew:wght@100..900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/webp" href="{{ asset('image/tool/shioya-farm-logo-login.webp') }}">
+    <link rel="stylesheet" href="{{ asset('css/reset.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/common.css') }}">
+    @yield('styles')
 </head>
 <body>
     @include('layouts.header')
