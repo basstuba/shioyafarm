@@ -2,8 +2,8 @@
     <div class="footer-inner">
         <div class="footer-info">
             <div class="footer-logo">
-                <a class="footer-logo__link" href="{{ route('top') }}">
-                    <img class="footer-logo__img" src="{{ asset('image/tool/shioya-farm-logo-small.webp') }}" alt="">
+                <a class="footer-logo__link" {{--href="{{ route('top') }}"--}}> <!-- ルートを設定するまでの仮実装 -->
+                    <img class="footer-logo__img" src="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}" alt="">
                     <span class="footer-logo__text">しおや農園</span>
                 </a>
             </div>
@@ -24,16 +24,16 @@
         <nav class="footer-nav">
             <ul class="footer-nav-list">
                 <li class="footer-nav-list-item">
-                    <a class="footer-nav-list-item__link" href="{{ route('shipping-fee') }}">送料案内</a>
+                    <a class="footer-nav-list-item__link" href="{{ route('info.shipping-fee') }}">送料案内</a>
                 </li>
                 <li class="footer-nav-list-item">
-                    <a class="footer-nav-list-item__link" href="{{ route('terms-of-service') }}">利用規約</a>
+                    <a class="footer-nav-list-item__link" href="{{ route('info.terms-of-service') }}">利用規約</a>
                 </li>
                 <li class="footer-nav-list-item">
-                    <a class="footer-nav-list-item__link" href="{{ route('privacy-policy') }}">プライバシーポリシー</a>
+                    <a class="footer-nav-list-item__link" href="{{ route('info.privacy-policy') }}">プライバシーポリシー</a>
                 </li>
                 <li class="footer-nav-list-item">
-                    <a class="footer-nav-list-item__link" href="{{ route('commercial-transaction')}}">特定商取引法に基づく表記</a>
+                    <a class="footer-nav-list-item__link" href="{{ route('info.commercial-transaction')}}">特定商取引法に基づく表記</a>
                 </li>
             </ul>
         </nav>

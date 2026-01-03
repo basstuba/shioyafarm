@@ -17,6 +17,9 @@ class HeaderComposer
             // トップページ
             'top' => Nav::top(),
 
+            // 送料案内・利用規約・プライバシーポリシー・特商法に基づく表記
+            'info.*' => Nav::top(),
+
             // ショップ全般（ログイン済/未ログイン）
             'shop.*' => Auth::check() ? Nav::shopAuth() : Nav::shopGuest(),
 

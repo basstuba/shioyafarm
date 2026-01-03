@@ -1,0 +1,59 @@
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em 4em;
+}
+
+.header-logo {
+    width: 5%;
+    text-align: center;
+}
+
+.header-logo__link {
+    text-decoration: none;
+}
+
+.header-logo__img {
+    width: 65%;
+    height: auto;
+    cursor: pointer;
+}
+
+.header-logo__text {
+    display: block;
+    color: #f0a13a;
+    font-family: "Kiwi Maru", sans-serif;
+    font-size: 12em;
+    font-weight: 500;
+    font-style: normal;
+    text-align: center;
+    cursor: pointer;
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16em;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    gap: 2em;
+}
+
+.nav-item__icon {
+    width: 20em;
+}
+
+.nav-item__label {
+    color: #2e2e2e;
+    font-family: "Kiwi Maru", sans-serif;
+    font-size: 14em;
+    font-weight: 400;
+    font-style: normal;
+}
