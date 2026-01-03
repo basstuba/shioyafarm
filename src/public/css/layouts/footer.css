@@ -1,0 +1,68 @@
+.footer-inner {
+    background-color: #fff4bf;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8em;
+}
+
+.footer-info {
+    width: 50%;
+    font-family: "Kiwi Maru", sans-serif;
+    font-style: normal;
+}
+
+.footer-logo__link {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    text-decoration: none;
+}
+
+.footer-logo__img {
+    width: 6.5%;
+    height: auto;
+    cursor: pointer;
+}
+
+.footer-logo__text {
+    color: #f0a13a;
+    font-size: 28em;
+    font-weight: 500;
+}
+
+.footer-farm-info {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 60em;
+    margin: 10em 0;
+}
+
+.footer-farm-info-item__label {
+    display: block;
+    color: #2e2e2e;
+    font-size: 12em;
+    font-weight: 400;
+    margin-bottom: 0.5em;
+}
+
+.footer-farm-info-item__value {
+    display: block;
+    color: #2e2e2e;
+    font-size: 12em;
+    font-weight: 400;
+}
+
+.footer-copyright__text {
+    color: #2e2e2e;
+    font-size: 12em;
+    font-weight: 400;
+}
+
+.footer-nav-list {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    gap: 20em;
+}
