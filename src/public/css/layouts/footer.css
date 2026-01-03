@@ -3,13 +3,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8em;
+    font-family: "Kiwi Maru", sans-serif;
+    font-style: normal;
+    padding: 12em 16em;
+}
+
+.terms-of-service-page .footer-inner {
+    background-color: #fffdf0;
 }
 
 .footer-info {
     width: 50%;
-    font-family: "Kiwi Maru", sans-serif;
-    font-style: normal;
 }
 
 .footer-logo__link {
@@ -64,5 +68,24 @@
     display: flex;
     justify-content: right;
     align-items: center;
-    gap: 20em;
+    gap: 40em;
+    padding-left: 0;
+}
+
+.footer-nav-list-item {
+    list-style: none;
+}
+
+.footer-nav-list-item__link {
+    color: #2e2e2e;
+    font-size: 14em;
+    font-weight: 400;
+    text-decoration: none;
+}
+
+.footer-nav-list-item__link:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 0.2em;
+    text-underline-offset: 0.3em;
+    text-decoration-color: #60b04e;
 }
