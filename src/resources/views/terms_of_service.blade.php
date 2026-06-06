@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('body-class', 'terms-of-service-page')
+@section('body-class', 'legal-page')
 
 @section('styles')
     <link rel="stylesheet" href="{{ asset('css/terms_of_service.css') }}">
