@@ -1,0 +1,14 @@
+.privacy-policy {
+    padding-top: var(--header-height);
+}
+
+.section-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1em 2em;
+}
+
+.section-info dt,
+.section-info dd {
+    margin: 0;
+}
