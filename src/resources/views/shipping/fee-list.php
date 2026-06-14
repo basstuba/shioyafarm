@@ -140,78 +140,78 @@
             </tr>
             <tr>
                 <th scope="row" class="division-type">100サイズ</th>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
+                <td class="division__fee">1,530</td>
+                <td class="division__fee">1,790</td>
+                <td class="division__fee">1,920</td>
+                <td class="division__fee">2,050</td>
+                <td class="division__fee">2,050</td>
+                <td class="division__fee">2,200</td>
+                <td class="division__fee">2,200</td>
+                <td class="division__fee">2,510</td>
+                <td class="division__fee">2,670</td>
+                <td class="division__fee">2,670</td>
+                <td class="division__fee">2,930</td>
+                <td class="division__fee">3,590</td>
             </tr>
             <tr>
                 <th scope="row" class="division-type">120サイズ</th>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
+                <td class="division__fee">1,850</td>
+                <td class="division__fee">2,110</td>
+                <td class="division__fee">2,240</td>
+                <td class="division__fee">2,370</td>
+                <td class="division__fee">2,370</td>
+                <td class="division__fee">2,520</td>
+                <td class="division__fee">2,520</td>
+                <td class="division__fee">2,830</td>
+                <td class="division__fee">2,990</td>
+                <td class="division__fee">2,990</td>
+                <td class="division__fee">3,250</td>
+                <td class="division__fee">4,240</td>
             </tr>
             <tr>
                 <th scope="row" class="division-type">140サイズ</th>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
+                <td class="division__fee">2,190</td>
+                <td class="division__fee">2,450</td>
+                <td class="division__fee">2,580</td>
+                <td class="division__fee">2,710</td>
+                <td class="division__fee">2,710</td>
+                <td class="division__fee">2,860</td>
+                <td class="division__fee">2,860</td>
+                <td class="division__fee">3,170</td>
+                <td class="division__fee">3,330</td>
+                <td class="division__fee">3,330</td>
+                <td class="division__fee">3,590</td>
+                <td class="division__fee">4,910</td>
             </tr>
             <tr>
                 <th scope="row" class="division-type">160サイズ</th>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
+                <td class="division__fee">2,510</td>
+                <td class="division__fee">2,770</td>
+                <td class="division__fee">2,900</td>
+                <td class="division__fee">3,030</td>
+                <td class="division__fee">3,030</td>
+                <td class="division__fee">3,180</td>
+                <td class="division__fee">3,180</td>
+                <td class="division__fee">3,490</td>
+                <td class="division__fee">3,650</td>
+                <td class="division__fee">3,650</td>
+                <td class="division__fee">3,910</td>
+                <td class="division__fee">5,560</td>
             </tr>
             <tr>
                 <th scope="row" class="division-type">180サイズ</th>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
-                <td class="division__fee"></td>
+                <td class="division__fee">3,060</td>
+                <td class="division__fee">4,090</td>
+                <td class="division__fee">4,220</td>
+                <td class="division__fee">4,350</td>
+                <td class="division__fee">4,350</td>
+                <td class="division__fee">5,380</td>
+                <td class="division__fee">5,380</td>
+                <td class="division__fee">5,690</td>
+                <td class="division__fee">6,180</td>
+                <td class="division__fee">6,180</td>
+                <td class="division__fee">6,550</td>
+                <td class="division__fee">9,080</td>
             </tr>
         </tbody>
     </table>
