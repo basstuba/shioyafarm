@@ -150,6 +150,37 @@ return [
         ],
     ],
 
+    'sizes' => [
+        60 => [
+            'max_weight' => 2,
+            'label' => '2kgまで',
+        ],
+        80 => [
+            'max_weight' => 5,
+            'label' => '5kgまで',
+        ],
+        100 => [
+            'max_weight' => 10,
+            'label' => '10kgまで',
+        ],
+        120 => [
+            'max_weight' => 15,
+            'label' => '15kgまで',
+        ],
+        140 => [
+            'max_weight' => 20,
+            'label' => '20kgまで',
+        ],
+        160 => [
+            'max_weight' => 25,
+            'label' => '25kgまで',
+        ],
+        180 => [
+            'max_weight' => 30,
+            'label' => '30kgまで',
+        ],
+    ],
+
     'prefecture_to_area' => [
         '北海道' => '北海道',
         '青森県' => '北東北',

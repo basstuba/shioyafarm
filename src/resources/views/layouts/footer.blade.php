@@ -9,12 +9,12 @@
             </div>
             <div class="footer-farm-info">
                 <div class="footer-farm-info-item">
-                    <span class="footer-farm-info-item__label">所在地</span>
-                    <span class="footer-farm-info-item__value">〒091-2345 北海道架空郡架空町567-34</span>
+                    <dt class="footer-farm-info-item__label">所在地</dt>
+                    <dd class="footer-farm-info-item__value">〒091-2345 北海道架空郡架空町567-34</dd>
                 </div>
                 <div class="footer-farm-info-item">
-                    <span class="footer-farm-info-item__label">電話番号</span>
-                    <span class="footer-farm-info-item__value">01234-5-6789</span>
+                    <dt class="footer-farm-info-item__label">電話番号</dt>
+                    <dd class="footer-farm-info-item__value">01234-5-6789</dd>
                 </div>
             </div>
             <div class="footer-copyright">

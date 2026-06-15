@@ -258,16 +258,16 @@
                 <h3 class="section-title">第10条（お問い合わせ窓口）</h3>
                 <p>本ポリシーに関するお問い合わせは，下記の窓口までお願いいたします。</p>
                 <dl class="section-info">
-                    <dt>住所</dt>
+                    <dt>住所：</dt>
                     <dd>北海道架空郡架空町567-34</dd>
 
-                    <dt>社名</dt>
+                    <dt>社名：</dt>
                     <dd>しおや農園</dd>
 
-                    <dt>代表</dt>
+                    <dt>代表：</dt>
                     <dd>塩谷貴良</dd>
 
-                    <dt>Eメールアドレス</dt>
+                    <dt>Eメールアドレス：</dt>
                     <dd>shioyafarm@example.com</dd>
                 </dl>
             </section>
