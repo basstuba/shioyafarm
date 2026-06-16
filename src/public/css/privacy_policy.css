@@ -2,13 +2,59 @@
     padding-top: var(--header-height);
 }
 
+.container {
+    padding: 0 200em 0 200em;
+}
+
+.title {
+    font-size: 24em;
+    font-weight: 600;
+    color: #2e2e2e;
+    text-align: center;
+}
+
+.section {
+    text-align: start;
+    margin: 80em 0 80em;
+}
+
+.section-title {
+    font-size: 20em;
+    font-weight: 400;
+    color: #2e2e2e;
+}
+
+.section-text {
+    font-size: 16em;
+    font-weight: 400;
+    color: #2e2e2e;
+}
+
+.section ol {
+    font-size: 16em;
+    font-weight: 400;
+    color: #2e2e2e;
+    padding-left: 1.5em;
+}
+
+.section ol ol {
+    font-size: 1em;
+}
+
 .section-info {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: max-content 1fr;
     gap: 1em 2em;
+    font-size: 16em;
+    font-weight: 400;
+    color: #2e2e2e;
 }
 
 .section-info dt,
 .section-info dd {
     margin: 0;
+}
+
+.section-info dt::after {
+    content: "：";
 }

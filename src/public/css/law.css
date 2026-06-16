@@ -1,0 +1,40 @@
+.law {
+    padding-top: var(--header-height);
+}
+
+.container {
+    padding: 0 200em 0 200em;
+    margin-bottom: 80em;
+}
+
+.title {
+    font-size: 24em;
+    font-weight: 600;
+    color: #2e2e2e;
+    text-align: center;
+}
+
+.divider {
+    color: #acacac;
+    margin: 80em 0;
+}
+
+.section-divider {
+    color: #dddddd;
+}
+
+.section {
+    font-size: 16em;
+    text-align: start;
+    margin: 2em 0 2em;
+}
+
+.section dt {
+    font-weight: 800;
+    margin: 0 0 1em 0;
+}
+
+.section dd {
+    font-weight: 400;
+    margin: 0;
+}
