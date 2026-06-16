@@ -1,4 +1,4 @@
-@section('layouts.app')
+@extends('layouts.app')
 
 @section('body-class', 'legal-page')
 
