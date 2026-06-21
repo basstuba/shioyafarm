@@ -1,3 +1,7 @@
+.footer {
+    align-self: self-end;
+}
+
 .footer-inner {
     background-color: #fff4bf;
     display: flex;

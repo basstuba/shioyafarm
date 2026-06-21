@@ -12,7 +12,7 @@
             <h2 class="title">配送料金一覧表</h2>
             <section class="section">
                 <div class="unit">
-                    <dt class="unit__title">単位：</dt>
+                    <dt class="unit__title">単位</dt>
                     <dd class="unit__name">円(税込)</dd>
                 </div>
                 <div class="fee-list">
