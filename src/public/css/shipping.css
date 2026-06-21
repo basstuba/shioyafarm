@@ -1,0 +1,104 @@
+.shipping-page {
+    background-color: #fff9db;
+}
+
+.shipping {
+    padding-top: var(--header-height);
+}
+
+.container {
+    padding: 40em 80em 60em 80em;
+}
+
+.title {
+    font-size: 24em;
+    font-weight: 600;
+    color: #2e2e2e;
+    text-align: center;
+}
+
+.unit {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 1em 0;
+    font-size: 14em;
+    font-weight: 400;
+    color: #2e2e2e;
+    width: fit-content;
+    margin-left: auto;
+    margin-bottom: 1em;
+}
+
+.unit dt,
+.unit dd {
+    margin: 0;
+}
+
+.unit dt::after {
+    content: "：";
+}
+
+.fee-list {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 60em;
+}
+
+.area,
+.area__name {
+    background-color: #dddddd;
+    font-size: 20em;
+    font-weight: 800;
+}
+
+.space,
+.prefecture__name {
+    background-color: #f5f5f5;
+    font-size: 16em;
+    font-weight: 400;
+}
+
+.prefecture__name ul {
+    padding: 0;
+}
+
+.prefecture__name li {
+    list-style: none;
+}
+
+.division-type {
+    background-color: #fff4bf;
+    font-size: 16em;
+    font-weight: 800;
+}
+
+.division__fee {
+    background-color: #ffffff;
+    font-size: 16em;
+    font-weight: 400;
+}
+
+.division-list {
+    width: 45%;
+    text-align: center;
+    padding-top: 20em;
+    margin: auto;
+}
+
+.division-list__title {
+    background-color: #dddddd;
+    font-size: 20em;
+    font-weight: 800;
+}
+
+.division__type {
+    background-color: #fff4bf;
+    font-size: 16em;
+    font-weight: 800;
+}
+
+.division__weight {
+    background-color: #ffffff;
+    font-size: 16em;
+    font-weight: 400;
+}
