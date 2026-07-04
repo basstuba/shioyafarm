@@ -72,7 +72,9 @@
                         </div>
                 </div>
             </section>
-            <section class="inquiry"></section>
+            <section class="inquiry">
+                <div></div>
+            </section>
         </div>
     </div>
 @endsection
