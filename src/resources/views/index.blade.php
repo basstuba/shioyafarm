@@ -73,7 +73,11 @@
                 </div>
             </section>
             <section class="inquiry">
-                <div></div>
+                <h2>お問い合わせ</h2>
+                <p>お問い合わせはこちらからお願いいたします</p>
+                <div>
+                    <a href="{{ route('inquiry') }}">お問い合わせフォームへ</a>
+                </div>
             </section>
         </div>
     </div>
