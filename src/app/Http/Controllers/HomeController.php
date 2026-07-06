@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
  */
 class HomeController extends Controller
 {
-    public function __invoke(HomeService $homeService):View
+    public function __invoke(HomeService $homeService): View
     {
         Log::debug('HomeController start');
 

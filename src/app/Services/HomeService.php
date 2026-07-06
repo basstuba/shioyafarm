@@ -2,18 +2,21 @@
 
 namespace App\Services;
 
-use App\Repositories\Interfaces\HomeRepositoryInterface;
+use App\Repositories\Interfaces\ItemRepositoryInterface;
+use App\Repositories\Interfaces\NoticeRepositoryInterface;
 
 /**
  * トップページサービス
  */
 class HomeService
 {
-    private HomeRepositoryInterface $homeRepository;
+    private ItemRepositoryInterface $itemRepository;
+    private NoticeRepositoryInterface $noticeRepository;
 
-    public function __construct(HomeRepositoryInterface $homeRepository)
+    public function __construct(ItemRepositoryInterface $itemRepository, NoticeRepositoryInterface $noticeRepository)
     {
-        $this->homeRepository = $homeRepository;
+        $this->itemRepository = $itemRepository;
+        $this->noticeRepository = $noticeRepository;
     }
 
     /**
@@ -21,7 +24,7 @@ class HomeService
      */
     public function getNoticeList()
     {
-        return $this->homeRepository->getNoticeList();
+        return $this->noticeRepository->getNoticeList();
     }
 
     /**
@@ -29,6 +32,6 @@ class HomeService
      */
     public function getRecommendItems()
     {
-        return $this->homeRepository->getRecommendItems();
+        return $this->itemRepository->getRecommendItems();
     }
 }
