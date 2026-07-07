@@ -5,10 +5,10 @@ use App\Http\Controllers\InquiryController;
 use Illuminate\Support\Facades\Route;
 
 // トップページ
-Route::get('/', HomeController::class)->name('index');
+Route::get('/', HomeController::class)->name('top.index');
 
 // お問い合わせフォーム
-Route::get('/inquiry', InquiryController::class)->name('inquiry');
+Route::get('/inquiry', InquiryController::class)->name('top.inquiry');
 
 // 送料案内
 Route::get('/shipping-fee', function () {

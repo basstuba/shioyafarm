@@ -2,7 +2,7 @@
     <div class="footer-inner">
         <div class="footer-info">
             <div class="footer-logo">
-                <a class="footer-logo__link" {{--href="{{ route('top') }}"--}}> <!-- ルートを設定するまでの仮実装 -->
+                <a class="footer-logo__link" {{--href="{{ route('top.index') }}"--}}>
                     <img class="footer-logo__img" src="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}" alt="">
                     <span class="footer-logo__text">しおや農園</span>
                 </a>
