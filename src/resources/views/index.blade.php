@@ -62,7 +62,7 @@
                 <div>
                     @foreach( $recommendItems as $recommendItem )
                         <div>
-                            <img src="{{ $recommendItem->img_url }}" alt="商品画像">
+                            <img src="{{ asset('storage/' . $recommendItem->img_url) }}" alt="商品画像">
                             @if( $recommendItem->isReservedOnly === true )
                                 <div>予約限定</div>
                             @endif
