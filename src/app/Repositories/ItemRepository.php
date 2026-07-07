@@ -18,7 +18,7 @@ class ItemRepository implements ItemRepositoryInterface
     #[Override]
     public function getRecommendItems(): Collection
     {
-        return Item::whereTrue('recommend')
+        return Item::where('recommend', true)
             ->orderBy('id')
             ->get();
     }

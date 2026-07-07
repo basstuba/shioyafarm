@@ -1,7 +1,7 @@
 <header class="header">
     <div class="header-inner">
         <div class="header-logo">
-            <a class="header-logo__link" {{--href="{{ route('top') }}"--}}> <!-- ルートを設定するまでの仮実装 -->
+            <a class="header-logo__link" {{--href="{{ route('top.index') }}"--}}>
                 <img class="header-logo__img" src="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}" alt="" />
                 <span class="header-logo__text">しおや農園</span>
             </a>
