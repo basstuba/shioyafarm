@@ -1,7 +1,7 @@
 ---
 paths:
   - "src/resources/views/**"
-  - "src/public/css/**"
+  - "src/resources/css/**"
 ---
 
 # フロントエンドの規約
@@ -10,19 +10,29 @@ paths:
 
 すべての画面のデザインはFigmaにあり、実装のたびにユーザーがリンクを渡す。
 
-- PC版とSP版の両方のリンクを使う。SP版のリンクがない場合は推測せず、ユーザーに依頼する。
+- PC版のリンクを使う。SP版のデザインはまだ作っていないため、下の「SP版のデザインを作る」の手順でユーザーと相談して作る。SP版のリンクが渡された場合はそちらを使う。
 - Figma MCPで取得したコードは参考情報として扱い、そのまま貼り付けない。
-  - Tailwind・React・インラインスタイルは使わず、Blade＋ページ単位のCSSに書き直す。
-  - 色・フォント・余白は、`common.css` に既存の定義があればそちらを使う。
-  - SP版はPC版のCSSにメディアクエリで追加する。ページごとにSP専用のCSSファイルは作らない。ブレークポイントは `common.css` に合わせて `max-width: 1440px` と `max-width: 567px` を使う。
+  - Tailwindのクラスはそのまま使ってよいが、Reactやインラインスタイルは使わずBladeに書き直す。
+  - 色・フォントは `resources/css/app.css` の `@theme` に定義したもの（`text-ink`、`bg-cream-200`、`font-maru` など）を使う。`bg-[#fff4bf]` のように色を直接書かない。新しい色が出てきたら `@theme` に追加する。
+  - SP版は同じクラスにブレークポイントの接頭辞（`md:` など）を付けて書く。モバイルファーストなので、接頭辞なしがSP、`md:`（768px以上）・`lg:`（1024px以上）がタブレット・PCになる。
 
-### 単位（px ではなく em で書く）
+### SP版のデザインを作る
 
-`common.css` で `body` の `font-size` を画面幅に応じて変えていて、**`1em` がデザイン上の `1px` に相当する**ようになっている。デザインの基準幅は、PCは1920px（1440px以下では1440px）、SPは414px。
+SP版のリンクがない場合は、実装前にユーザーと相談してFigmaにSP版のフレームを作る。推測で実装しない。
 
-- Figmaの数値（px）は、そのまま `em` に置き換えて書く（例：`font-size: 16px` → `16em`、`padding: 40px` → `40em`）。
-- `px` は `border` の太さなど、画面幅で伸び縮みさせたくない場合だけ使う。
-- `font-size` を指定した要素の中では `em` の基準が変わる（`font-size: 14em` の要素で `padding: 10em` と書くと140px相当になる）。そのため既存のCSS（`layouts/header.css` など）と同じく、`font-size` はテキストだけの末端の要素（`.nav-item__label` など）に指定し、余白・幅・`gap` はその外側の要素に書く。
+1. PC版のデザインを読み込み、SP版のレイアウト方針（縦積みにする部分、ナビの形、表をカード形式にするかなど）を短く提案する。
+2. `figma:figma-use` と `figma:figma-generate-design` スキルを読み込み、Figma MCPで、PC版と同じファイルにSP版のフレーム（幅414px）を作る。色・フォント・コンポーネントはPC版のものを使う。
+3. 作ったフレームのリンクとスクリーンショットをユーザーに見せ、OKが出るまで修正する。管理画面は高齢の生産者向けに、文字やボタンを大きめにする。
+4. OKが出たら、そのフレームをSP版のデザインとして実装する。
+
+### 単位
+
+Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮小する仕組みは使わない（ブラウザの文字サイズ設定が効くようにするため）。
+
+- 余白・幅はTailwindの目盛り（1 = 4px）に直して書く（例：`padding: 40px` → `p-10`、`gap: 60px` → `gap-15`）。4の倍数でない値だけ `w-[62px]` のように書く。
+- 文字サイズは `text-xs`(12px)・`text-sm`(14px)・`text-base`(16px)・`text-xl`(20px)・`text-2xl`(24px) などを使い、当てはまらない値だけ `text-[28px]` のように書く。
+- PCデザイン（幅1920px）の左右の余白は、`mx-auto max-w-[1520px] px-4` のように最大幅で表す。画面が狭くなっても横スクロールが出ないようにするため、固定の `px-[200px]` は使わない。
+- 固定ヘッダーの高さは `h-header` / `pt-header`（70px）を使う。
 - 画像はFigmaから書き出したものを `.webp` に変換し、下の「画像」の規約に従って置く。既存の画像と同じものがあれば、そちらを使う。
 - 実装後はFigmaのスクリーンショットと実際の画面を見比べて、違いがあれば報告する。
 
@@ -31,17 +41,15 @@ paths:
 - ビューは `resources/views/{shop,admin,auth,layouts,shipping}` に分かれている。トップページや静的ページは `resources/views` の直下に置く。
 - ユーザー画面は `layouts/app`、管理画面は `layouts/admin/app` を継承する。
 - `layouts/app` のセクション：
-  - `@section('styles')`：ページ専用CSSの `<link>` を書く
-  - `@section('body-class')`：`<body>` に付けるクラス
+  - `@section('body-class')`：`<body>` に付けるクラス（背景色の `bg-cream-100` や、フッターの色を変える目印の `legal-page` など）
   - `@section('content')`：`<main>` の中身
+- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う。
 - ヘッダーは `layouts.header` が自動で読み込まれ、ナビはルート名で決まる（`.claude/rules/backend.md` を参照）。
 
 ```blade
 @extends('layouts.app')
 
-@section('styles')
-    <link rel="stylesheet" href="{{ asset('css/shop/cart.css') }}">
-@endsection
+@section('body-class', 'bg-cream-100')
 
 @section('content')
     ...
@@ -50,9 +58,13 @@ paths:
 
 ## CSS
 
-- Vite（`resources/css`）は使わず、手書きのプレーンなCSSを `public/css/` に置いて `asset()` で読み込む。
-- ビューのパスに合わせて1ページ1ファイルにする（例：`views/shop/cart.blade.php` ↔ `public/css/shop/cart.css`）。
-- `reset.css`、`common.css`、`layouts/header.css`、`layouts/footer.css` は `layouts/app` で読み込み済み。共通のスタイルは `common.css` に書く。
+- **Tailwind CSS v4** を使い、Viteでビルドする。入口は `resources/css/app.css` だけで、`layouts/app` の `@vite` で読み込み済み。ページごとのCSSファイルは作らない。
+- スタイルはBladeにTailwindのクラスで書く。`app.css` に手書きするのは次の場合だけにする。
+  - `@theme`：色・フォント・ヘッダー高さなどのデザイントークン
+  - `@utility`：複数の場所で使う小さなスタイルのまとまり（例：リンクの下線の `underline-accent`）
+  - `@layer components`：利用規約などの長文の文書のように、子要素にまとめてスタイルを当てる場合（例：`.legal-document`）
+- `container` はTailwindのクラス名と重なるため、独自のクラス名として使わない。
+- `grid` の子要素の中に横長の表を置く場合は、親に `min-w-0` を付け、表は `overflow-x-auto` で囲んでページ全体が横スクロールしないようにする。
 - 管理画面も含め、**全ページにSP（スマホ）向けのスタイルが必要**（生産者がモバイルで管理画面を使うため）。管理画面は高齢の生産者でも使いやすいよう、文字やボタンを大きめにする。
 
 ## 画像

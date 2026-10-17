@@ -1,25 +1,25 @@
-<header class="header">
-    <div class="header-inner">
-        <div class="header-logo">
-            <a class="header-logo__link" {{--href="{{ route('top.index') }}"--}}>
-                <img class="header-logo__img" src="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}" alt="" />
-                <span class="header-logo__text">しおや農園</span>
+<header class="fixed top-0 left-0 z-10 h-header w-full backdrop-blur-[10px]">
+    <div class="flex items-center justify-between gap-4 bg-white/80 px-1 py-px font-maru">
+        <div class="w-24 shrink-0 text-center">
+            <a class="no-underline" {{--href="{{ route('top.index') }}"--}}>
+                <img class="mx-auto h-auto w-[62px] cursor-pointer" src="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}" alt="" />
+                <span class="block cursor-pointer text-center text-xs font-medium text-primary">しおや農園</span>
             </a>
         </div>
-        <nav class="header-nav">
+        <nav class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
             @foreach ($navItems as $item)
                 @if (isset($item['method']) && $item['method'] === 'post')
-                    <form class="nav-item" action="{{ $item['url'] }}" method="POST">
+                    <form action="{{ $item['url'] }}" method="POST">
                         @csrf
-                        <button class="nav-item__logout" type="submit">
-                            <img class="nav-item__icon"  src="{{ asset('storage/' . $item['icon']) }}" alt="" />
-                            <span class="nav-item__label">{{ $item['label'] }}</span>
+                        <button class="group flex cursor-pointer items-center gap-0.5" type="submit">
+                            <img class="w-5" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
+                            <span class="text-sm text-ink underline-accent group-hover:underline">{{ $item['label'] }}</span>
                         </button>
                     </form>
                 @else
-                    <a class="nav-item" href="{{ $item['url'] }}">
-                        <img class="nav-item__icon" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
-                        <span class="nav-item__label">{{ $item['label'] }}</span>
+                    <a class="group flex items-center gap-0.5" href="{{ $item['url'] }}">
+                        <img class="w-5" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
+                        <span class="text-sm text-ink underline-accent group-hover:underline">{{ $item['label'] }}</span>
                     </a>
                 @endif
             @endforeach

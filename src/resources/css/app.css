@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* デザイントークン（Figmaの色・フォントと対応させる） */
+@theme {
+    --font-inika: "Inika", serif;
+    --font-maru: "Kiwi Maru", sans-serif;
+    --default-font-family: var(--font-inika);
+
+    --color-ink: #2e2e2e;
+    --color-primary: #f0a13a;
+    --color-accent: #60b04e;
+    --color-cream-50: #fffdf0;
+    --color-cream-100: #fff9db;
+    --color-cream-200: #fff4bf;
+    --color-surface: #f5f5f5;
+    --color-line: #dddddd;
+    --color-line-strong: #acacac;
+
+    --spacing-header: 70px;
+}
+
+/* リンクのホバー時の下線（`hover:underline` と組み合わせて使う） */
+@utility underline-accent {
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: 0.2em;
+    text-underline-offset: 0.3em;
+}
+
+@layer components {
+    /*
+     * 利用規約・プライバシーポリシーなどの長文の文書。
+     * 段落やリストが多く、要素ごとにクラスを付けると読みにくくなるため、子要素にまとめてスタイルを当てる。
+     */
+    .legal-document {
+        @apply text-base text-ink;
+
+        & section {
+            @apply my-20;
+        }
+
+        & h3 {
+            @apply my-5 text-xl;
+        }
+
+        & p {
+            @apply my-4;
+        }
+
+        & ol {
+            @apply my-4 list-decimal pl-6;
+        }
+
+        & ol ol {
+            @apply my-0;
+        }
+
+        & ol[type="a"] {
+            @apply list-[lower-alpha];
+        }
+    }
+}

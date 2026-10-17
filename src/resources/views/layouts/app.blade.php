@@ -12,15 +12,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400;500&family=Noto+Sans+Hebrew:wght@100..900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/webp" href="{{ asset('image/tool/shioya-farm-logo-login.webp') }}">
-    <link rel="stylesheet" href="{{ asset('css/reset.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/common.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/layouts/header.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/layouts/footer.css') }}">
-    @yield('styles')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="@yield('body-class')">
+<body class="grid min-h-screen grid-rows-[auto_1fr_auto] @yield('body-class')">
     @include('layouts.header')
-    <main>@yield('content')</main>
+    <main class="min-w-0">@yield('content')</main>
     @include('layouts.footer')
 </body>
 </html>
