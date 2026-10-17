@@ -47,5 +47,6 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 
 ## 規約
 
+- ユーザーとのやり取り（返答・作業報告・途中経過）はすべて日本語で行う。
 - コードコメント、docblock、UIの文言は日本語で書く。
 - コミットメッセージはconventionalなプレフィックスに日本語の要約を付ける（例：`feat: ItemRepository,NoticeRepository作成`）。
