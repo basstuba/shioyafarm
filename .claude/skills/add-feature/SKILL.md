@@ -23,7 +23,7 @@ argument-hint: "[機能名またはパス 例: 商品一覧 / /items]"
 - `src/app/Http/Controllers/XxxController.php`（中身が空のスタブ）
 - `src/app/Http/Requests/XxxRequest.php`（バリデーションルール定義済み）
 - `src/app/Models/*.php`、`src/database/migrations/*`
-- `src/resources/views/**/*.blade.php`、`src/public/css/**/*.css`（マークアップのみの場合がある）
+- `src/resources/views/**/*.blade.php`（マークアップのみの場合がある）
 
 ## 3. ルートを定義する
 
@@ -49,11 +49,11 @@ argument-hint: "[機能名またはパス 例: 商品一覧 / /items]"
 
 画面のデザインはすべてFigmaにある。
 
-- Figmaのリンクが渡されていない場合は、作業を始める前にユーザーに依頼する。PC版とSP版の両方の、`node-id` 付きのフレーム単位のリンクをもらう。
+- Figmaのリンクが渡されていない場合は、作業を始める前にユーザーに依頼する。PC版の、`node-id` 付きのフレーム単位のリンクをもらう。
+- SP版のリンクがない場合は、`.claude/rules/frontend.md` の「SP版のデザインを作る」の手順で、ユーザーと相談してFigmaにSP版のフレームを作り、OKをもらってから実装する。
 - `figma:figma-design-to-code` スキルを読み込んでから、Figma MCPでデザイン情報とスクリーンショットを取得する。
-- Figmaが出すコード（Tailwind・Reactなど）はそのまま使わず、`.claude/rules/frontend.md` の規約に合わせて書き直す。
-- Bladeは `layouts/app`（管理画面は `layouts/admin/app`）を継承し、`@section('styles')` でページ専用のCSSを読み込む。
-- CSSはビューのパスに対応する `src/public/css/...` に書く。SP向けのスタイルも必ず書く。
+- Figmaが出すコードはそのまま使わず、`.claude/rules/frontend.md` の規約に合わせて書き直す（色は `@theme` のトークンに置き換える、ReactはBladeにするなど）。
+- Bladeは `layouts/app`（管理画面は `layouts/admin/app`）を継承し、スタイルはTailwindのクラスで書く。ページごとのCSSファイルは作らない。SP向けのスタイルも必ず書く。
 
 ## 8. ナビの仮置きを差し替える
 

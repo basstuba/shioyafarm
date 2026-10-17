@@ -2,13 +2,9 @@
 
 @section('body-class', 'fv-page')
 
-@section('styles')
-    <link rel="stylesheet" href="{{ asset('css/index.css') }}">
-@endsection
-
 @section('content')
     <div class="index">
-        <div class="container">
+        <div>
             <section class="first-view">
                 <div class="slide">
                     <img src="{{ asset('storage/image/tool/fv-maine-photo.webp') }}" alt="誰が作ったかまで、おいしい理由になる">

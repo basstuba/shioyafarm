@@ -18,6 +18,16 @@ services:
     volumes:
       - ./src:/var/www/
 
+  node:
+    image: node:22.12.0
+    user: node
+    working_dir: /var/www
+    volumes:
+      - ./src:/var/www/
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev"
+
   mysql:
     image: mysql:8.0.37
     environment:
