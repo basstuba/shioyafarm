@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 interface ItemRepositoryInterface
 {
     /**
-     * おすすめ商品取得
+     * おすすめ商品を指定件数取得
      */
-    public function getRecommendItems(): Collection;
+    public function getRecommendItems(int $limit): Collection;
 }

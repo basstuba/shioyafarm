@@ -13,11 +13,11 @@ use Override;
 class NoticeRepository implements NoticeRepositoryInterface
 {
     /**
-     * お知らせ一覧を取得
+     * 新しい順にお知らせを指定件数取得
      */
     #[Override]
-    public function getNoticeList(): Collection
+    public function getNoticeList(int $limit): Collection
     {
-        return Notice::latest('updated_at')->get();
+        return Notice::latest('updated_at')->limit($limit)->get();
     }
 }

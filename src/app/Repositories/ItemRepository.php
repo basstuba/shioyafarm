@@ -13,13 +13,14 @@ use Override;
 class ItemRepository implements ItemRepositoryInterface
 {
     /**
-     * おすすめ商品を取得
+     * おすすめ商品を指定件数取得
      */
     #[Override]
-    public function getRecommendItems(): Collection
+    public function getRecommendItems(int $limit): Collection
     {
         return Item::where('recommend', true)
             ->orderBy('id')
+            ->limit($limit)
             ->get();
     }
 }

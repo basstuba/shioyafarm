@@ -22,7 +22,7 @@
             </div>
         </div>
         <nav>
-            <ul class="flex flex-wrap items-center gap-x-10 gap-y-2 md:justify-end">
+            <ul class="flex flex-wrap items-center gap-x-10 gap-y-3 md:justify-end">
                 <li>
                     <a class="text-sm underline-accent hover:underline" href="{{ route('info.shipping-fee') }}">送料案内</a>
                 </li>

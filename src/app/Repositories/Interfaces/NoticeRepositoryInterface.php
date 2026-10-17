@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 interface NoticeRepositoryInterface
 {
     /**
-     * お知らせ一覧を取得
+     * 新しい順にお知らせを指定件数取得
      */
-    public function getNoticeList(): Collection;
+    public function getNoticeList(int $limit): Collection;
 }
