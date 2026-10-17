@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400;500&family=Noto+Sans+Hebrew:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/webp" href="{{ asset('image/tool/shioya-farm-logo-login.webp') }}">
+    <link rel="icon" type="image/webp" href="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="grid min-h-screen grid-rows-[auto_1fr_auto] @yield('body-class')">
