@@ -1,2 +1,5 @@
 docker/mysql/data/*
 !.gitkeep
+
+# Excel files (docs)
+*.xlsx
