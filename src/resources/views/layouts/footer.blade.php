@@ -2,7 +2,7 @@
     <div class="flex flex-col gap-4 bg-cream-200 px-4 py-3 font-maru text-ink in-[.legal-page]:bg-cream-50 md:flex-row md:items-center md:justify-between">
         <div class="md:w-1/2">
             <div>
-                <a class="flex items-center no-underline" {{--href="{{ route('top.index') }}"--}}>
+                <a class="flex items-center no-underline" href="{{ route('top.index') }}">
                     <img class="h-auto w-[61px] cursor-pointer" src="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}" alt="" />
                     <span class="text-[28px] font-medium text-primary">しおや農園</span>
                 </a>
