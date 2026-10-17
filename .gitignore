@@ -3,3 +3,6 @@ docker/mysql/data/*
 
 # Excel files (docs)
 *.xlsx
+
+# Playwright MCP の作業ファイル
+.playwright-mcp/
