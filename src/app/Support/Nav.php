@@ -12,14 +12,12 @@ class Nav
         return [
             [
                 'label' => 'お知らせ',
-                // 'url'   => '#news',
-                'url' => '#news',
+                'url'   => route('top.index') . '#news',
                 'icon'  => 'image/icon/notice-header-icon.webp',
             ],
             [
                 'label' => 'しおや農園について',
-                // 'url'   => '#about',
-                'url' => '#about',
+                'url'   => route('top.index') . '#about',
                 'icon'  => 'image/icon/team-header-icon.webp',
             ],
             [
@@ -39,14 +37,12 @@ class Nav
         return [
             [
                 'label' => 'お知らせ',
-                // 'url'   => route('top.index') . '#news',
-                'url' => route('top.index') . '#news',
+                'url'   => route('top.index') . '#news',
                 'icon'  => 'image/icon/notice-header-icon.webp',
             ],
             [
                 'label' => 'しおや農園について',
-                // 'url'   => route('top.index') . '#about',
-                'url' => route('top.index') . '#about',
+                'url'   => route('top.index') . '#about',
                 'icon'  => 'image/icon/team-header-icon.webp',
             ],
             [
@@ -66,14 +62,12 @@ class Nav
         return [
             [
                 'label' => 'お知らせ',
-                // 'url'   => route('top.index') . '#news',
-                'url' => route('top.index') . '#news',
+                'url'   => route('top.index') . '#news',
                 'icon'  => 'image/icon/notice-header-icon.webp',
             ],
             [
                 'label' => 'しおや農園について',
-                // 'url'   => route('top.index') . '#about',
-                'url' => route('top.index') . '#about',
+                'url'   => route('top.index') . '#about',
                 'icon'  => 'image/icon/team-header-icon.webp',
             ],
             [
@@ -106,14 +100,12 @@ class Nav
         return [
             [
                 'label' => 'お知らせ',
-                // 'url'   => route('top.index') . '#news',
-                'url' => route('top.index') . '#news',
+                'url'   => route('top.index') . '#news',
                 'icon'  => 'image/icon/notice-header-icon.webp',
             ],
             [
                 'label' => 'しおや農園について',
-                // 'url'   => route('top.index') . '#about',
-                'url' => route('top.index') . '#about',
+                'url'   => route('top.index') . '#about',
                 'icon'  => 'image/icon/team-header-icon.webp',
             ],
             [
