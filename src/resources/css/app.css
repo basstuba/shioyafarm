@@ -15,8 +15,27 @@
     --color-surface: #f5f5f5;
     --color-line: #dddddd;
     --color-line-strong: #acacac;
+    --color-sage: #b2c8a3;
+    --color-forest: #356859;
 
     --spacing-header: 70px;
+
+    /* トップページのファーストビュー（4枚を6秒ずつフェードで切り替える。各スライドに animation-delay を付けて使う） */
+    --animate-fv-fade: fv-fade 24s infinite;
+
+    @keyframes fv-fade {
+        0% {
+            opacity: 0;
+        }
+        4%,
+        25% {
+            opacity: 1;
+        }
+        29%,
+        100% {
+            opacity: 0;
+        }
+    }
 }
 
 /* リンクのホバー時の下線（`hover:underline` と組み合わせて使う） */

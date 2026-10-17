@@ -11,15 +11,15 @@
                 @if (isset($item['method']) && $item['method'] === 'post')
                     <form action="{{ $item['url'] }}" method="POST">
                         @csrf
-                        <button class="group flex cursor-pointer items-center gap-0.5" type="submit">
-                            <img class="w-5" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
-                            <span class="text-sm text-ink underline-accent group-hover:underline">{{ $item['label'] }}</span>
+                        <button class="group flex cursor-pointer flex-col items-center gap-0.5 md:flex-row" type="submit">
+                            <img class="w-6 md:w-5" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
+                            <span class="text-[10px] text-ink underline-accent group-hover:underline md:text-sm">{{ $item['label'] }}</span>
                         </button>
                     </form>
                 @else
-                    <a class="group flex items-center gap-0.5" href="{{ $item['url'] }}">
-                        <img class="w-5" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
-                        <span class="text-sm text-ink underline-accent group-hover:underline">{{ $item['label'] }}</span>
+                    <a class="group flex flex-col items-center gap-0.5 md:flex-row" href="{{ $item['url'] }}">
+                        <img class="w-6 md:w-5" src="{{ asset('storage/' . $item['icon']) }}" alt="" />
+                        <span class="text-[10px] text-ink underline-accent group-hover:underline md:text-sm">{{ $item['label'] }}</span>
                     </a>
                 @endif
             @endforeach
