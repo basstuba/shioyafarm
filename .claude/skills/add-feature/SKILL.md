@@ -8,7 +8,13 @@ argument-hint: "[機能名またはパス 例: 商品一覧 / /items]"
 
 対象：$ARGUMENTS
 
-`.claude/rules/backend.md` と `.claude/rules/frontend.md` の規約に従う。送料や決済に関わる場合は `.claude/rules/shipping.md` も読む。
+流れは **ブランチを切る → 仕様・デザイン・受け入れ条件を固める → implementer エージェントが実装・テスト → テスト確認 → uat-tester エージェントがUAT → レビュー → ユーザーの受け入れ確認** の順。実装とUATはメインセッションで行わず、必ずそれぞれのエージェントに任せる。
+
+## 0. 作業ブランチを切る
+
+- `git status` で未コミットの変更がないか確認する。ある場合は作業を止めてユーザーに確認する。
+- `main` から `feat/<機能名の英語ケバブケース>`（例：`feat/item-index`）を作成して切り替える。修正の場合は `fix/...` にする。
+- すでに `main` 以外のブランチにいる場合は、そのまま使ってよいかユーザーに確認する。
 
 ## 1. 仕様を確認する
 
@@ -16,62 +22,57 @@ argument-hint: "[機能名またはパス 例: 商品一覧 / /items]"
 - 必要に応じて `docs/03-page-list.md`、`docs/04-feature-list.md`、`docs/05-table-specification.md` も読む。
 - 設計書に載っていない、または内容があいまいな場合は、実装する前にユーザーに確認する。
 
-## 2. 既存のファイルを確認する
+## 2. デザインを用意する（画面がある場合）
 
-次のファイルは先に作ってあることが多い。新しく作らず、既存のものを使う。
+ユーザーとのやり取りが必要なので、implementer に渡す前にここで済ませる。
 
-- `src/app/Http/Controllers/XxxController.php`（中身が空のスタブ）
-- `src/app/Http/Requests/XxxRequest.php`（バリデーションルール定義済み）
-- `src/app/Models/*.php`、`src/database/migrations/*`
-- `src/resources/views/**/*.blade.php`（マークアップのみの場合がある）
+- Figmaのリンクが渡されていない場合はユーザーに依頼する。PC版の、`node-id` 付きのフレーム単位のリンクをもらう。
+- SP版のリンクがない場合は、`.claude/rules/frontend.md` の「SP版のデザインを作る」の手順で、ユーザーと相談してFigmaにSP版のフレームを作り、OKをもらう。
 
-## 3. ルートを定義する
+## 3. 受け入れ条件とUATシナリオを作る
 
-- `src/routes/web.php` に追加し、必ず `->name()` を付ける。名前は `top.*` / `info.*` / `shop.*` / `admin.*` のプレフィックスに合わせる。
-- 認証が必要なルートは `auth` ミドルウェアでグループ化する。管理画面のルートは管理者用の認証を使う。
+- `.claude/rules/uat.md` の書式で `docs/uat/<機能名>.md` を作り、「受け入れ条件」「シナリオ」「ユーザー確認チェックリスト」を書く。「実施結果」と「判定」は空のままにする。
+- 手順1の設計書とユーザーと決めた事項をもとに作る。
+- ユーザーに見せてOKをもらう。OKが出るまで実装に進まない。
 
-## 4. Repository を作る
+## 4. implementer エージェントに実装を依頼する
 
-- データ取得・更新が必要な場合は `src/app/Repositories/Interfaces/XxxRepositoryInterface.php` と `src/app/Repositories/XxxRepository.php` を作る（既存のものがあればメソッドを追加する）。
-- 新しいリポジトリは `src/app/Providers/RepositoryServiceProvider.php` にバインドを追加する。
+Agent ツールで `subagent_type: implementer` を呼ぶ。依頼文には次を書く（エージェントはこの会話を見られないため、省略しない）。
 
-## 5. Service を作る
+- 対象のルート（パス・メソッド・コントローラー・アクション・ルート名・認証の要否）
+- 手順1で確認した仕様の要約と、ユーザーと決めた事項
+- FigmaのリンクPC版・SP版
+- UATのファイルのパス（受け入れ条件を満たすように実装し、PHPUnitのテストにも反映すること）
+- 作業ブランチ名（ブランチの切り替えはしないこと）
 
-- `src/app/Services/XxxService.php` を作り、リポジトリのインターフェースをコンストラクタで受け取る。
-- ビジネスロジック（送料計算、合計金額の計算など）はここに書く。
+## 5. テストが通ったことを確認する
 
-## 6. Controller を実装する
+- エージェントの報告を鵜呑みにせず、メインセッションで `docker compose exec php php artisan test` を実行する。
+- 失敗している場合は、SendMessage で同じ implementer に失敗内容を渡して修正させ、再度確認する。**テストが全件通るまでUATに進まない。**
 
-- スタブを実装する。Serviceはメソッドインジェクションで受け取り、FormRequestでバリデーションする。
-- `Log::debug('XxxController start')` / `Log::debug('XxxController end')` を出力する。
+## 6. UATを実施する
 
-## 7. View と CSS を作る
+- Agent ツールで `subagent_type: uat-tester` を呼ぶ。依頼文には、UATのファイルのパス、作業ブランチ名、対象のルートを書く。
+- 結果を受け取ったら `docs/uat/<機能名>.md` の「実施結果」を確認する。
+- NGがある場合は、SendMessage で implementer にNGの内容（再現手順・期待結果・実際の結果）を渡して修正させ、手順5からやり直す（テスト確認 → UAT）。
+- 判定保留・未実施がある場合は、その内容をユーザーに伝えて判断をもらう。「DBの作り直しが必要」で未実施になったシナリオは、`migrate:fresh --seed` を実行してよいかユーザーに確認し、了承を得てから実行して、そのシナリオだけ uat-tester に再実施させる。
+- **NGがなくなるまでレビューに進まない。**
 
-画面のデザインはすべてFigmaにある。
+## 7. レビューする
 
-- Figmaのリンクが渡されていない場合は、作業を始める前にユーザーに依頼する。PC版の、`node-id` 付きのフレーム単位のリンクをもらう。
-- SP版のリンクがない場合は、`.claude/rules/frontend.md` の「SP版のデザインを作る」の手順で、ユーザーと相談してFigmaにSP版のフレームを作り、OKをもらってから実装する。
-- `figma:figma-design-to-code` スキルを読み込んでから、Figma MCPでデザイン情報とスクリーンショットを取得する。
-- Figmaが出すコードはそのまま使わず、`.claude/rules/frontend.md` の規約に合わせて書き直す（色は `@theme` のトークンに置き換える、ReactはBladeにするなど）。
-- Bladeは `layouts/app`（管理画面は `layouts/admin/app`）を継承し、スタイルはTailwindのクラスで書く。ページごとのCSSファイルは作らない。SP向けのスタイルも必ず書く。
+- `code-review` スキルを実行し、`main` との差分をレビューする。
+- 対象の機能に応じて、次の観点でも差分を確認する。ただし構成についての提案（`Actions/` 層、API Resource など）はプロジェクトの規約（Controller → Service → Repository）を優先し、採用しない。
+  - 認証・会員情報・カート・決済・管理画面・ファイルアップロードに関わる場合：`laravel-security` スキルを読み込み、認可、Mass Assignment、XSS、CSRF、アップロードの検証などを確認する。
+  - 一覧の取得や、複数テーブルの更新（注文・予約など）がある場合：`laravel-patterns` スキルを読み込み、N+1（Eager Loading）とトランザクションを確認する。
+- 指摘のうち対応するものは、SendMessage で implementer に修正させる。修正後は手順5からやり直す（テスト確認 → UAT → 再レビュー）。
+- 対応しないと判断した指摘は、理由とあわせて報告に含める。
 
-## 8. ナビの仮置きを差し替える
+## 8. ユーザーに受け入れ確認を依頼する
 
-- `src/app/Support/Nav.php` で、今回作ったルートを指す `'url' => '#'` があれば `route('...')` に差し替える。
+- `docs/uat/<機能名>.md` の「ユーザー確認チェックリスト」をユーザーに示し、http://localhost で確認してもらう。
+- ユーザーの結果（受け入れ：済 / 未、コメント）を「判定」の欄に記入する。Claudeが代わりに「済」にしない。
+- 指摘があれば implementer に修正させ、手順5からやり直す。
 
-## 9. 確認する
+## 9. 報告する
 
-リポジトリ直下で実行する。
-
-```bash
-docker compose exec php ./vendor/bin/pint
-docker compose exec php php artisan route:list --name=<ルート名>
-docker compose exec php php artisan test
-```
-
-- 画面がある場合は http://localhost で表示を確認する。
-- メール送信がある場合は MailHog（http://localhost:8025）で確認する。
-
-## 10. 報告する
-
-実装したファイル、設計書と違う判断をした点、未実装のまま残した点をまとめて報告する。コミットはユーザーに頼まれたときだけ行い、メッセージは `feat: 〇〇機能作成` のように日本語で書く。
+作業ブランチ名、実装したファイル、PHPUnitの結果、UATの結果（OK / NGの件数と `docs/uat/<機能名>.md` へのリンク）、レビューの指摘と対応内容、ユーザーの受け入れ判定、設計書と違う判断をした点、未実装のまま残した点をまとめて報告する。コミットはユーザーに頼まれたときだけ行い、メッセージは `feat: 〇〇機能作成` のように日本語で書く。

@@ -43,7 +43,12 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 - `frontend.md`：Blade、Tailwind、画像、SP対応
 - `shipping.md`：送料計算（`config/shipping.php`）と支払方法
 
-設計書のルートを実装するときは `/add-feature` スキルを使う。
+- `testing.md`：テストの書き方（`#[Test]` アトリビュートを使う）
+- `uat.md`：UAT（受け入れテスト）のシナリオの書き方と、`docs/uat/` のファイルの書式
+
+設計書のルートを実装するときは `/add-feature` スキルを使う。作業ブランチを切る → 受け入れ条件とUATシナリオ（`docs/uat/`）を作ってユーザーのOKをもらう → `implementer` エージェント（sonnet / effort: high）が実装・テスト → テストが通ってから `uat-tester` エージェントがPlaywrightでUAT → `/code-review` でレビュー → ユーザーがチェックリストで受け入れ確認、の順に進める。`main` ブランチ上で `src/` を編集するとhookでブロックされる。マイグレーションは、`main` にコミット済みのものと、DBに適用済みのものの書き換えがhookでブロックされる（修正用のマイグレーションを追加して直す）。
+
+作業ブランチを `main` にマージする前には、`laravel-verification` スキルで検証する（毎回の実装の流れには含めず、手動で実行する）。phpstan は未導入のため、静的解析の工程は飛ばす。
 
 ## 規約
 
