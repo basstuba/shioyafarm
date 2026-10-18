@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Item;
 use App\Models\Notice;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -17,7 +18,8 @@ class HomeTest extends TestCase
     /**
      * トップページが表示される
      */
-    public function test_トップページが表示される(): void
+    #[Test]
+    public function トップページが表示される(): void
     {
         $response = $this->get(route('top.index'));
 
@@ -28,7 +30,8 @@ class HomeTest extends TestCase
     /**
      * お知らせは更新日の新しい順に最新5件だけ表示される
      */
-    public function test_お知らせは新しい順に5件表示される(): void
+    #[Test]
+    public function お知らせは新しい順に5件表示される(): void
     {
         foreach (range(1, 6) as $day) {
             Notice::factory()->create([
@@ -49,7 +52,8 @@ class HomeTest extends TestCase
     /**
      * お知らせがないときはその旨を表示する
      */
-    public function test_お知らせがないときはメッセージを表示する(): void
+    #[Test]
+    public function お知らせがないときはメッセージを表示する(): void
     {
         $response = $this->get(route('top.index'));
 
@@ -59,7 +63,8 @@ class HomeTest extends TestCase
     /**
      * おすすめ商品はおすすめのものだけをID順に3件表示する
      */
-    public function test_おすすめ商品は3件表示される(): void
+    #[Test]
+    public function おすすめ商品は3件表示される(): void
     {
         Item::factory()->create(['name' => 'おすすめでない商品', 'recommend' => false]);
         $recommendItems = Item::factory()
@@ -79,7 +84,8 @@ class HomeTest extends TestCase
     /**
      * 予約限定の商品にはバッジを表示する
      */
-    public function test_予約限定の商品にはバッジを表示する(): void
+    #[Test]
+    public function 予約限定の商品にはバッジを表示する(): void
     {
         Item::factory()->create(['recommend' => true, 'is_reserved_only' => false]);
 
@@ -93,7 +99,8 @@ class HomeTest extends TestCase
     /**
      * 商品名・重さ・税込価格を表示する
      */
-    public function test_商品の名前と重さと価格を表示する(): void
+    #[Test]
+    public function 商品の名前と重さと価格を表示する(): void
     {
         Item::factory()->create([
             'name' => 'じゃがいも',
