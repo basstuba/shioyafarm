@@ -7,10 +7,11 @@
     認証ページ用のレイアウト（ログイン・会員登録）。
     SPは全面に背景画像を敷いて縦に並べ、PC（lg以上）は左にフォーム・右に背景画像のパネルを置く。
     サイト名・見出し・案内・©は右のパネルに入るため、DOMの順序はSPの並び（order-*）で決めている。
-    ページ側のセクション：page-title（<title>）、heading（見出し）、form（フォーム）、guide（別ページへの案内）
+    PCの並び順は auth-direction で変えられる（省略時は左にフォーム・右にパネル。左にパネルを置くなら lg:flex-row-reverse を指定する）。
+    ページ側のセクション：page-title（<title>）、auth-direction、heading（見出し）、form（フォーム）、guide（別ページへの案内）
 --}}
 <body class="font-maru text-ink">
-    <div class="flex min-h-screen flex-col bg-(image:--auth-bg) bg-cover bg-center lg:flex-row lg:bg-none lg:bg-white" style="--auth-bg: url('{{ asset('storage/image/tool/login-page-back-image.webp') }}')">
+    <div class="flex min-h-screen flex-col bg-(image:--auth-bg) bg-cover bg-center @yield('auth-direction', 'lg:flex-row') lg:bg-none lg:bg-white" style="--auth-bg: url('{{ asset('storage/image/tool/login-page-back-image.webp') }}')">
         <main class="order-3 min-w-0 px-4 pt-8 pb-2 lg:order-none lg:flex lg:flex-1 lg:items-center lg:justify-center lg:p-8">
             @yield('form')
         </main>
