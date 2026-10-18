@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Reservation;
-use App\Models\Purchase_history_item;
 
 class Item extends Model
 {
@@ -22,11 +20,13 @@ class Item extends Model
         'reservation_limit',
     ];
 
-    public function reservations() {
+    public function reservations()
+    {
         return $this->hasMany(Reservation::class);
     }
 
-    public function purchaseHistoryItems() {
+    public function purchaseHistoryItems()
+    {
         return $this->hasMany(Purchase_history_item::class);
     }
 }

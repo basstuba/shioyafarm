@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Purchase_history;
-use App\Models\Item;
 
 class Purchase_history_item extends Model
 {
@@ -19,11 +17,13 @@ class Purchase_history_item extends Model
         'subtotal',
     ];
 
-    public function purchaseHistory() {
+    public function purchaseHistory()
+    {
         return $this->belongsTo(Purchase_history::class);
     }
 
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(Item::class);
     }
 }
