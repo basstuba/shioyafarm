@@ -1,18 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-    <meta property='og:type' content='website'>
-    <meta property='og:title' content='Shioya Farm'>
-    <meta property='og:description' content='TAKAYOSHI SHIOYAの個人開発ウェブサイトです。'>
-    <meta name="description" content="TAKAYOSHI SHIOYAの個人開発ウェブサイトです。" />
-    <title>Shioya Farm</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@300;400;500&family=Noto+Sans+Hebrew:wght@100..900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/webp" href="{{ asset('storage/image/tool/shioya-farm-logo-small.webp') }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('layouts.head')
 </head>
 <body class="grid min-h-screen grid-rows-[auto_1fr_auto] @yield('body-class')">
     @include('layouts.header')

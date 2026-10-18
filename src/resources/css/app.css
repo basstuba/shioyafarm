@@ -8,6 +8,8 @@
 
     --color-ink: #2e2e2e;
     --color-primary: #f0a13a;
+    --color-primary-dark: #c0822f;
+    --color-primary-hover: #ff8800;
     --color-accent: #60b04e;
     --color-cream-50: #fffdf0;
     --color-cream-100: #fff9db;
@@ -17,8 +19,12 @@
     --color-line-strong: #acacac;
     --color-sage: #b2c8a3;
     --color-forest: #356859;
+    --color-danger: #d93025;
 
     --spacing-header: 70px;
+
+    --shadow-card: 0 4px 20px rgb(0 0 0 / 0.25);
+    --shadow-button: 0 4px 10px rgb(0 0 0 / 0.25);
 
     /* トップページのファーストビュー（4枚を6秒ずつフェードで切り替える。各スライドに animation-delay を付けて使う） */
     --animate-fv-fade: fv-fade 24s infinite;
