@@ -6,7 +6,9 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Http\Controllers\RegisteredUserController;
 use App\Http\Requests\LoginRequest;
+use App\Services\AreaService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,6 +17,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Http\Controllers\RegisteredUserController as FortifyRegisteredUserController;
 use Laravel\Fortify\Http\Requests\LoginRequest as FortifyLoginRequest;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -26,6 +29,9 @@ class FortifyServiceProvider extends ServiceProvider
     {
         // Fortifyのログイン用リクエストを、プロジェクトのFormRequestに差し替える
         $this->app->bind(FortifyLoginRequest::class, LoginRequest::class);
+
+        // 会員登録のコントローラーも、文字列でない入力で500にならないものに差し替える
+        $this->app->bind(FortifyRegisteredUserController::class, RegisteredUserController::class);
     }
 
     /**
@@ -34,6 +40,11 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Fortify::loginView(fn () => view('auth.login'));
+
+        // 会員登録ページには、お住まいの地域の選択肢として都道府県の一覧を渡す
+        Fortify::registerView(fn () => view('auth.register', [
+            'prefectures' => app(AreaService::class)->getPrefectures(),
+        ]));
 
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);

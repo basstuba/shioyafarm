@@ -250,6 +250,22 @@ class LoginTest extends TestCase
     }
 
     /**
+     * メールアドレスを配列で送っても、エラーで戻ったログインページが500にならず表示される
+     */
+    #[Test]
+    public function メールアドレスを配列で送ってもログインページが表示される(): void
+    {
+        $response = $this->followingRedirects()->from(route('login'))->post(route('login.store'), [
+            'email' => ['test@test.com'],
+            'password' => 'test1234',
+        ]);
+
+        $response->assertOk();
+        $response->assertViewIs('auth.login');
+        $response->assertSee('メールアドレスは文字で入力してください');
+    }
+
+    /**
      * JSONを期待するリクエストは、6回目に入力エラーではなく429で返る
      */
     #[Test]
