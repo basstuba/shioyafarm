@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-しおや農園（Shioya Farm）は、小規模な家族農家のための直販型ECサイトで、ポートフォリオ用のプロジェクト。公開ショップ（商品・カート・予約・決済。決済はStripeを想定）と、高齢の生産者でも使いやすい管理画面で構成される。管理画面はモバイルでも使う想定のため、全ページにSPデザインが必要。技術スタックは Laravel 11 / PHP 8.2、MySQL 8、Fortify（ユーザー認証、2FA含む）、Livewire 3（動的UIに使用予定）、Tailwind CSS v4 + Vite、maatwebsite/excel（管理画面のエクスポート）。
+しおや農園（Shioya Farm）は、小規模な家族農家のための直販型ECサイトで、ポートフォリオ用のプロジェクト。公開ショップ（商品・カート・予約・決済。決済はStripeを想定）と、高齢の生産者でも使いやすい管理画面で構成される。管理画面はモバイルでも使う想定のため、全ページにSPデザインが必要。技術スタックは Laravel 12 / PHP 8.2、MySQL 8、Fortify（ユーザー認証、2FA含む）、Livewire 3（動的UIに使用予定）、Tailwind CSS v4 + Vite、maatwebsite/excel（管理画面のエクスポート）。
 
 リポジトリ直下にはDocker構成と `docs/` がある。**Laravelアプリ本体は `src/` にあり**、`php` コンテナと `node` コンテナの `/var/www` にマウントされる。`node` コンテナは起動するとViteの開発サーバー（:5173）を立ち上げる。
 
