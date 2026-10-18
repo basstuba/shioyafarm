@@ -47,8 +47,7 @@ class Nav
             ],
             [
                 'label' => 'ログイン',
-                // 'url'   => route('login'),
-                'url' => '#', // ルートを設定するまでの仮実装
+                'url'   => route('login'),
                 'icon'  => 'image/icon/login-header-icon.webp',
             ],
         ];
@@ -84,8 +83,7 @@ class Nav
             ],
             [
                 'label' => 'ログアウト',
-                // 'url'   => route('logout'),
-                'url' => '#', // ルートを設定するまでの仮実装
+                'url'   => route('logout'),
                 'method'=> 'post', // ← logout用
                 'icon'  => 'image/icon/logout-icon.webp',
             ],
@@ -116,8 +114,7 @@ class Nav
             ],
             [
                 'label' => 'ログアウト',
-                // 'url'   => route('logout'),
-                'url' => '#', // ルートを設定するまでの仮実装
+                'url'   => route('logout'),
                 'method'=> 'post', // ← logout用
                 'icon'  => 'image/icon/logout-icon.webp',
             ],

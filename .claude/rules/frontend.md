@@ -39,11 +39,17 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
 ## Blade
 
 - ビューは `resources/views/{shop,admin,auth,layouts,shipping}` に分かれている。トップページや静的ページは `resources/views` の直下に置く。
-- ユーザー画面は `layouts/app`、管理画面は `layouts/admin/app` を継承する。
+- ユーザー画面は `layouts/app`、管理画面は `layouts/admin/app`、認証画面（ログイン・会員登録）は `layouts/auth` を継承する。
+- `<head>`（メタ・フォント・favicon・`@vite`）は `layouts/head` にまとめてあり、各レイアウトから `@include` する。レイアウトに直接書かない。`<title>` は `@section('page-title')` で変えられる（省略時は「Shioya Farm」）。
 - `layouts/app` のセクション：
   - `@section('body-class')`：`<body>` に付けるクラス（背景色の `bg-cream-100` や、フッターの色を変える目印の `legal-page` など）
   - `@section('content')`：`<main>` の中身
-- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う。
+- `layouts/auth` は、共通ヘッダー・フッター（`layouts.header` / `layouts.footer`）を使わず、認証ページ用のヘッダー（ロゴ）と © を持つ。PC（`lg:` 以上）は左にフォーム、右に背景画像のパネルの2分割、SPは画面全体に背景画像を敷いて縦に並べる。セクション：
+  - `@section('form')`：左側（SPでは見出しの下）のフォーム
+  - `@section('heading')`：右側のパネル（SPでは上部）の見出し
+  - `@section('guide')`：見出しの下の案内文とリンクボタン（ログインページなら会員登録への案内）
+  - 入力欄は `<x-auth-input>`（ラベル・input・エラーメッセージをまとめたもの）を使う。
+- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う（`layouts/auth` の見出しはデザインが違うため除く）。
 - ヘッダーは `layouts.header` が自動で読み込まれ、ナビはルート名で決まる（`.claude/rules/backend.md` を参照）。
 
 ```blade
