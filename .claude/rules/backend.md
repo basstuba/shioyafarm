@@ -2,6 +2,7 @@
 paths:
   - "src/app/**/*.php"
   - "src/routes/**/*.php"
+  - "src/database/**/*.php"
 ---
 
 # バックエンドの規約
@@ -37,6 +38,18 @@ paths:
 
 - クラス名はテーブル名に合わせてアンダースコア区切りにしている（`Delivery_address`、`Purchase_history`、`Purchase_history_item`）。新しいモデルもこの命名に従う。
 - スキーマは `docs/05-table-specification.md` と `docs/06-er-diagram.md` を正とする。
+
+## マイグレーション
+
+- **既存のマイグレーションファイルは書き換えない。** カラムの追加・変更・削除やインデックスの追加は、修正用のマイグレーションを新しく作って行う。
+  - 例：`php artisan make:migration add_stock_to_items_table --table=items`
+  - ファイル名は `add_<カラム>_to_<テーブル>_table` / `change_<カラム>_in_<テーブル>_table` / `drop_<カラム>_from_<テーブル>_table` のように、何をするかがわかる名前にする。
+- **書き換えてよいのは、`main` になく、まだ `migrate` していないファイルだけ。** `main` にコミット済みのもの、DBに適用済み（`migrate:status` が `Ran`）のものは、hookで書き換えがブロックされる。
+  - `migrate` する前に、`docs/05-table-specification.md` と見比べて内容を確定させる。
+  - 適用した後に誤りに気づいた場合は、修正用のマイグレーションを追加して直す。`migrate:rollback` して書き換えたり、ファイルを削除して作り直したりしない。
+- `down()` には `up()` を元に戻す処理を必ず書く。
+- カラムの型や属性を変更する場合は `->change()` を使う。変更前の属性（`nullable`、`default`、`comment` など）は引き継がれないので、残したいものはすべて書き直す。
+- スキーマを変更したら、`docs/05-table-specification.md` と `docs/06-er-diagram.md` との違いを報告に含める（設計書の更新はユーザーに確認してから行う）。
 
 ## 認証
 
