@@ -1,4 +1,4 @@
-FROM php:8.2.19-fpm
+FROM php:8.4-fpm
 
 RUN groupadd -g 1000 appuser \
     && useradd -m -u 1000 -g 1000 appuser
@@ -15,7 +15,7 @@ RUN apt-get update \
     libpng-dev \
     unzip \
     libmagickwand-dev --no-install-recommends \
-    && docker-php-ext-install pdo_mysql zip \
+    && docker-php-ext-install pdo_mysql zip bcmath \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd \
     && pecl install imagick \
