@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\HomeService;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 /**
  * トップページ表示コントローラ

@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Item;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Item>
+ * @extends Factory<Item>
  */
 class ItemFactory extends Factory
 {
@@ -17,11 +18,11 @@ class ItemFactory extends Factory
     public function definition(): array
     {
         $name = fake()->randomElement([
-                'じゃがいも',
-                '玉ねぎ',
-                '人参',
-                '北の恵みセット',
-            ]);
+            'じゃがいも',
+            '玉ねぎ',
+            '人参',
+            '北の恵みセット',
+        ]);
 
         return [
             'name' => $name,

@@ -3,8 +3,8 @@
 namespace App\View\Composers;
 
 use App\Support\Nav;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class HeaderComposer
 {

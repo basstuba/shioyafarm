@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use App\Repositories\Interfaces\ItemRepositoryInterface;
-use App\Repositories\ItemRepository;
 use App\Repositories\Interfaces\NoticeRepositoryInterface;
+use App\Repositories\ItemRepository;
 use App\Repositories\NoticeRepository;
+use Illuminate\Support\ServiceProvider;
 use Override;
 
 class RepositoryServiceProvider extends ServiceProvider

@@ -6,9 +6,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Delivery_address;
-use App\Models\Purchase_history;
-use App\Models\Reservation;
 
 class User extends Authenticatable
 {
@@ -52,15 +49,18 @@ class User extends Authenticatable
         ];
     }
 
-    public function deliveryAddresses() {
+    public function deliveryAddresses()
+    {
         return $this->hasMany(Delivery_address::class);
     }
 
-    public function purchaseHistories() {
+    public function purchaseHistories()
+    {
         return $this->hasMany(Purchase_history::class);
     }
 
-    public function reservations() {
+    public function reservations()
+    {
         return $this->hasMany(Reservation::class);
     }
 }
