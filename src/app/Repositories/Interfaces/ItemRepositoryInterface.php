@@ -13,4 +13,9 @@ interface ItemRepositoryInterface
      * おすすめ商品を指定件数取得
      */
     public function getRecommendItems(int $limit): Collection;
+
+    /**
+     * 全商品をID順に取得
+     */
+    public function getAllItems(): Collection;
 }

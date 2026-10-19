@@ -22,10 +22,22 @@ class Nav
             ],
             [
                 'label' => 'オンラインショップ',
-                // 'url'   => route('shop.products'),
-                'url' => '#', // ルートを設定するまでの仮実装
+                'url' => route('shop.items.index'),
                 'icon' => 'image/icon/cart-header-icon.webp',
             ],
+        ];
+    }
+
+    /**
+     * トップページ用ナビ（ログイン中）
+     *
+     * ログアウトのリンクは出さない（docs/03-page-list.md）。
+     */
+    public static function topAuth(): array
+    {
+        return [
+            ...self::top(),
+            self::mypageItem(),
         ];
     }
 
@@ -75,12 +87,7 @@ class Nav
                 'url' => '#', // ルートを設定するまでの仮実装
                 'icon' => 'image/icon/cart-header-icon.webp',
             ],
-            [
-                'label' => 'マイページ',
-                // 'url'   => route('mypage'),
-                'url' => '#', // ルートを設定するまでの仮実装
-                'icon' => 'image/icon/id-card-header-icon.webp',
-            ],
+            self::mypageItem(),
             [
                 'label' => 'ログアウト',
                 'url' => route('logout'),
@@ -106,18 +113,28 @@ class Nav
                 'url' => route('top.index').'#about',
                 'icon' => 'image/icon/team-header-icon.webp',
             ],
-            [
-                'label' => 'マイページ',
-                // 'url'   => route('mypage'),
-                'url' => '#', // ルートを設定するまでの仮実装
-                'icon' => 'image/icon/id-card-header-icon.webp',
-            ],
+            self::mypageItem(),
             [
                 'label' => 'ログアウト',
                 'url' => route('logout'),
                 'method' => 'post', // ← logout用
                 'icon' => 'image/icon/logout-icon.webp',
             ],
+        ];
+    }
+
+    /**
+     * ナビの「マイページ」項目（ログイン中のナビで共通）
+     *
+     * マイページのルートができたら route('mypage') に差し替え、マイページ上では非表示にする。
+     */
+    private static function mypageItem(): array
+    {
+        return [
+            'label' => 'マイページ',
+            // 'url'   => route('mypage'),
+            'url' => '#', // ルートを設定するまでの仮実装
+            'icon' => 'image/icon/id-card-header-icon.webp',
         ];
     }
 }
