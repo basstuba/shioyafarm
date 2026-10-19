@@ -101,7 +101,7 @@
             <div class="mt-10 text-center md:mt-16">
                 {{-- 商品一覧のルート（shop.products）を作成したら route() に差し替える --}}
                 <a
-                    class="block rounded-[30px] border-2 border-sage bg-white py-5 font-maru text-2xl text-forest transition-colors hover:bg-cream-50 md:mx-auto md:flex md:h-[110px] md:w-[600px] md:items-center md:justify-center md:py-0 md:text-[40px]"
+                    class="block rounded-[30px] border-2 border-sage bg-white py-5 font-maru text-2xl text-forest transition hover:border-accent hover:bg-accent hover:text-white hover:shadow-button md:mx-auto md:flex md:h-[110px] md:w-[600px] md:items-center md:justify-center md:py-0 md:text-[40px]"
                     href="#"
                 >すべての商品を見る</a>
             </div>
