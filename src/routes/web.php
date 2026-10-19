@@ -2,10 +2,14 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
+use App\Http\Controllers\ItemController;
 use Illuminate\Support\Facades\Route;
 
 // トップページ
 Route::get('/', HomeController::class)->name('top.index');
+
+// 商品一覧
+Route::get('/items', [ItemController::class, 'index'])->name('shop.items.index');
 
 // お問い合わせフォーム
 Route::get('/inquiry', InquiryController::class)->name('top.inquiry');
