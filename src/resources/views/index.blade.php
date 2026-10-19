@@ -84,12 +84,7 @@
             <ul class="mx-auto grid max-w-[1260px] gap-6 md:grid-cols-3 xl:gap-30">
                 @foreach ($recommendItems as $item)
                     <li class="flex flex-col bg-white text-center md:h-[460px]">
-                        <div class="relative">
-                            <img class="h-[200px] w-full object-cover" src="{{ asset('storage/' . $item->img_url) }}" alt="{{ $item->name }}">
-                            @if ($item->is_reserved_only)
-                                <span class="absolute top-3 right-3 rounded-[30px] bg-primary px-4 py-1.5 text-lg text-white md:top-[15px] md:right-[17px] md:px-[22px] md:py-2.5 md:text-2xl md:leading-none">予約限定</span>
-                            @endif
-                        </div>
+                        <x-item-image :item="$item" />
                         <div class="flex flex-1 flex-col items-center gap-3 px-5 pt-5 pb-6 md:gap-0 md:px-6 md:pt-[15px] md:pb-[30px]">
                             <h3 class="text-xl md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</h3>
                             <p class="text-base leading-normal md:mt-7 md:text-xl">{{ $item->detail }}</p>
@@ -99,10 +94,9 @@
                 @endforeach
             </ul>
             <div class="mt-10 text-center md:mt-16">
-                {{-- 商品一覧のルート（shop.products）を作成したら route() に差し替える --}}
                 <a
                     class="block rounded-[30px] border-2 border-sage bg-white py-5 font-maru text-2xl text-forest transition hover:border-accent hover:bg-accent hover:text-white hover:shadow-button md:mx-auto md:flex md:h-[110px] md:w-[600px] md:items-center md:justify-center md:py-0 md:text-[40px]"
-                    href="#"
+                    href="{{ route('shop.items.index') }}"
                 >すべての商品を見る</a>
             </div>
         </section>

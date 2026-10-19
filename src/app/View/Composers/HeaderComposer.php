@@ -13,20 +13,22 @@ class HeaderComposer
      */
     public function compose(View $view): void
     {
+        $loggedIn = Auth::check();
+
         // 先に一致したパターンが使われるため、具体的なパターンを先に書く
         $navMap = [
-            // トップページ
-            'top.*' => Nav::top(),
+            // トップページ（ログイン中は「マイページ」を出す）
+            'top.*' => $loggedIn ? Nav::topAuth() : Nav::top(),
 
-            // 送料案内・利用規約・プライバシーポリシー・特商法に基づく表記
-            'info.*' => Nav::top(),
+            // 送料案内・利用規約・プライバシーポリシー・特商法に基づく表記（ログイン中は「マイページ」を出す）
+            'info.*' => $loggedIn ? Nav::topAuth() : Nav::top(),
 
             // ショップ（カート・購入手続き）
             'shop.cart' => Nav::shopCart(),
             'shop.checkout.*' => Nav::shopCart(),
 
             // ショップ全般（ログイン済/未ログイン）
-            'shop.*' => Auth::check() ? Nav::shopAuth() : Nav::shopGuest(),
+            'shop.*' => $loggedIn ? Nav::shopAuth() : Nav::shopGuest(),
         ];
 
         $nav = collect($navMap)
