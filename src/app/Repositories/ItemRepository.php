@@ -23,4 +23,13 @@ class ItemRepository implements ItemRepositoryInterface
             ->limit($limit)
             ->get();
     }
+
+    /**
+     * 全商品をID順に取得
+     */
+    #[Override]
+    public function getAllItems(): Collection
+    {
+        return Item::orderBy('id')->get();
+    }
 }
