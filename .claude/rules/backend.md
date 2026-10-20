@@ -19,6 +19,20 @@ paths:
 - `app/Http/Controllers` の多くは中身が空のスタブ（`throw new \Exception('Not implemented')` のものもある）。新しく作らず、既存のスタブを実装する。
 - クラスやメソッドには日本語のdocblockを付ける（例：`/** 商品リポジトリ */`、`/** おすすめ商品を取得 */`）。
 
+## 型とPHPDoc（PHP 8.4）
+
+型はコードに書き、PHPDocには型宣言で表せないことだけを書く。PHPDocの型は Larastan（`phpstan.neon`）で検査される。
+
+- 引数・戻り値・プロパティには型宣言を必ず書く。型宣言と同じ内容の `@param` / `@return` / `@var` は書かない。
+- クラス定数には型を付ける（`private const int NOTICE_LIMIT = 5;`）。
+- 依存はコンストラクタのプロパティ昇格で受け取る（`private readonly ItemRepositoryInterface $itemRepository`）。
+- PHPDocに書くのは次の場合だけ。
+  - コレクション・ページネーターの中身：`@return Collection<int, Item>`、`@return LengthAwarePaginator<int, Item>`
+  - リレーション：`@return HasMany<Purchase_history, $this>`、`@return BelongsTo<Item, $this>`
+  - 配列の形：`@param array{name: string, price: int} $data`、`@return array<string, string>`
+  - 呼び出し側で処理してほしい例外：`@throws`
+- Eloquentモデルのカラムは `@property` で書かない（Larastanがマイグレーションから読み取る）。
+
 ## ルート名とヘッダーナビ
 
 ヘッダーのナビはルート名で切り替わる。`ViewServiceProvider` が `HeaderComposer` を `layouts.header` に紐づけていて、HeaderComposerは現在のルート名を次のパターンと照合し、`app/Support/Nav.php` のメニューを選ぶ。

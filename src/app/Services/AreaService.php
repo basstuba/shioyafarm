@@ -10,12 +10,9 @@ use Illuminate\Support\Collection;
  */
 class AreaService
 {
-    private AreaRepositoryInterface $areaRepository;
-
-    public function __construct(AreaRepositoryInterface $areaRepository)
-    {
-        $this->areaRepository = $areaRepository;
-    }
+    public function __construct(
+        private readonly AreaRepositoryInterface $areaRepository,
+    ) {}
 
     /**
      * 都道府県名の一覧を取得（セレクトボックスの選択肢用）

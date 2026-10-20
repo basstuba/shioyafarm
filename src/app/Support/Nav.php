@@ -14,6 +14,8 @@ class Nav
      * SPでもヘッダーに出す項目かどうか
      *
      * 項目の 'sp' => 'bar' で判定する。この判定はここ1か所にまとめる。
+     *
+     * @param  array<string, mixed>  $item
      */
     public static function isSpBar(array $item): bool
     {
@@ -40,6 +42,8 @@ class Nav
 
     /**
      * トップページ用ナビ
+     *
+     * @return array<int, array<string, mixed>>
      */
     public static function top(): array
     {
@@ -67,6 +71,8 @@ class Nav
      * トップページ用ナビ（ログイン中）
      *
      * ログアウトのリンクは出さない（docs/03-page-list.md）。
+     *
+     * @return array<int, array<string, mixed>>
      */
     public static function topAuth(): array
     {
@@ -78,6 +84,8 @@ class Nav
 
     /**
      * ショップ（未ログイン）
+     *
+     * @return array<int, array<string, mixed>>
      */
     public static function shopGuest(): array
     {
@@ -103,6 +111,8 @@ class Nav
 
     /**
      * ショップ（ログイン中）
+     *
+     * @return array<int, array<string, mixed>>
      */
     public static function shopAuth(): array
     {
@@ -136,6 +146,8 @@ class Nav
 
     /**
      * ショップ（カート・購入手続き）
+     *
+     * @return array<int, array<string, mixed>>
      */
     public static function shopCart(): array
     {
@@ -164,6 +176,8 @@ class Nav
      * ナビの「マイページ」項目（ログイン中のナビで共通）
      *
      * マイページのルートができたら route('mypage') に差し替え、マイページ上では非表示にする。
+     *
+     * @return array<string, string>
      */
     private static function mypageItem(): array
     {

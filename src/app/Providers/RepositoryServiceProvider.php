@@ -11,8 +11,14 @@ use App\Repositories\NoticeRepository;
 use Illuminate\Support\ServiceProvider;
 use Override;
 
+/**
+ * リポジトリのインターフェースと実装を結び付けるサービスプロバイダ
+ */
 class RepositoryServiceProvider extends ServiceProvider
 {
+    /**
+     * リポジトリをバインドする
+     */
     #[Override]
     public function register(): void
     {

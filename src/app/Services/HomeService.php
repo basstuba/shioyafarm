@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Item;
+use App\Models\Notice;
 use App\Repositories\Interfaces\ItemRepositoryInterface;
 use App\Repositories\Interfaces\NoticeRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,23 +14,20 @@ use Illuminate\Database\Eloquent\Collection;
 class HomeService
 {
     /** トップページに表示するお知らせの件数 */
-    private const NOTICE_LIMIT = 5;
+    private const int NOTICE_LIMIT = 5;
 
     /** トップページに表示するおすすめ商品の件数 */
-    private const RECOMMEND_ITEM_LIMIT = 3;
+    private const int RECOMMEND_ITEM_LIMIT = 3;
 
-    private ItemRepositoryInterface $itemRepository;
-
-    private NoticeRepositoryInterface $noticeRepository;
-
-    public function __construct(ItemRepositoryInterface $itemRepository, NoticeRepositoryInterface $noticeRepository)
-    {
-        $this->itemRepository = $itemRepository;
-        $this->noticeRepository = $noticeRepository;
-    }
+    public function __construct(
+        private readonly ItemRepositoryInterface $itemRepository,
+        private readonly NoticeRepositoryInterface $noticeRepository,
+    ) {}
 
     /**
      * 最新のお知らせを取得
+     *
+     * @return Collection<int, Notice>
      */
     public function getNoticeList(): Collection
     {
@@ -37,6 +36,8 @@ class HomeService
 
     /**
      * おすすめ商品を取得
+     *
+     * @return Collection<int, Item>
      */
     public function getRecommendItems(): Collection
     {
