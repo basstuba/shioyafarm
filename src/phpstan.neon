@@ -1,0 +1,11 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - routes/
+        - database/
+
+    # 0〜9（数字が大きいほど厳しい）。5は引数の型の不一致まで検査する
+    level: 5
