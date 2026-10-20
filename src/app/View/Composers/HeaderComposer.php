@@ -6,6 +6,9 @@ use App\Support\Nav;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
+/**
+ * ヘッダーのナビを、現在のルート名に応じて切り替えるビューコンポーザー
+ */
 class HeaderComposer
 {
     /**

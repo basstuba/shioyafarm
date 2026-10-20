@@ -14,6 +14,8 @@ class ItemRepository implements ItemRepositoryInterface
 {
     /**
      * おすすめ商品を指定件数取得
+     *
+     * @return Collection<int, Item>
      */
     #[Override]
     public function getRecommendItems(int $limit): Collection
@@ -26,6 +28,8 @@ class ItemRepository implements ItemRepositoryInterface
 
     /**
      * 全商品をID順に取得
+     *
+     * @return Collection<int, Item>
      */
     #[Override]
     public function getAllItems(): Collection
