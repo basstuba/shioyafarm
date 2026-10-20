@@ -7,6 +7,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class InquiryRequest extends FormRequest
 {
+    /** バリデーションエラー時はお問い合わせフォームへ戻す（直前のURLに依存しない） */
+    protected $redirectRoute = 'top.inquiry';
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -26,7 +29,7 @@ class InquiryRequest extends FormRequest
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
             'email' => 'required|email|max:30',
-            'detail' => 'required|string',
+            'detail' => 'required|string|max:2000',
         ];
     }
 
@@ -49,6 +52,7 @@ class InquiryRequest extends FormRequest
             'email.max' => 'メールアドレスは30文字以内で入力してください',
             'detail.required' => 'お問い合わせ内容を入力してください',
             'detail.string' => 'お問い合わせ内容は文章で入力してください',
+            'detail.max' => 'お問い合わせ内容は2000文字以内で入力してください',
         ];
     }
 }

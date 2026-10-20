@@ -2,10 +2,16 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /** お問い合わせの送信を1分間に受け付ける回数（IPアドレスごと） */
+    public const int INQUIRY_MAX_ATTEMPTS = 10;
+
     /**
      * Register any application services.
      */
@@ -19,6 +25,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * 回数制限を定義する
+     */
+    private function configureRateLimiting(): void
+    {
+        // お問い合わせの送信（メッセージの改行は、画面側でPCのときだけ <br> にする）：超えたときは429画面ではなく、入力を残してフォームへ戻し、日本語のメッセージを出す
+        RateLimiter::for('inquiry', fn (Request $request) => Limit::perMinute(self::INQUIRY_MAX_ATTEMPTS)
+            ->by((string) $request->ip())
+            ->response(fn () => redirect()
+                ->route('top.inquiry')
+                ->withInput($request->only(['last_name', 'first_name', 'email', 'detail']))
+                ->with('inquiry_throttled', "送信回数が多すぎます。しばらく時間をおいてから\n再度お試しください。")));
     }
 }
