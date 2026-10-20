@@ -30,4 +30,12 @@ class ItemService
             ->groupBy('name')
             ->map(fn (Collection $items): Collection => $items->sortBy('weight')->values());
     }
+
+    /**
+     * 商品を1件取得（存在しなければ ModelNotFoundException を投げ、404になる）
+     */
+    public function getItem(int $id): Item
+    {
+        return $this->itemRepository->findById($id);
+    }
 }
