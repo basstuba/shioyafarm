@@ -4,9 +4,13 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * 会員
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
@@ -14,7 +18,7 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'last_name',
@@ -29,7 +33,7 @@ class User extends Authenticatable
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         'password',
@@ -49,17 +53,32 @@ class User extends Authenticatable
         ];
     }
 
-    public function deliveryAddresses()
+    /**
+     * 登録した配送先住所
+     *
+     * @return HasMany<Delivery_address, $this>
+     */
+    public function deliveryAddresses(): HasMany
     {
         return $this->hasMany(Delivery_address::class);
     }
 
-    public function purchaseHistories()
+    /**
+     * 購入履歴
+     *
+     * @return HasMany<Purchase_history, $this>
+     */
+    public function purchaseHistories(): HasMany
     {
         return $this->hasMany(Purchase_history::class);
     }
 
-    public function reservations()
+    /**
+     * 予約
+     *
+     * @return HasMany<Reservation, $this>
+     */
+    public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
     }

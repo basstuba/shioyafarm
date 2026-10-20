@@ -14,6 +14,8 @@ class NoticeRepository implements NoticeRepositoryInterface
 {
     /**
      * 新しい順にお知らせを指定件数取得
+     *
+     * @return Collection<int, Notice>
      */
     #[Override]
     public function getNoticeList(int $limit): Collection
