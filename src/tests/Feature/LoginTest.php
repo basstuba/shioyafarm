@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Item;
 use App\Models\User;
 use App\Support\Nav;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,10 +61,10 @@ class LoginTest extends TestCase
     }
 
     /**
-     * 正しい情報でログインするとトップページへ遷移し、認証済みになる
+     * 直前のページが無い状態で正しい情報でログインすると商品一覧ページへ遷移し、認証済みになる
      */
     #[Test]
-    public function 正しい情報でログインするとトップページへ遷移する(): void
+    public function 正しい情報でログインすると商品一覧ページへ遷移する(): void
     {
         $user = $this->createUser();
 
@@ -72,8 +73,87 @@ class LoginTest extends TestCase
             'password' => 'test1234',
         ]);
 
-        $response->assertRedirect(route('top.index'));
+        $response->assertRedirect(route('shop.items.index'));
         $this->assertAuthenticatedAs($user);
+    }
+
+    /**
+     * 商品詳細ページのヘッダーからログインした場合は、ログイン後に商品詳細ページへ戻る
+     */
+    #[Test]
+    public function ログイン後はログインページを開く前のページへ戻る(): void
+    {
+        $this->createUser();
+        $item = Item::factory()->create();
+        $this->get(route('shop.items.show', $item))->assertOk();
+        $this->get(route('login'))->assertOk();
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'test@test.com',
+            'password' => 'test1234',
+        ]);
+
+        $response->assertRedirect(route('shop.items.show', $item));
+    }
+
+    /**
+     * 直前のページのクエリ文字列（絞り込みやページ番号）も含めて戻る
+     */
+    #[Test]
+    public function ログイン後はクエリ文字列も含めて元のページへ戻る(): void
+    {
+        $this->createUser();
+        $this->get(route('shop.items.index', ['page' => 2]))->assertOk();
+        $this->get(route('login'))->assertOk();
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'test@test.com',
+            'password' => 'test1234',
+        ]);
+
+        $response->assertRedirect(route('shop.items.index', ['page' => 2]));
+    }
+
+    /**
+     * ログインに失敗してログインページに戻っても、戻り先は元のページのまま変わらない
+     */
+    #[Test]
+    public function ログイン失敗の後にログインしても元のページへ戻る(): void
+    {
+        $this->createUser();
+        $this->get(route('info.shipping-fee'))->assertOk();
+        $this->get(route('login'))->assertOk();
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'test@test.com',
+            'password' => 'wrongpass',
+        ])->assertRedirect(route('login'));
+        $this->get(route('login'))->assertOk();
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'test@test.com',
+            'password' => 'test1234',
+        ]);
+
+        $response->assertRedirect(route('info.shipping-fee'));
+    }
+
+    /**
+     * 会員登録ページからログインページへ移った場合も、会員登録ページを開く前のページへ戻る
+     */
+    #[Test]
+    public function 会員登録ページを経由してもログイン後は元のページへ戻る(): void
+    {
+        $this->createUser();
+        $this->get(route('top.index'))->assertOk();
+        $this->get(route('register'))->assertOk();
+        $this->get(route('login'))->assertOk();
+
+        $response = $this->post(route('login.store'), [
+            'email' => 'test@test.com',
+            'password' => 'test1234',
+        ]);
+
+        $response->assertRedirect(route('top.index'));
     }
 
     /**
