@@ -11,6 +11,9 @@ Route::get('/', HomeController::class)->name('top.index');
 // 商品一覧
 Route::get('/items', [ItemController::class, 'index'])->name('shop.items.index');
 
+// 商品詳細
+Route::get('/items/{item}', [ItemController::class, 'show'])->name('shop.items.show');
+
 // お問い合わせフォーム
 Route::get('/inquiry', [InquiryController::class, 'create'])->name('top.inquiry');
 Route::post('/inquiry/create', [InquiryController::class, 'store'])->middleware('throttle:inquiry')->name('top.inquiry.store');

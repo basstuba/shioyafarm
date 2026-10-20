@@ -51,6 +51,19 @@ class ItemServiceTest extends TestCase
         $this->assertTrue($groups->isEmpty());
     }
 
+    /**
+     * 商品をIDで1件取得する
+     */
+    #[Test]
+    public function 商品を_i_dで取得する(): void
+    {
+        $item = new Item(['name' => 'じゃがいも']);
+        $repository = Mockery::mock(ItemRepositoryInterface::class);
+        $repository->shouldReceive('findById')->with(3)->once()->andReturn($item);
+
+        $this->assertSame($item, (new ItemService($repository))->getItem(3));
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

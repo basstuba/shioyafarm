@@ -36,4 +36,13 @@ class ItemRepository implements ItemRepositoryInterface
     {
         return Item::orderBy('id')->get();
     }
+
+    /**
+     * IDで商品を1件取得（存在しなければ ModelNotFoundException を投げる）
+     */
+    #[Override]
+    public function findById(int $id): Item
+    {
+        return Item::findOrFail($id);
+    }
 }

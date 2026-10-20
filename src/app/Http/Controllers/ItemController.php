@@ -24,4 +24,18 @@ class ItemController extends Controller
 
         return view('shop.items', compact('itemGroups'));
     }
+
+    /**
+     * 商品詳細ページを表示
+     */
+    public function show(int $item, ItemService $itemService): View
+    {
+        Log::debug('ItemController start');
+
+        $foundItem = $itemService->getItem($item);
+
+        Log::debug('ItemController end');
+
+        return view('shop.item_detail', ['item' => $foundItem]);
+    }
 }
