@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Area;
+use App\Models\Item;
 use App\Models\User;
 use Database\Seeders\AreasTableSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -130,14 +131,14 @@ class RegisterTest extends TestCase
     }
 
     /**
-     * 正しい入力で会員が登録され、ログイン状態でトップページへ遷移する
+     * 正しい入力で会員が登録され、ログイン状態で商品一覧ページへ遷移する（直前のページが無いとき）
      */
     #[Test]
-    public function 正しい入力で会員登録するとログインしてトップページへ遷移する(): void
+    public function 正しい入力で会員登録するとログインして商品一覧ページへ遷移する(): void
     {
         $response = $this->register();
 
-        $response->assertRedirect(route('top.index'));
+        $response->assertRedirect(route('shop.items.index'));
         $this->assertDatabaseHas('users', [
             'last_name' => '山田',
             'first_name' => '太郎',
@@ -148,6 +149,46 @@ class RegisterTest extends TestCase
         ]);
         $this->assertDatabaseCount('users', 1);
         $this->assertAuthenticatedAs(User::where('email', 'new-user@example.com')->firstOrFail());
+    }
+
+    /**
+     * 商品詳細ページから会員登録ページを開いた場合は、登録後に商品詳細ページへ戻る
+     */
+    #[Test]
+    public function 会員登録後は登録ページを開く前のページへ戻る(): void
+    {
+        $item = Item::factory()->create();
+        $this->get(route('shop.items.show', $item))->assertOk();
+        $this->get(route('register'))->assertOk();
+
+        $this->register()->assertRedirect(route('shop.items.show', $item));
+    }
+
+    /**
+     * ログインページから会員登録ページへ移った場合も、ログインページを開く前のページへ戻る
+     */
+    #[Test]
+    public function ログインページを経由しても会員登録後は元のページへ戻る(): void
+    {
+        $this->get(route('info.shipping-fee'))->assertOk();
+        $this->get(route('login'))->assertOk();
+        $this->get(route('register'))->assertOk();
+
+        $this->register()->assertRedirect(route('info.shipping-fee'));
+    }
+
+    /**
+     * 入力エラーで会員登録ページに戻っても、戻り先は元のページのまま変わらない
+     */
+    #[Test]
+    public function 入力エラーの後に会員登録しても元のページへ戻る(): void
+    {
+        $this->get(route('info.shipping-fee'))->assertOk();
+        $this->get(route('register'))->assertOk();
+        $this->register(['email' => ''])->assertRedirect(route('register'));
+        $this->get(route('register'))->assertOk();
+
+        $this->register()->assertRedirect(route('info.shipping-fee'));
     }
 
     /**
@@ -166,7 +207,7 @@ class RegisterTest extends TestCase
         $this->assertGuest();
 
         $this->post(route('login.store'), ['email' => 'new-user@example.com', 'password' => 'password123'])
-            ->assertRedirect(route('top.index'));
+            ->assertRedirect(route('shop.items.index'));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -176,7 +217,7 @@ class RegisterTest extends TestCase
     #[Test]
     public function メールアドレスは小文字にそろえて保存される(): void
     {
-        $this->register(['email' => 'New-User@Example.com'])->assertRedirect(route('top.index'));
+        $this->register(['email' => 'New-User@Example.com'])->assertRedirect(route('shop.items.index'));
 
         $this->assertDatabaseHas('users', ['email' => 'new-user@example.com']);
     }
@@ -197,7 +238,7 @@ class RegisterTest extends TestCase
             'email' => $email,
             'password' => 'pass1234',
             'password_confirmation' => 'pass1234',
-        ])->assertRedirect(route('top.index'))->assertSessionHasNoErrors();
+        ])->assertRedirect(route('shop.items.index'))->assertSessionHasNoErrors();
 
         $this->assertSame(30, strlen($email));
         $this->assertDatabaseHas('users', ['email' => $email, 'tell' => '0312345678']);
