@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +27,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+        $this->configureRoutePatterns();
+    }
+
+    /**
+     * ルートパラメータの形式を定義する
+     */
+    private function configureRoutePatterns(): void
+    {
+        // 商品ID：先頭が0でない18桁までの数字（PHP_INT_MAXを超えて int への変換が失敗しないようにする）
+        Route::pattern('item', '[1-9][0-9]{0,17}');
     }
 
     /**

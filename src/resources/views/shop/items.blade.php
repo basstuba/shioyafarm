@@ -61,8 +61,7 @@
         {{-- 会員登録の案内（未ログインのときだけ表示する） --}}
         @guest
             <section class="flex flex-col items-center gap-3 bg-cream-50 px-4 py-5 text-center font-maru md:h-30 md:justify-center md:gap-4 md:py-0">
-                <p class="text-sm text-primary md:text-base">※ご購入の際は会員登録と<wbr>ログインをお願いします。</p>
-                <x-outline-button :href="route('register')">会員登録</x-outline-button>
+                <x-register-guide />
             </section>
         @endguest
 
@@ -80,8 +79,7 @@
                                     <div class="flex flex-1 flex-col items-center gap-3 px-5 pt-5 pb-6 md:gap-3.5 md:px-4 md:pt-4 md:pb-5">
                                         <h4 class="text-xl md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</h4>
                                         <p class="text-lg md:text-xl">{{ number_format($item->price) }}円(税込)</p>
-                                        {{-- 商品詳細ページのルート（shop.items.show）を作成したら route() に差し替える --}}
-                                        <x-outline-button class="md:mt-auto" href="#" aria-label="{{ $item->name }} {{ $item->weight }}kgの詳細を見る">詳しく見る</x-outline-button>
+                                        <x-outline-button class="md:mt-auto" :href="route('shop.items.show', $item)" aria-label="{{ $item->name }} {{ $item->weight }}kgの詳細を見る">詳しく見る</x-outline-button>
                                     </div>
                                 </li>
                             @endforeach

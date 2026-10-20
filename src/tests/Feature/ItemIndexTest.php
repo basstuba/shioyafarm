@@ -76,7 +76,7 @@ class ItemIndexTest extends TestCase
     #[Test]
     public function 商品カードの内容を表示する(): void
     {
-        Item::factory()->create([
+        $item = Item::factory()->create([
             'name' => 'じゃがいも',
             'weight' => 10,
             'price' => 1320,
@@ -92,7 +92,7 @@ class ItemIndexTest extends TestCase
         $response->assertSee('alt="じゃがいも 10kg"', false);
         $response->assertSee('aria-label="じゃがいも 10kgの詳細を見る"', false);
         $response->assertSee('詳しく見る');
-        $response->assertSee('href="#"', false);
+        $response->assertSee('href="'.route('shop.items.show', $item).'"', false);
     }
 
     /**
