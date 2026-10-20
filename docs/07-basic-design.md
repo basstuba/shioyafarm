@@ -11,6 +11,7 @@
 | `/items/{item}` | GET | ItemController | show | | 商品詳細ページ表示 |
 | `/inquiry` | GET | InquiryController | create | | お問い合わせフォームページ表示 |
 | `/inquiry/create` | POST | InquiryController | store | | お問い合わせフォーム送信機能 |
+| `/inquiry/thanks` | GET | InquiryController | thanks | | お問い合わせサンクスページ表示 |
 | `/terms-of-service` | VIEW | Routeからviewを呼び出し | | | 利用規約ページ表示 |
 | `/privacy-policy` | VIEW | Routeからviewを呼び出し | | | プライバシーポリシーページ表示 |
 | `/commercial-transaction` | VIEW | Routeからviewを呼び出し | | | 特定商取引法に基づく表記ページ表示 |
@@ -149,7 +150,7 @@ user_idと合計金額はcontrollerで取得
 | 姓 | 入力必須、文字列、255文字以下 |
 | 名 | 入力必須、文字列、255文字以下 |
 | メールアドレス | 入力必須、正しいメールアドレス形式、30文字以下 |
-| お問い合わせ内容 | 入力必須、文字列 |
+| お問い合わせ内容 | 入力必須、文字列、2000文字以下 |
 
 ### ReservationRequest.php（予約ページの決済）
 

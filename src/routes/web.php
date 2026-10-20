@@ -12,7 +12,9 @@ Route::get('/', HomeController::class)->name('top.index');
 Route::get('/items', [ItemController::class, 'index'])->name('shop.items.index');
 
 // お問い合わせフォーム
-Route::get('/inquiry', InquiryController::class)->name('top.inquiry');
+Route::get('/inquiry', [InquiryController::class, 'create'])->name('top.inquiry');
+Route::post('/inquiry/create', [InquiryController::class, 'store'])->middleware('throttle:inquiry')->name('top.inquiry.store');
+Route::get('/inquiry/thanks', [InquiryController::class, 'thanks'])->name('top.inquiry.thanks');
 
 // 送料案内
 Route::get('/shipping-fee', function () {
