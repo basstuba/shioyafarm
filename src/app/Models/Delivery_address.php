@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * 配送先住所
+ */
 class Delivery_address extends Model
 {
     use HasFactory;
@@ -15,7 +19,12 @@ class Delivery_address extends Model
         'delivery_city',
     ];
 
-    public function user()
+    /**
+     * この住所を登録した会員
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Item;
 use App\Repositories\Interfaces\ItemRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
 /**
@@ -11,19 +12,16 @@ use Illuminate\Support\Collection;
  */
 class ItemService
 {
-    private ItemRepositoryInterface $itemRepository;
-
-    public function __construct(ItemRepositoryInterface $itemRepository)
-    {
-        $this->itemRepository = $itemRepository;
-    }
+    public function __construct(
+        private readonly ItemRepositoryInterface $itemRepository,
+    ) {}
 
     /**
      * 全商品を品目（name）ごとにまとめて取得
      *
-     * 品目の並びは各品目の最小IDの順、品目内は重さの昇順。
+     * 品目の並びは各品目の最小IDの順、品目内は重さの昇順。キーは品目名。
      *
-     * @return Collection<string, Collection<int, Item>>
+     * @return Collection<array-key, EloquentCollection<int, Item>>
      */
     public function getItemsGroupedByName(): Collection
     {

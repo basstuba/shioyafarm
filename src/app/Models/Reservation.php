@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * 予約
+ */
 class Reservation extends Model
 {
     use HasFactory;
@@ -22,12 +26,22 @@ class Reservation extends Model
         'payment_method',
     ];
 
-    public function user()
+    /**
+     * 予約した会員
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function item()
+    /**
+     * 予約した商品
+     *
+     * @return BelongsTo<Item, $this>
+     */
+    public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
     }

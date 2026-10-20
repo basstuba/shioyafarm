@@ -34,6 +34,11 @@ class ItemRequest extends FormRequest
         ];
     }
 
+    /**
+     * バリデーションエラーメッセージ
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
