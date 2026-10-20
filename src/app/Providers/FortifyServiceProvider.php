@@ -9,6 +9,7 @@ use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Http\Controllers\RegisteredUserController;
 use App\Http\Requests\LoginRequest;
 use App\Services\AreaService;
+use App\Support\IntendedUrl;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -39,12 +40,21 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Fortify::loginView(fn () => view('auth.login'));
+        // ログイン・会員登録の後は、ページを開く前に見ていたページへ戻す
+        Fortify::loginView(function (Request $request) {
+            IntendedUrl::rememberPrevious($request);
+
+            return view('auth.login');
+        });
 
         // 会員登録ページには、お住まいの地域の選択肢として都道府県の一覧を渡す
-        Fortify::registerView(fn () => view('auth.register', [
-            'prefectures' => app(AreaService::class)->getPrefectures(),
-        ]));
+        Fortify::registerView(function (Request $request) {
+            IntendedUrl::rememberPrevious($request);
+
+            return view('auth.register', [
+                'prefectures' => app(AreaService::class)->getPrefectures(),
+            ]);
+        });
 
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
