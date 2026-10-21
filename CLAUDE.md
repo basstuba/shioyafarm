@@ -28,6 +28,7 @@ docker compose exec php php artisan migrate --seed      # または migrate:fres
 docker compose exec php php artisan storage:link        # 必須：画像は storage/ から配信している
 docker compose exec php php artisan test                # 全テスト
 docker compose exec php php artisan test --filter=SomeTest
+docker compose exec php php artisan test --coverage     # カバレッジ計測（ドライバは PCOV。Xdebug は入っていないので XDEBUG_MODE は不要）
 docker compose exec php ./vendor/bin/pint               # コードスタイル
 docker compose exec php ./vendor/bin/phpstan analyse --memory-limit=1G   # 静的解析（Larastan、レベル5。設定は src/phpstan.neon）
 docker compose exec node npm run build                  # 本番用にCSS/JSをビルド（開発中は node コンテナの Vite が自動で反映する）
@@ -49,7 +50,7 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 
 設計書のルートを実装するときは `/add-feature` スキルを使う。作業ブランチを切る → 受け入れ条件とUATシナリオ（`docs/uat/`）を作ってユーザーのOKをもらう → `implementer` エージェント（sonnet / effort: high）が実装・テスト → テストが通ってから `uat-tester` エージェントがPlaywrightでUAT → `/code-review` でレビュー → ユーザーがチェックリストで受け入れ確認、の順に進める。`main` ブランチ上で `src/` を編集するとhookでブロックされる。マイグレーションは、`main` にコミット済みのものと、DBに適用済みのものの書き換えがhookでブロックされる（修正用のマイグレーションを追加して直す）。
 
-作業ブランチを `main` にマージする前には、`laravel-verification` スキルで検証する（毎回の実装の流れには含めず、手動で実行する）。静的解析は Larastan（上記の phpstan コマンド）で行い、エラー0件を保つ。
+作業ブランチを `main` にマージする前には、`laravel-verification` スキルで検証する（毎回の実装の流れには含めず、手動で実行する）。テストとカバレッジは `docker compose exec php php artisan test --coverage` で実行する。静的解析は Larastan（上記の phpstan コマンド）で行い、エラー0件を保つ。
 
 ## 規約
 
