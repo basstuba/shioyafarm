@@ -31,4 +31,12 @@ interface ItemRepositoryInterface
      * @throws ModelNotFoundException<Item>
      */
     public function findById(int $id): Item;
+
+    /**
+     * IDの配列で商品をまとめて取得（存在しないIDは含まれない）
+     *
+     * @param  array<int, int>  $ids
+     * @return Collection<int, Item>
+     */
+    public function findByIds(array $ids): Collection;
 }

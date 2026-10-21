@@ -120,8 +120,9 @@ class ItemShowTest extends TestCase
         $response->assertSee('購入する');
         $response->assertDontSee('予約する');
         $response->assertDontSee('※ご購入の際は会員登録と');
-        // 仮のボタンなのでリンク先は「#」
-        $this->assertMatchesRegularExpression('#<a\s[^>]*href="\#"[^>]*>カートに入れる</a>#s', $response->getContent());
+        // 「カートに入れる」は Livewire のボタン（ページを移動しない）。「購入する」は仮のリンク「#」
+        $response->assertSeeLivewire('add-to-cart-button');
+        $this->assertMatchesRegularExpression('#<button\s[^>]*wire:click="addToCart"[^>]*>カートに入れる</button>#s', $response->getContent());
         $this->assertMatchesRegularExpression('#<a\s[^>]*href="\#"[^>]*>購入する</a>#s', $response->getContent());
     }
 
@@ -186,7 +187,8 @@ class ItemShowTest extends TestCase
             ->assertDontSee('マイページ');
 
         $this->actingAs(User::factory()->create())->get(route('shop.items.show', $item))
-            ->assertSeeInOrder(['お知らせ', 'しおや農園について', 'カート', 'マイページ', 'ログアウト']);
+            ->assertSeeInOrder(['お知らせ', 'しおや農園について', 'カート', 'マイページ', 'ログアウト'])
+            ->assertSee('href="'.route('shop.cart').'"', false);
     }
 
     /**
