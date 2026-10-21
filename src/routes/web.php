@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\ItemController;
@@ -13,6 +14,9 @@ Route::get('/items', [ItemController::class, 'index'])->name('shop.items.index')
 
 // 商品詳細
 Route::get('/items/{item}', [ItemController::class, 'show'])->name('shop.items.show');
+
+// カート（未ログインはログインページへ。ログイン後にカートへ戻る）
+Route::get('/cart', [CartController::class, 'index'])->middleware('auth')->name('shop.cart');
 
 // お問い合わせフォーム
 Route::get('/inquiry', [InquiryController::class, 'create'])->name('top.inquiry');

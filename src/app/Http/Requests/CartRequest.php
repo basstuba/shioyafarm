@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\CartService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -24,7 +25,7 @@ class CartRequest extends FormRequest
     {
         return [
             'item_id' => 'required|exists:items,id',
-            'quantity' => 'required|integer|min:1|max:10',
+            'quantity' => self::quantityRules(),
         ];
     }
 
@@ -35,10 +36,29 @@ class CartRequest extends FormRequest
      */
     public function messages(): array
     {
+        return self::quantityMessages();
+    }
+
+    /**
+     * 商品数量のルール（カートページの数量変更でも使う）
+     */
+    public static function quantityRules(): string
+    {
+        return 'required|integer|min:'.CartService::MIN_QUANTITY.'|max:'.CartService::MAX_QUANTITY;
+    }
+
+    /**
+     * 商品数量のエラーメッセージ（キーは `quantity.ルール名`）
+     *
+     * @return array<string, string>
+     */
+    public static function quantityMessages(): array
+    {
         return [
             'quantity.required' => '商品の数を入力してください',
-            'quantity.min' => '商品の数は1個以上にしてください',
-            'quantity.max' => '商品の数は10個以下にしてください',
+            'quantity.integer' => '商品の数は整数で入力してください',
+            'quantity.min' => '商品の数は'.CartService::MIN_QUANTITY.'個以上にしてください',
+            'quantity.max' => '商品の数は'.CartService::MAX_QUANTITY.'個以下にしてください',
         ];
     }
 }
