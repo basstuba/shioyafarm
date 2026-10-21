@@ -20,13 +20,13 @@
             </div>
 
             @auth
-                {{-- 購入・予約の機能ができたら href を差し替える --}}
+                {{-- 予約の機能ができたら href を差し替える --}}
                 <div class="flex flex-col items-center gap-4 md:flex-row md:justify-center md:gap-8">
                     @if ($item->is_reserved_only)
                         <x-filled-button href="#">予約する</x-filled-button>
                     @else
                         <livewire:add-to-cart-button :item-id="$item->id" />
-                        <x-filled-button href="#">購入する</x-filled-button>
+                        <x-filled-button :href="route('shop.checkout.index', $item)">購入する</x-filled-button>
                     @endif
                 </div>
             @endauth
