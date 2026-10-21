@@ -20,6 +20,8 @@ RUN apt-get update \
     && docker-php-ext-install -j$(nproc) gd \
     && pecl install imagick \
     && docker-php-ext-enable imagick \
+    && pecl install pcov \
+    && docker-php-ext-enable pcov \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
