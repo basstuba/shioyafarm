@@ -93,6 +93,14 @@ class CartService
     }
 
     /**
+     * カートを空にする
+     */
+    public function clear(): void
+    {
+        $this->session->forget(self::SESSION_KEY);
+    }
+
+    /**
      * カートの行を商品ID順に取得する
      *
      * DBに存在しない商品と予約限定の商品は、行にも小計にも含めず（エラーにはしない）、セッションのカートからも取り除く。

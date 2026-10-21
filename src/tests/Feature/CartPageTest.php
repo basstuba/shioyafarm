@@ -111,8 +111,8 @@ class CartPageTest extends TestCase
         $response->assertSee('>個<', false);
         $response->assertSee('削除');
         $response->assertDontSee('カートに商品はありません');
-        // 購入機能ができるまでの仮リンク
-        $this->assertMatchesRegularExpression('#<a\s[^>]*href="\#"[^>]*>購入する</a>#s', $response->getContent());
+        // 「購入する」は購入ページ（カートの中身）へのリンク
+        $this->assertMatchesRegularExpression('#<a\s[^>]*href="'.preg_quote(route('shop.checkout.index'), '#').'"[^>]*>購入する</a>#s', $response->getContent());
     }
 
     /**

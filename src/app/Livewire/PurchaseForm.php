@@ -1,0 +1,295 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Enums\PaymentMethod;
+use App\Enums\PurchaseSource;
+use App\Http\Requests\CartRequest;
+use App\Http\Requests\DeliveryAddressRequest;
+use App\Models\User;
+use App\Services\AreaService;
+use App\Services\CartService;
+use App\Services\DeliveryAddressService;
+use App\Services\PurchaseService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
+use InvalidArgumentException;
+use Livewire\Attributes\Locked;
+use Livewire\Component;
+
+/**
+ * 購入ページの注文内容（数量・お届け先・支払方法・金額）と、住所追加モーダル
+ *
+ * 数量の変更・住所の切り替え・支払方法の選択で、ページを再読み込みせずに小計・送料・代引手数料・合計を更新する。
+ * 「注文を確定する」は通常のフォーム送信（POST /payment）で、PurchaseRequest が検証する。
+ * 検証エラーで戻ったときと、Stripe の決済ページから「戻る」で戻ったときは、入力していた内容を復元する。
+ */
+class PurchaseForm extends Component
+{
+    /** 購入の入り口（cart: カートの中身、item: 商品詳細から1商品） */
+    #[Locked]
+    public string $source = 'cart';
+
+    /** 商品詳細から購入する場合の商品ID */
+    #[Locked]
+    public ?int $itemId = null;
+
+    /**
+     * 商品ごとの数量（商品ID => 数量）
+     *
+     * 入力途中の不正な値（0・11など）もそのまま持つ。金額の計算では1〜10に収める。
+     *
+     * @var array<int, int|string>
+     */
+    public array $quantities = [];
+
+    /** お届け先氏名 */
+    public string $deliveryName = '';
+
+    /** お届け先電話番号 */
+    public string $deliveryTell = '';
+
+    /** お届け先住所の選択肢の値（`user_{会員ID}` / `delivery_{住所ID}`） */
+    public string $addressId = '';
+
+    /** 支払方法 */
+    public string $paymentMethod = PaymentMethod::Card->value;
+
+    /** 住所追加モーダルを開いているか */
+    public bool $showAddressModal = false;
+
+    /** 住所追加モーダルの都道府県（DeliveryAddressRequest と同じ名前にして、同じルールで検証する） */
+    public string $delivery_prefecture = '';
+
+    /** 住所追加モーダルの住所（市区町村以降） */
+    public string $delivery_city = '';
+
+    /**
+     * 初期値を設定する
+     *
+     * 優先順位は、検証エラーで戻ったときの入力 > 「戻る」で戻った直後の保存待ちの注文 > 会員登録の内容。
+     */
+    public function mount(PurchaseService $purchaseService, DeliveryAddressService $addressService, ?int $itemId = null): void
+    {
+        $user = $this->user();
+        $source = $itemId === null ? PurchaseSource::Cart : PurchaseSource::Item;
+
+        $this->itemId = $itemId;
+        $this->source = $source->value;
+        $this->quantities = $purchaseService->initialQuantities($source, $itemId);
+        $this->deliveryName = $user->last_name.$user->first_name;
+        $this->deliveryTell = $user->tell;
+        $this->addressId = $addressService->userAddressId($user);
+
+        // 決済ページ（Stripe Checkout）や振込先のご案内の「戻る」で戻った直後（1回だけ）は、保存待ちの注文の入力を復元する
+        $pending = session()->get(PurchaseService::RESTORE_FLASH_KEY) === true ? $purchaseService->getPendingOrder($user) : null;
+        if ($pending !== null && $pending->matches($source, $itemId)) {
+            $this->deliveryName = $pending->deliveryName;
+            $this->deliveryTell = $pending->deliveryTell;
+            $this->applyAddressId($user, $addressService, $pending->addressId);
+            $this->paymentMethod = $pending->paymentMethod->value;
+            if ($source === PurchaseSource::Item) {
+                foreach ($pending->items as $item) {
+                    $this->quantities[$item['item_id']] = $item['quantity'];
+                }
+            }
+        }
+
+        $this->restoreOldInput($user, $addressService);
+    }
+
+    /**
+     * 商品の数量を変更する
+     *
+     * CartRequest と同じルール・メッセージで検証する。エラーのときは数量を変えず、その商品の行にエラーを表示する。
+     * カートから来た場合は、カートの数量も変える。
+     */
+    public function updateQuantity(CartService $cartService, int $itemId, mixed $quantity): void
+    {
+        $this->resetErrorBag("quantities.{$itemId}");
+
+        if (! array_key_exists($itemId, $this->quantities)) {
+            return;
+        }
+
+        $validator = Validator::make(
+            ['quantity' => is_string($quantity) ? trim($quantity) : (is_int($quantity) ? $quantity : null)],
+            ['quantity' => CartRequest::quantityRules()],
+            CartRequest::quantityMessages(),
+        );
+
+        if ($validator->fails()) {
+            $current = $this->quantities[$itemId];
+            $message = $validator->errors()->first('quantity');
+            if (is_int($current) && $current >= CartService::MIN_QUANTITY && $current <= CartService::MAX_QUANTITY) {
+                $message .= "（数量は{$current}個のままです）";
+            }
+            $this->addError("quantities.{$itemId}", $message);
+
+            return;
+        }
+
+        $valid = (int) $validator->validated()['quantity'];
+        $this->quantities[$itemId] = $valid;
+        if ($this->source === PurchaseSource::Cart->value) {
+            $cartService->updateQuantity($itemId, $valid);
+        }
+    }
+
+    /**
+     * 住所追加モーダルを開く（前回の入力とエラーは消す）
+     */
+    public function openAddressModal(): void
+    {
+        $this->reset(['delivery_prefecture', 'delivery_city']);
+        $this->resetErrorBag(['delivery_prefecture', 'delivery_city']);
+        $this->showAddressModal = true;
+    }
+
+    /**
+     * 配送先住所を追加する
+     *
+     * DeliveryAddressRequest と同じルール・メッセージで検証する。エラーはモーダル内に表示する。
+     * 追加できたらモーダルを閉じ、追加した住所をお届け先住所に選択する。
+     */
+    public function addAddress(DeliveryAddressService $addressService): void
+    {
+        $validated = $this->validate(
+            DeliveryAddressRequest::addressRules(),
+            DeliveryAddressRequest::addressMessages(),
+        );
+
+        $address = $addressService->add($this->user(), $validated['delivery_prefecture'], $validated['delivery_city']);
+
+        $this->addressId = $addressService->deliveryAddressId($address);
+        $this->showAddressModal = false;
+        $this->reset(['delivery_prefecture', 'delivery_city']);
+    }
+
+    public function render(PurchaseService $purchaseService, DeliveryAddressService $addressService, AreaService $areaService): View
+    {
+        $user = $this->user();
+
+        // 改ざんされた値・他人の住所のときは、会員登録の住所に戻す
+        $address = $addressService->resolve($user, $this->addressId);
+        if ($address === null) {
+            $this->addressId = $addressService->userAddressId($user);
+            $address = ['prefecture' => $user->prefecture, 'city' => $user->city];
+        }
+
+        $lines = $purchaseService->buildLines($this->numericQuantities());
+        $method = PaymentMethod::tryFrom($this->paymentMethod);
+
+        // 送料の地域が見つからない都道府県（設定にない住所）のときは、描画でエラーにせず、住所欄にエラーを出して注文を確定できなくする
+        $shippingError = null;
+        try {
+            $summary = $purchaseService->summarize($lines, $address['prefecture'], $method);
+        } catch (InvalidArgumentException) {
+            $summary = $purchaseService->summarize($lines, null, $method);
+            $shippingError = 'このお届け先住所は送料を計算できません。別の住所を選択してください';
+        }
+
+        return view('livewire.purchase-form', [
+            'lines' => $lines,
+            'summary' => $summary,
+            'shippingError' => $shippingError,
+            'addressOptions' => $addressService->getOptions($user),
+            'confirmAddress' => $address['prefecture'].$address['city'],
+            'prefectures' => $areaService->getPrefectures(),
+            'paymentOptions' => self::paymentOptions(),
+            'minQuantity' => CartService::MIN_QUANTITY,
+            'maxQuantity' => CartService::MAX_QUANTITY,
+        ]);
+    }
+
+    /**
+     * 支払方法の選択肢（値・表示名・説明・アイコン）
+     *
+     * @return list<array{value: string, label: string, description: string, icon: string}>
+     */
+    public static function paymentOptions(): array
+    {
+        return [
+            ['value' => PaymentMethod::Card->value, 'label' => 'クレジットカード', 'description' => 'Visa / Master / JCB', 'icon' => 'image/icon/credit-card-icon.webp'],
+            ['value' => PaymentMethod::CustomerBalance->value, 'label' => '銀行振込', 'description' => '銀行口座にお振込み', 'icon' => 'image/icon/bank-icon.webp'],
+            ['value' => PaymentMethod::Cod->value, 'label' => '代金引換', 'description' => '受け取り時にお支払い', 'icon' => 'image/icon/box-icon.webp'],
+        ];
+    }
+
+    /**
+     * ログイン中の会員
+     */
+    private function user(): User
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User, 401);
+
+        return $user;
+    }
+
+    /**
+     * 数量を金額計算用の整数にする（数字でない値は0とし、計算側で1〜10に収める）
+     *
+     * @return array<int, int>
+     */
+    private function numericQuantities(): array
+    {
+        return array_map(fn (int|string $quantity): int => is_numeric($quantity) ? (int) $quantity : 0, $this->quantities);
+    }
+
+    /**
+     * 選べる住所のときだけ、お届け先住所に設定する
+     */
+    private function applyAddressId(User $user, DeliveryAddressService $addressService, string $addressId): void
+    {
+        if ($addressService->resolve($user, $addressId) !== null) {
+            $this->addressId = $addressId;
+        }
+    }
+
+    /**
+     * 検証エラー（または住所追加）で戻ったときの入力を復元する
+     *
+     * 空欄で送信した項目は、ミドルウェアで null になって old() では値が取れないため、
+     * 送信された項目かどうかはキーの有無で判定し、空欄のまま復元する（会員の初期値に戻さない）。
+     */
+    private function restoreOldInput(User $user, DeliveryAddressService $addressService): void
+    {
+        /** @var array<string, mixed> $oldInput */
+        $oldInput = session()->getOldInput();
+
+        if (array_key_exists('delivery_name', $oldInput)) {
+            $this->deliveryName = is_string($oldInput['delivery_name']) ? $oldInput['delivery_name'] : '';
+        }
+
+        if (array_key_exists('delivery_tell', $oldInput)) {
+            $this->deliveryTell = is_string($oldInput['delivery_tell']) ? $oldInput['delivery_tell'] : '';
+        }
+
+        $addressId = $oldInput['address_id'] ?? null;
+        if (is_string($addressId)) {
+            $this->applyAddressId($user, $addressService, $addressId);
+        }
+
+        $method = $oldInput['payment_method'] ?? null;
+        if (is_string($method) && PaymentMethod::tryFrom($method) !== null) {
+            $this->paymentMethod = $method;
+        }
+
+        $rows = $oldInput['items'] ?? null;
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                if (! is_array($row) || ! isset($row['item_id']) || ! is_scalar($row['item_id']) || ! array_key_exists('quantity', $row)) {
+                    continue;
+                }
+                // 数量を空欄で送信した場合も、空欄のまま復元する
+                $quantity = is_scalar($row['quantity']) ? trim((string) $row['quantity']) : '';
+                $id = (int) $row['item_id'];
+                if (array_key_exists($id, $this->quantities)) {
+                    $this->quantities[$id] = is_numeric($quantity) && (string) (int) $quantity === $quantity ? (int) $quantity : $quantity;
+                }
+            }
+        }
+    }
+}

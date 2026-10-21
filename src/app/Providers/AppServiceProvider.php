@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\Payment\PaymentGatewayInterface;
+use App\Services\Payment\StripePaymentGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -18,7 +20,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // 決済サービス（テストではこのバインドをモックに差し替える）
+        $this->app->bind(PaymentGatewayInterface::class, function (): StripePaymentGateway {
+            $secret = config('services.stripe.secret');
+
+            return new StripePaymentGateway(is_string($secret) ? $secret : null);
+        });
     }
 
     /**

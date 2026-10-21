@@ -278,4 +278,19 @@ class CartServiceTest extends TestCase
         $this->session->put('cart', 'broken');
         $this->assertTrue($this->service->getLines()->isEmpty());
     }
+
+    /**
+     * カートを空にすると、セッションのカートが消える（購入完了時に使う）
+     */
+    #[Test]
+    public function カートを空にするとセッションから消える(): void
+    {
+        $this->session->put('cart', [3 => 2, 5 => 1]);
+        $this->session->put('other', 'keep');
+
+        $this->service->clear();
+
+        $this->assertNull($this->session->get('cart'));
+        $this->assertSame('keep', $this->session->get('other'));
+    }
 }

@@ -14,6 +14,7 @@ erDiagram
     items ||--o{ reservations : "is reserved in"
     items ||--o{ purchase_history_items : "is purchased in"
     purchase_histories ||--o{ purchase_history_items : "contains"
+    purchase_histories ||--o| purchase_bank_transfers : "has"
 
     users {
         bigint id PK
@@ -24,6 +25,7 @@ erDiagram
         varchar tell
         varchar email
         varchar password
+        varchar stripe_customer_id
         timestamp created_at
         timestamp updated_at
     }
@@ -61,6 +63,23 @@ erDiagram
         varchar delivery_city
         varchar delivery_tell
         varchar payment_method
+        int shipping_fee
+        int cod_fee
+        int total_price
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    purchase_bank_transfers {
+        bigint id PK
+        bigint purchase_history_id FK
+        varchar stripe_payment_intent_id
+        varchar bank_name
+        varchar branch_name
+        varchar account_type
+        varchar account_number
+        varchar account_holder_name
+        int amount
         timestamp created_at
         timestamp updated_at
     }
