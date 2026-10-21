@@ -59,4 +59,28 @@ class ItemRepositoryTest extends TestCase
 
         (new ItemRepository)->findById(99999);
     }
+
+    /**
+     * IDの配列で商品をID順にまとめて取得し、存在しないIDは含めない
+     */
+    #[Test]
+    public function idの配列で商品をまとめて取得する(): void
+    {
+        $items = Item::factory()->count(3)->create();
+
+        $result = (new ItemRepository)->findByIds([$items[2]->id, $items[0]->id, 99999]);
+
+        $this->assertSame([$items[0]->id, $items[2]->id], $result->pluck('id')->all());
+    }
+
+    /**
+     * 空の配列を渡すと空を返す
+     */
+    #[Test]
+    public function idの配列が空のときは空を返す(): void
+    {
+        Item::factory()->create();
+
+        $this->assertTrue((new ItemRepository)->findByIds([])->isEmpty());
+    }
 }
