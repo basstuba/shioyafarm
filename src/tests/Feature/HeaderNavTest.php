@@ -137,6 +137,7 @@ class HeaderNavTest extends TestCase
 
         $cases['ショップ（未ログイン）'] = ['shop.items.index', false, ['ログイン'], $about, [...$about, 'ログイン']];
         $cases['ショップ（ログイン中）'] = ['shop.items.index', true, ['カート', 'マイページ'], [...$about, 'ログアウト'], [...$about, 'カート', 'マイページ', 'ログアウト']];
+        $cases['カート'] = ['shop.cart', true, ['マイページ'], [...$about, 'ログアウト'], [...$about, 'マイページ', 'ログアウト']];
 
         return $cases;
     }

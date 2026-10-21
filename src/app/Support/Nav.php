@@ -129,8 +129,7 @@ class Nav
             ],
             [
                 'label' => 'カート',
-                // 'url'   => route('shop.cart'),
-                'url' => '#', // ルートを設定するまでの仮実装
+                'url' => route('shop.cart'),
                 'icon' => 'image/icon/cart-header-icon.webp',
                 'sp' => 'bar',
             ],

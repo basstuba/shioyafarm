@@ -9,8 +9,8 @@ use Tests\TestCase;
 /**
  * ヘッダーナビ（Nav）の、SPでヘッダーに出す項目とメニューに入れる項目の振り分けのテスト
  *
- * 各ルートでの表示は HeaderNavTest で確認する。ここでは、まだルートが無く画面で確認できない
- * Nav::shopCart()（shop.cart / shop.checkout.*）と、振り分け処理（Nav::split）を確認する。
+ * 各ルートでの表示は HeaderNavTest で確認する。ここでは、Nav::shopCart()（shop.cart / shop.checkout.*）と、
+ * 振り分け処理（Nav::split）を確認する。
  */
 class NavTest extends TestCase
 {
