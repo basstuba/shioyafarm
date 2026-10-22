@@ -15,7 +15,7 @@
 
 - HTML5
 - CSS3
-- PHP 8.2.19
+- PHP 8.4.27
 
 ### フレームワーク
 
@@ -23,11 +23,12 @@
 
 ### ツール
 
-- Nginx 1.27.0
-- MySQL 8.0.37
+- Nginx 1.30.6
+- MySQL 8.4.13
+- Node.js 24.22.1
 - Docker
-- phpMyAdmin
-- MailHog
+- phpMyAdmin 5.2.3
+- Mailpit 1.31.6
 
 ### その他
 
