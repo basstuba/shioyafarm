@@ -120,10 +120,10 @@ class ItemShowTest extends TestCase
         $response->assertSee('購入する');
         $response->assertDontSee('予約する');
         $response->assertDontSee('※ご購入の際は会員登録と');
-        // 「カートに入れる」は Livewire のボタン（ページを移動しない）。「購入する」は仮のリンク「#」
+        // 「カートに入れる」は Livewire のボタン（ページを移動しない）。「購入する」は購入ページ（その商品1個）へのリンク
         $response->assertSeeLivewire('add-to-cart-button');
         $this->assertMatchesRegularExpression('#<button\s[^>]*wire:click="addToCart"[^>]*>カートに入れる</button>#s', $response->getContent());
-        $this->assertMatchesRegularExpression('#<a\s[^>]*href="\#"[^>]*>購入する</a>#s', $response->getContent());
+        $this->assertMatchesRegularExpression('#<a\s[^>]*href="'.preg_quote(route('shop.checkout.index', $item), '#').'"[^>]*>購入する</a>#s', $response->getContent());
     }
 
     /**

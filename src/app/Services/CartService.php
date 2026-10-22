@@ -93,6 +93,33 @@ class CartService
     }
 
     /**
+     * 購入した商品の数量だけをカートから減らす（0以下になった商品はカートから削除する）
+     *
+     * 購入していない商品や、購入した数量を超えて入っている分はカートに残す。
+     *
+     * @param  array<int, int>  $purchased  商品ID => 購入した数量
+     */
+    public function reduceQuantities(array $purchased): void
+    {
+        $quantities = $this->getQuantities();
+
+        foreach ($purchased as $itemId => $quantity) {
+            if (! array_key_exists($itemId, $quantities)) {
+                continue;
+            }
+
+            $remaining = $quantities[$itemId] - $quantity;
+            if ($remaining > 0) {
+                $quantities[$itemId] = $remaining;
+            } else {
+                unset($quantities[$itemId]);
+            }
+        }
+
+        $this->session->put(self::SESSION_KEY, $quantities);
+    }
+
+    /**
      * カートの行を商品ID順に取得する
      *
      * DBに存在しない商品と予約限定の商品は、行にも小計にも含めず（エラーにはしない）、セッションのカートからも取り除く。

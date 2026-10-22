@@ -55,8 +55,7 @@
 
         <div class="mt-6 flex flex-col items-center gap-4 rounded-[20px] bg-white px-4 py-6 shadow-card md:ml-auto md:max-w-[480px] md:flex-row md:justify-between md:px-8">
             <p class="font-maru text-xl md:text-2xl">小計 <span class="text-primary">{{ number_format($subtotal) }}円</span></p>
-            {{-- 購入機能ができたら href を差し替える --}}
-            <x-filled-button href="#">購入する</x-filled-button>
+            <x-filled-button :href="route('shop.checkout.index')">購入する</x-filled-button>
         </div>
 
         <div class="mt-6 text-center md:mt-8">
