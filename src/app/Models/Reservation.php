@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * 予約
@@ -24,6 +25,8 @@ class Reservation extends Model
         'price',
         'subtotal',
         'payment_method',
+        'shipping_fee',
+        'total_price',
     ];
 
     /**
@@ -44,5 +47,15 @@ class Reservation extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    /**
+     * 銀行振込の振込先（銀行振込の予約だけ）
+     *
+     * @return HasOne<Reservation_bank_transfer, $this>
+     */
+    public function reservationBankTransfer(): HasOne
+    {
+        return $this->hasOne(Reservation_bank_transfer::class);
     }
 }

@@ -204,7 +204,10 @@ class PurchaseFormLivewireTest extends TestCase
 
         $html = Livewire::actingAs($user)->test(PurchaseForm::class)->html();
 
-        $this->assertStringContainsString('x-on:submit="submitting = true"', $html);
+        // 送信は、実行中の Livewire の更新（数量の欄の change など）が終わるまで待つ（検証エラーのフラッシュを更新リクエストに消されないため）
+        $this->assertStringContainsString('x-on:submit="submit($event)"', $html);
+        $this->assertStringContainsString("Livewire.hook('commit'", $html);
+        $this->assertStringContainsString('this.pending > 0', $html);
         $this->assertMatchesRegularExpression('#<button[^>]*x-bind:disabled="submitting \|\| false"[^>]*>\s*注文を確定する#', $html);
     }
 
