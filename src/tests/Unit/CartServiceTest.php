@@ -278,4 +278,44 @@ class CartServiceTest extends TestCase
         $this->session->put('cart', 'broken');
         $this->assertTrue($this->service->getLines()->isEmpty());
     }
+
+    /**
+     * 購入した商品の数量だけがカートから減り、購入していない商品は残る
+     */
+    #[Test]
+    public function 購入した商品の数量だけカートから減らす(): void
+    {
+        $this->session->put('cart', [3 => 5, 5 => 1, 7 => 2]);
+
+        $this->service->reduceQuantities([3 => 2, 5 => 1]);
+
+        // 3 は 5 - 2 = 3 個、5 は 0 個になって削除、7 は購入していないので残る
+        $this->assertSame([3 => 3, 7 => 2], $this->session->get('cart'));
+    }
+
+    /**
+     * 購入した数量がカートの数量以上なら削除する。カートにない商品は無視する
+     */
+    #[Test]
+    public function 購入した数量がカート以上なら削除しカートにない商品は無視する(): void
+    {
+        $this->session->put('cart', [3 => 2, 7 => 4]);
+
+        $this->service->reduceQuantities([3 => 5, 99 => 1]);
+
+        $this->assertSame([7 => 4], $this->session->get('cart'));
+    }
+
+    /**
+     * すべて購入するとカートは空になる
+     */
+    #[Test]
+    public function 全部購入するとカートは空になる(): void
+    {
+        $this->session->put('cart', [3 => 2, 5 => 1]);
+
+        $this->service->reduceQuantities([3 => 2, 5 => 1]);
+
+        $this->assertSame([], $this->session->get('cart'));
+    }
 }
