@@ -6,3 +6,7 @@ docker/mysql/data/*
 
 # Playwright MCP の作業ファイル
 .playwright-mcp/
+
+# MySQL のバックアップ（ダンプ）
+docker/mysql/backup/
+docker/mysql/data_*/
