@@ -19,7 +19,7 @@ services:
       - ./src:/var/www/
 
   node:
-    image: node:22.12.0
+    image: node:24.22.1
     user: node
     working_dir: /var/www
     volumes:
