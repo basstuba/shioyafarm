@@ -15,7 +15,7 @@
 
 - HTML5
 - CSS3
-- PHP 8.4.27
+- PHP 8.4
 
 ### フレームワーク
 
@@ -32,7 +32,10 @@
 
 ### その他
 
-- UIの動的な部分はLivewireを使用予定
+- UIの動的な部分はLivewire 3を使用
+- CSSはTailwind CSS v4、ビルドはViteを使用
+- ユーザー認証はLaravel Fortifyを使用
+- 管理画面のエクスポートはLaravel Excel（maatwebsite/excel）を使用
 
 ## 追加機能
 
