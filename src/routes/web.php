@@ -7,6 +7,7 @@ use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 
 // トップページ
@@ -41,6 +42,23 @@ Route::middleware('auth')->group(function () {
         ->name('shop.checkout.payment');
     // 配送先住所の追加
     Route::post('/add-address', [AddAddressController::class, 'store'])->name('shop.checkout.add-address');
+
+    // 予約（予約限定の商品1つを先払いで予約する。購入と同じ流れ）
+    // 固定のパス（success, bank-transfer, thanks, payment）は /reservation/{item} より前に定義する
+    // 予約完了（クレジットカード専用：Stripe の success_url）
+    Route::get('/reservation/success', [ReservationController::class, 'reservationSuccess'])->name('shop.reservation.success');
+    // 銀行振込の振込先のご案内と、その「戻る」（PaymentIntent をキャンセルして予約ページへ）
+    Route::get('/reservation/bank-transfer', [ReservationController::class, 'bankTransfer'])->name('shop.reservation.bank-transfer');
+    Route::post('/reservation/bank-transfer/cancel', [ReservationController::class, 'cancelBankTransfer'])->name('shop.reservation.bank-transfer.cancel');
+    // 銀行振込の「振込み」（POST：PaymentIntent を確認して予約データを保存し、サンクスページへ）と、そのサンクスページ（保存直後の1回だけ表示）
+    Route::post('/reservation/bank-transfer/confirm', [ReservationController::class, 'confirmBankTransfer'])->name('shop.reservation.bank-transfer.confirm');
+    Route::get('/reservation/thanks', [ReservationController::class, 'thanks'])->name('shop.reservation.thanks');
+    // 予約の確定（カード：決済ページへ、銀行振込：振込先のご案内へ）。同じセッションの同時リクエストは順番に処理する（購入の /payment と同じ）
+    Route::post('/reservation/payment', [ReservationController::class, 'payment'])
+        ->block((int) config('purchase.begin_lock_ttl'), (int) config('purchase.session_lock_wait'))
+        ->name('shop.reservation.payment');
+    // 予約ページ（予約限定の商品のみ。商品IDは先頭が0でない18桁までの数字）
+    Route::get('/reservation/{item}', [ReservationController::class, 'index'])->where('item', '[1-9][0-9]{0,17}')->name('shop.reservation.index');
 });
 
 // お問い合わせフォーム

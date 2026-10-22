@@ -5,13 +5,12 @@ namespace App\Livewire;
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
 use App\Http\Requests\CartRequest;
-use App\Http\Requests\DeliveryAddressRequest;
+use App\Livewire\Concerns\WithDeliveryForm;
 use App\Models\User;
 use App\Services\AreaService;
 use App\Services\CartService;
 use App\Services\DeliveryAddressService;
 use App\Services\PurchaseService;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -28,6 +27,8 @@ use Livewire\Component;
  */
 class PurchaseForm extends Component
 {
+    use WithDeliveryForm;
+
     /** 購入の入り口（cart: カートの中身、item: 商品詳細から1商品） */
     #[Locked]
     public string $source = 'cart';
@@ -56,18 +57,6 @@ class PurchaseForm extends Component
      */
     public array $quantities = [];
 
-    /** お届け先氏名 */
-    public string $deliveryName = '';
-
-    /** お届け先電話番号 */
-    public string $deliveryTell = '';
-
-    /** お届け先住所の選択肢の値（`user_{会員ID}` / `delivery_{住所ID}`） */
-    public string $addressId = '';
-
-    /** 支払方法 */
-    public string $paymentMethod = PaymentMethod::Card->value;
-
     /**
      * 注文トークン（「注文を確定する」を1回しか受け付けないための、1回限りのトークン）
      *
@@ -75,15 +64,6 @@ class PurchaseForm extends Component
      */
     #[Locked]
     public string $orderToken = '';
-
-    /** 住所追加モーダルを開いているか */
-    public bool $showAddressModal = false;
-
-    /** 住所追加モーダルの都道府県（DeliveryAddressRequest と同じ名前にして、同じルールで検証する） */
-    public string $delivery_prefecture = '';
-
-    /** 住所追加モーダルの住所（市区町村以降） */
-    public string $delivery_city = '';
 
     /**
      * 初期値を設定する
@@ -99,9 +79,7 @@ class PurchaseForm extends Component
         $this->source = $source->value;
         $this->quantities = $purchaseService->initialQuantities($source, $itemId);
         $this->itemIds = array_keys($this->quantities);
-        $this->deliveryName = $user->last_name.$user->first_name;
-        $this->deliveryTell = $user->tell;
-        $this->addressId = $addressService->userAddressId($user);
+        $this->fillDeliveryDefaults($user, $addressService);
 
         // 決済ページ（Stripe Checkout）や振込先のご案内の「戻る」で戻った直後（1回だけ）は、保存待ちの注文の入力を復元する
         $pending = session()->get(PurchaseService::RESTORE_FLASH_KEY) === true ? $purchaseService->getPendingOrder($user) : null;
@@ -172,46 +150,12 @@ class PurchaseForm extends Component
         }
     }
 
-    /**
-     * 住所追加モーダルを開く（前回の入力とエラーは消す）
-     */
-    public function openAddressModal(): void
-    {
-        $this->reset(['delivery_prefecture', 'delivery_city']);
-        $this->resetErrorBag(['delivery_prefecture', 'delivery_city']);
-        $this->showAddressModal = true;
-    }
-
-    /**
-     * 配送先住所を追加する
-     *
-     * DeliveryAddressRequest と同じルール・メッセージで検証する。エラーはモーダル内に表示する。
-     * 追加できたらモーダルを閉じ、追加した住所をお届け先住所に選択する。
-     */
-    public function addAddress(DeliveryAddressService $addressService): void
-    {
-        $validated = $this->validate(
-            DeliveryAddressRequest::addressRules(),
-            DeliveryAddressRequest::addressMessages(),
-        );
-
-        $address = $addressService->add($this->user(), $validated['delivery_prefecture'], $validated['delivery_city']);
-
-        $this->addressId = $addressService->deliveryAddressId($address);
-        $this->showAddressModal = false;
-        $this->reset(['delivery_prefecture', 'delivery_city']);
-    }
-
     public function render(PurchaseService $purchaseService, DeliveryAddressService $addressService, AreaService $areaService): View
     {
         $user = $this->user();
 
         // 改ざんされた値・他人の住所のときは、会員登録の住所に戻す
-        $address = $addressService->resolve($user, $this->addressId);
-        if ($address === null) {
-            $this->addressId = $addressService->userAddressId($user);
-            $address = ['prefecture' => $user->prefecture, 'city' => $user->city];
-        }
+        $address = $this->resolveAddress($user, $addressService);
 
         $lines = $purchaseService->buildLines($this->numericQuantities());
         $method = PaymentMethod::tryFrom($this->paymentMethod);
@@ -253,17 +197,6 @@ class PurchaseForm extends Component
     }
 
     /**
-     * ログイン中の会員
-     */
-    private function user(): User
-    {
-        $user = Auth::user();
-        abort_unless($user instanceof User, 401);
-
-        return $user;
-    }
-
-    /**
      * 数量を金額計算用の整数にする（数字でない値は0とし、計算側で1〜10に収める）
      *
      * @return array<int, int>
@@ -274,43 +207,14 @@ class PurchaseForm extends Component
     }
 
     /**
-     * 選べる住所のときだけ、お届け先住所に設定する
-     */
-    private function applyAddressId(User $user, DeliveryAddressService $addressService, string $addressId): void
-    {
-        if ($addressService->resolve($user, $addressId) !== null) {
-            $this->addressId = $addressId;
-        }
-    }
-
-    /**
      * 検証エラー（または住所追加）で戻ったときの入力を復元する
-     *
-     * 空欄で送信した項目は、ミドルウェアで null になって old() では値が取れないため、
-     * 送信された項目かどうかはキーの有無で判定し、空欄のまま復元する（会員の初期値に戻さない）。
      */
     private function restoreOldInput(User $user, DeliveryAddressService $addressService): void
     {
         /** @var array<string, mixed> $oldInput */
         $oldInput = session()->getOldInput();
 
-        if (array_key_exists('delivery_name', $oldInput)) {
-            $this->deliveryName = is_string($oldInput['delivery_name']) ? $oldInput['delivery_name'] : '';
-        }
-
-        if (array_key_exists('delivery_tell', $oldInput)) {
-            $this->deliveryTell = is_string($oldInput['delivery_tell']) ? $oldInput['delivery_tell'] : '';
-        }
-
-        $addressId = $oldInput['address_id'] ?? null;
-        if (is_string($addressId)) {
-            $this->applyAddressId($user, $addressService, $addressId);
-        }
-
-        $method = $oldInput['payment_method'] ?? null;
-        if (is_string($method) && PaymentMethod::tryFrom($method) !== null) {
-            $this->paymentMethod = $method;
-        }
+        $this->restoreDeliveryOldInput($user, $addressService, $oldInput);
 
         $rows = $oldInput['items'] ?? null;
         if (is_array($rows)) {
@@ -319,10 +223,9 @@ class PurchaseForm extends Component
                     continue;
                 }
                 // 数量を空欄で送信した場合も、空欄のまま復元する
-                $quantity = is_scalar($row['quantity']) ? trim((string) $row['quantity']) : '';
                 $id = (int) $row['item_id'];
                 if (array_key_exists($id, $this->quantities)) {
-                    $this->quantities[$id] = is_numeric($quantity) && (string) (int) $quantity === $quantity ? (int) $quantity : $quantity;
+                    $this->quantities[$id] = $this->restoredQuantity($row['quantity']);
                 }
             }
         }

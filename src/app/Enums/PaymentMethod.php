@@ -27,6 +27,16 @@ enum PaymentMethod: string
     }
 
     /**
+     * 予約で選べる支払方法の値の一覧（予約は先払いのため、代金引換は選べない）
+     *
+     * @return list<string>
+     */
+    public static function reservationValues(): array
+    {
+        return [self::Card->value, self::CustomerBalance->value];
+    }
+
+    /**
      * Stripe Checkout（Stripeのページ）で支払う方法かどうか
      */
     public function usesCheckout(): bool

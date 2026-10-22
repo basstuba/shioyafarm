@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Item;
 use App\Models\User;
 use App\Support\Nav;
 use DOMDocument;
@@ -164,6 +165,27 @@ class HeaderNavTest extends TestCase
         $this->assertSame($bar, $nav['bar']);
         $this->assertSame($menu, $nav['menu']);
         $this->assertSame($pc, $nav['pc']);
+    }
+
+    /**
+     * 予約ページ（shop.reservation.*）のヘッダーは、カート・購入手続きと同じナビ（マイページ・ログアウト）になる
+     */
+    #[Test]
+    public function 予約のルートはカート用のナビになる(): void
+    {
+        $about = ['お知らせ', 'しおや農園について'];
+        $item = Item::factory()->create(['is_reserved_only' => true, 'reservation_limit' => 200]);
+        $this->actingAs(User::factory()->create());
+
+        $cart = $this->parseNav($this->get(route('shop.cart'))->getContent());
+
+        $page = $this->get(route('shop.reservation.index', $item));
+        $page->assertOk();
+        $nav = $this->parseNav($page->getContent());
+        $this->assertSame(['マイページ'], $nav['bar']);
+        $this->assertSame([...$about, 'ログアウト'], $nav['menu']);
+        $this->assertSame([...$about, 'マイページ', 'ログアウト'], $nav['pc']);
+        $this->assertSame($cart, $nav);
     }
 
     /**

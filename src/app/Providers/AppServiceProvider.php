@@ -2,9 +2,13 @@
 
 namespace App\Providers;
 
+use App\Services\OrderTokenStore;
 use App\Services\Payment\PaymentGatewayInterface;
 use App\Services\Payment\StripePaymentGateway;
+use App\Services\PendingOrderStore;
+use App\Services\ReservationService;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +34,14 @@ class AppServiceProvider extends ServiceProvider
                 (int) config('services.stripe.connect_timeout'),
             );
         });
+
+        // 予約の保存待ちの注文・注文トークンは、購入と別のキーに持つ（購入の保存待ちの注文と干渉しないようにする）
+        $this->app->when(ReservationService::class)->needs(PendingOrderStore::class)->give(
+            fn ($app): PendingOrderStore => new PendingOrderStore($app->make(Session::class), PendingOrderStore::RESERVATION_SESSION_KEY),
+        );
+        $this->app->when(ReservationService::class)->needs(OrderTokenStore::class)->give(
+            fn (): OrderTokenStore => new OrderTokenStore(OrderTokenStore::RESERVATION_KEY_PREFIX),
+        );
     }
 
     /**

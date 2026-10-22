@@ -12,9 +12,20 @@ use Illuminate\Support\Str;
  * 購入ページを開くたびに発行し、「注文を確定する」（POST /payment）の排他ロックの中で使用済みにする。
  * セッションに持つと、同時に届いたリクエストの書き込みで上書きされるため、サーバー側（キャッシュ）に会員単位で持つ。
  * 複数のタブで購入ページを開いても、タブごとに別のトークンになる。
+ * 予約は別の接頭辞（RESERVATION_KEY_PREFIX）で持つ。予約用の接頭辞は AppServiceProvider で ReservationService に渡している。
  */
 class OrderTokenStore
 {
+    /** 購入のトークンのキャッシュのキーの接頭辞 */
+    public const string PURCHASE_KEY_PREFIX = 'purchase-order-token';
+
+    /** 予約のトークンのキャッシュのキーの接頭辞 */
+    public const string RESERVATION_KEY_PREFIX = 'reservation-order-token';
+
+    public function __construct(
+        private readonly string $keyPrefix = self::PURCHASE_KEY_PREFIX,
+    ) {}
+
     /**
      * 新しいトークンを発行する
      */
@@ -62,6 +73,6 @@ class OrderTokenStore
      */
     private function key(int $userId, string $token): string
     {
-        return 'purchase-order-token:'.$userId.':'.hash('sha256', $token);
+        return $this->keyPrefix.':'.$userId.':'.hash('sha256', $token);
     }
 }

@@ -41,7 +41,7 @@ paths:
 |---|---|---|
 | `top.*` | トップページ・お問い合わせ | ログイン状態で `Nav::topAuth()`（マイページあり・ログアウトなし）/ `Nav::top()` |
 | `info.*` | 送料案内・規約などの静的ページ | ログイン状態で `Nav::topAuth()` / `Nav::top()` |
-| `shop.cart`, `shop.checkout.*` | カート・購入手続き | `Nav::shopCart()` |
+| `shop.cart`, `shop.checkout.*`, `shop.reservation.*` | カート・購入手続き・予約手続き | `Nav::shopCart()` |
 | `shop.*` | ショップ全般 | ログイン状態で `Nav::shopAuth()` / `Nav::shopGuest()` |
 
 - ログイン中は、マイページ以外のすべてのページのヘッダーに「マイページ」を出す。`top.*` / `info.*` はトップ用の `Nav::topAuth()`（ログアウトは出さない）、`shop.*` は `shopAuth()` / `shopCart()` が持っている。マイページのルートができたら、マイページ上では非表示にする。
@@ -65,7 +65,7 @@ paths:
   - 適用した後に誤りに気づいた場合は、修正用のマイグレーションを追加して直す。`migrate:rollback` して書き換えたり、ファイルを削除して作り直したりしない。
 - `down()` には `up()` を元に戻す処理を必ず書く。
 - カラムの型や属性を変更する場合は `->change()` を使う。変更前の属性（`nullable`、`default`、`comment` など）は引き継がれないので、残したいものはすべて書き直す。
-- スキーマを変更したら、`docs/05-table-specification.md` と `docs/06-er-diagram.md` との違いを報告に含める（設計書の更新はユーザーに確認してから行う）。
+- スキーマを変更したら、`docs/05-table-specification.md` と `docs/06-er-diagram.md` との違いを報告に含める。設計書の更新はユーザーに確認してから、同じ作業ブランチ内で行う（全機能の実装後にまとめて直すのではない）。
 
 ## 認証
 
