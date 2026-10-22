@@ -15,7 +15,7 @@
 
 - HTML5
 - CSS3
-- PHP 8.2.19
+- PHP 8.4
 
 ### フレームワーク
 
@@ -23,15 +23,19 @@
 
 ### ツール
 
-- Nginx 1.27.0
-- MySQL 8.0.37
+- Nginx 1.30.6
+- MySQL 8.4.13
+- Node.js 24.22.1
 - Docker
-- phpMyAdmin
-- MailHog
+- phpMyAdmin 5.2.3
+- Mailpit 1.31.6
 
 ### その他
 
-- UIの動的な部分はLivewireを使用予定
+- UIの動的な部分はLivewire 3を使用
+- CSSはTailwind CSS v4、ビルドはViteを使用
+- ユーザー認証はLaravel Fortifyを使用
+- 管理画面のエクスポートはLaravel Excel（maatwebsite/excel）を使用
 
 ## 追加機能
 
