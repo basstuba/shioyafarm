@@ -137,52 +137,17 @@ class PurchaseSuccessTest extends TestCase
     }
 
     /**
-     * 代金引換：購入データを保存し、サンクスページを表示し、カートを空にする（S-17, AC-10, AC-11）
-     */
-    #[Test]
-    public function 代金引換は購入データを保存しカートを空にする(): void
-    {
-        [$user, $items] = $this->cartScenario();
-        $this->gatewayNeverCalled();
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
-
-        $this->actingAs($user)
-            ->get(route('shop.checkout.success'))
-            ->assertOk()
-            ->assertViewIs('shop.purchase_thanks');
-
-        $history = Purchase_history::sole();
-        $this->assertSame($user->id, $history->user_id);
-        $this->assertSame('山田花子', $history->delivery_name);
-        $this->assertSame('北海道', $history->delivery_prefecture);
-        $this->assertSame('札幌市中央区1-1-1', $history->delivery_city);
-        $this->assertSame('08011112222', $history->delivery_tell);
-        $this->assertSame('cod', $history->payment_method);
-        $this->assertSame(1850, $history->shipping_fee);
-        $this->assertSame(config('shipping.cod_fee'), $history->cod_fee);
-        $this->assertSame(4053, $history->total_price);
-
-        $rows = $history->purchaseHistoryItems()->orderBy('item_id')->get();
-        $this->assertCount(3, $rows);
-        $this->assertSame([2, 1, 1], $rows->pluck('quantity')->all());
-        $this->assertSame([330, 795, 418], $rows->pluck('price')->all());
-        $this->assertSame([660, 795, 418], $rows->pluck('subtotal')->all());
-
-        $this->assertNull(session('pending_order'));
-        $this->assertNull(session('cart'));
-    }
-
-    /**
      * サンクスページに背景画像・お礼・発送の案内・「ホームに戻る」が表示される（S-21, AC-13）
      */
     #[Test]
     public function サンクスページの表示内容(): void
     {
         [$user, $items] = $this->cartScenario();
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
+        $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok');
+        $this->mockSession('cs_test_ok', 'complete');
 
         $this->actingAs($user)
-            ->get(route('shop.checkout.success'))
+            ->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))
             ->assertOk()
             ->assertSee('<title>ご注文完了 | Shioya Farm</title>', false)
             ->assertSee('storage/image/tool/thanks-page-photo.webp', false)
@@ -202,12 +167,12 @@ class PurchaseSuccessTest extends TestCase
     public function 再読み込みしても二重に登録されない(): void
     {
         [$user, $items] = $this->cartScenario();
-        $this->gatewayNeverCalled();
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
+        $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok');
+        $this->mockSession('cs_test_ok', 'complete');
 
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertOk();
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertRedirect(route('top.index'));
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertRedirect(route('top.index'));
+        $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertOk();
+        $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertRedirect(route('top.index'));
+        $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertRedirect(route('top.index'));
 
         $this->assertSame(1, Purchase_history::count());
         $this->assertSame(3, Purchase_history_item::count());
@@ -221,9 +186,10 @@ class PurchaseSuccessTest extends TestCase
     {
         [$user, $items] = $this->cartScenario();
         $cart = session('cart');
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod, null, PurchaseSource::Item);
+        $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok', PurchaseSource::Item);
+        $this->mockSession('cs_test_ok', 'complete');
 
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertOk();
+        $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertOk();
 
         $this->assertSame(1, Purchase_history::count());
         $this->assertSame($cart, session('cart'));
@@ -251,27 +217,63 @@ class PurchaseSuccessTest extends TestCase
         $this->assertSame(3723, $history->total_price);
         $this->assertSame(3, $history->purchaseHistoryItems()->count());
         $this->assertNull(session('pending_order'));
-        $this->assertNull(session('cart'));
+        // 購入した商品の数量だけカートから減るため、カートは空になる
+        $this->assertEmpty(session('cart'));
     }
 
     /**
-     * カード・代金引換では振込先データを作らない
+     * カードでは振込先データを作らない
      */
     #[Test]
-    public function カードと代金引換では振込先を保存しない(): void
+    public function カードでは振込先を保存しない(): void
     {
         [$user, $items] = $this->cartScenario();
-
         $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok');
         $this->mockSession('cs_test_ok', 'complete');
+
         $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertOk();
 
-        session(['cart' => [$items['potato']->id => 1]]);
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
-        $this->get(route('shop.checkout.success'))->assertOk();
-
-        $this->assertSame(2, Purchase_history::count());
+        $this->assertSame(1, Purchase_history::count());
         $this->assertSame(0, Purchase_bank_transfer::count());
+    }
+
+    /**
+     * 購入していない商品はカートに残り、購入した商品は数量の分だけ減る（カードで支払ったあと）
+     */
+    #[Test]
+    public function カートに残る商品は購入後も残る(): void
+    {
+        [$user, $items] = $this->cartScenario();
+        $other = $this->makeItem('かぼちゃ', 3, 500);
+        // 注文（じゃがいも2・玉ねぎ1・人参1）より、じゃがいもを多く、かぼちゃを別に入れている
+        session(['cart' => [$items['potato']->id => 5, $items['onion']->id => 1, $items['carrot']->id => 1, $other->id => 2]]);
+        $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok');
+        $this->mockSession('cs_test_ok', 'complete');
+
+        $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertOk();
+
+        $this->assertSame([$items['potato']->id => 3, $other->id => 2], session('cart'));
+    }
+
+    /**
+     * GET /purchase/success はクレジットカード専用：保存待ちの注文が代金引換のままのセッション（古いセッション）で開いても、
+     * 購入データを保存せず、Stripe にも問い合わせず、購入ページへ戻す
+     */
+    #[Test]
+    public function 代金引換の保存待ちの注文は保存されない(): void
+    {
+        [$user, $items] = $this->cartScenario();
+        $this->gatewayNeverCalled();
+        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
+
+        $this->actingAs($user)
+            ->get(route('shop.checkout.success'))
+            ->assertRedirect(route('shop.checkout.index'))
+            ->assertSessionHasErrors('payment');
+        $this->get(route('shop.checkout.success', ['session_id' => 'cs_test_x']))->assertRedirect(route('shop.checkout.index'));
+
+        $this->assertSame(0, Purchase_history::count());
+        $this->assertNotEmpty(session('cart'));
     }
 
     /**
@@ -459,7 +461,8 @@ class PurchaseSuccessTest extends TestCase
     public function 保存に失敗したらどちらも作られない(): void
     {
         [$user, $items] = $this->cartScenario();
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
+        $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok');
+        $this->mockSession('cs_test_ok', 'complete');
         // 3件目の明細の商品を、存在しない商品IDにして外部キーエラーにする
         $pending = session('pending_order');
         $pending['items'][2]['item_id'] = 999999;
@@ -467,7 +470,7 @@ class PurchaseSuccessTest extends TestCase
 
         $this->withoutExceptionHandling();
         try {
-            $this->actingAs($user)->get(route('shop.checkout.success'));
+            $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']));
             $this->fail('保存に失敗するはずが、例外が発生しなかった');
         } catch (QueryException) {
             // 想定どおり
@@ -486,33 +489,14 @@ class PurchaseSuccessTest extends TestCase
     public function 保存する金額は注文時に再計算した金額(): void
     {
         [$user, $items] = $this->cartScenario();
-        $this->putPendingOrder($user, $items, PaymentMethod::Cod);
+        $this->putPendingOrder($user, $items, PaymentMethod::Card, 'cs_test_ok');
+        $this->mockSession('cs_test_ok', 'complete');
         $items['potato']->update(['price' => 9999]);
 
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertOk();
+        $this->actingAs($user)->get(route('shop.checkout.success', ['session_id' => 'cs_test_ok']))->assertOk();
 
         $this->assertSame(330, Purchase_history_item::where('item_id', $items['potato']->id)->sole()->price);
-        $this->assertSame(4053, Purchase_history::sole()->total_price);
-    }
-
-    /**
-     * 注文の確定から購入完了までの一連の流れ（代金引換）：POST /payment → GET /purchase/success
-     */
-    #[Test]
-    public function 注文確定から購入完了までの流れ(): void
-    {
-        [$user, $items] = $this->cartScenario();
-        $this->gatewayNeverCalled();
-
-        $this->actingAs($user)
-            ->post(route('shop.checkout.payment'), $this->paymentData($user, [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1], ['payment_method' => 'cod']))
-            ->assertRedirect(route('shop.checkout.success'));
-
-        $this->get(route('shop.checkout.success'))->assertOk()->assertSee('ご注文ありがとうございました。');
-
-        $this->assertSame(4053, Purchase_history::sole()->total_price);
-        $this->assertSame(3, Purchase_history_item::count());
-        $this->assertNull(session('cart'));
+        $this->assertSame(3723, Purchase_history::sole()->total_price);
     }
 
     /**

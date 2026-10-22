@@ -18,10 +18,14 @@
 | `/shipping-fee` | VIEW | Routeからviewを呼び出し | | | 送料案内ページ表示 |
 | `/cart` | GET | CartController | index | 必須 | カートページ表示 |
 | `/purchase/?{item_id}` | GET | PurchaseController | index | 必須 | 購入ページ表示 |
-| `/purchase/success` | GET | PurchaseController | purchaseSuccess | 必須 | 購入履歴作成機能 |
+| `/purchase/success` | GET | PurchaseController | purchaseSuccess | 必須 | 購入履歴作成機能（クレジットカード：Stripeの決済後に戻る先） |
+| `/purchase/bank-transfer` | GET | PurchaseController | bankTransfer | 必須 | 銀行振込の振込先のご案内ページ表示 |
+| `/purchase/bank-transfer/cancel` | POST | PurchaseController | cancelBankTransfer | 必須 | 銀行振込の取り消し機能（購入ページへ戻る） |
+| `/purchase/bank-transfer/confirm` | POST | PurchaseController | confirmBankTransfer | 必須 | 銀行振込の購入履歴作成機能 |
+| `/purchase/thanks` | GET | PurchaseController | thanks | 必須 | 購入完了ページ表示（銀行振込・代金引換） |
 | `/reservation/{item_id}` | GET | ReservationController | index | 必須 | 予約ページ表示 |
 | `/reservation/success` | GET | ReservationController | reservationSuccess | 必須 | 予約履歴作成機能 |
-| `/payment` | POST | PaymentController | payment | 必須 | 決済機能 |
+| `/payment` | POST | PaymentController | payment | 必須 | 決済機能（代金引換はここで購入履歴を作成） |
 | `/add-address` | POST | AddAddressController | store | 必須 | 配送先住所追加機能 |
 | `/mypage` | GET | MyPageController | index | 必須 | マイページ表示 |
 | `/mypage/edit` | GET | MyPageController | edit | 必須 | 登録情報変更ページ表示 |
@@ -136,8 +140,11 @@ user_idと合計金額はcontrollerで取得
 
 | フォーム | ルール |
 |---|---|
-| 商品ID | 入力必須、idの有無 |
-| 商品数量 | 入力必須、整数値、1以上、10以下 |
+| 購入元 | 入力必須、文字列、指定の値のみ（`cart`：カートから、`item`：商品詳細から） |
+| 注文トークン（order_token） | 入力必須、文字列、100文字以下（購入ページの表示ごとに発行する1回限りの値。使用済み・不正な値では注文を作らない） |
+| 商品（items） | 入力必須、配列、1件以上 |
+| 商品ID（items.*.item_id） | 入力必須、整数値、重複不可、idの有無（予約限定の商品は不可） |
+| 商品数量（items.*.quantity） | 入力必須、整数値、1以上、10以下 |
 | 配送先氏名 | 入力必須、文字列、255文字以下 |
 | 配送先住所 | 入力必須、文字列、接頭辞と正規表現の値 |
 | 配送先電話番号 | 入力必須、数字のみ、10〜11桁、15文字以下 |

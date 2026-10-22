@@ -18,7 +18,7 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * stripe_customer_id は含めない（会員情報の更新フォームなどから書き換えられないようにする。保存は forceFill で行う）。
+     * stripe_customer_id は含めない（会員情報の更新フォームなどから書き換えられないようにする。保存は UserRepository の forceFill で行う）。
      *
      * @var list<string>
      */

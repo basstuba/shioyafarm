@@ -7,6 +7,7 @@ use App\Enums\PurchaseSource;
 use App\Models\Area;
 use App\Models\Item;
 use App\Models\User;
+use App\Services\OrderTokenStore;
 use App\Services\Payment\BankTransferInstructions;
 use App\Services\PendingOrder;
 use Mockery\MockInterface;
@@ -91,7 +92,17 @@ trait PurchaseTestHelpers
             'address_id' => 'user_'.$user->id,
             'delivery_tell' => '09012345678',
             'payment_method' => 'card',
+            // 購入ページが発行する1回限りの注文トークン（呼ぶたびに新しく発行する。同じ内容を2回送るときは、2回呼ぶ）
+            'order_token' => $this->newOrderToken($user),
         ], $overrides);
+    }
+
+    /**
+     * 購入ページが発行する1回限りの注文トークンを新しく発行する
+     */
+    private function newOrderToken(User $user): string
+    {
+        return app(OrderTokenStore::class)->issue($user->id);
     }
 
     /**

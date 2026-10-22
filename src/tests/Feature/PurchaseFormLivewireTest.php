@@ -156,6 +156,59 @@ class PurchaseFormLivewireTest extends TestCase
     }
 
     /**
+     * クライアントが読み込んだ商品以外のキーを数量に追加しても、取り除かれる（送信される items[] に載らない）
+     */
+    #[Test]
+    public function 読み込んでいない商品の数量は追加できない(): void
+    {
+        [$user, $items] = $this->cartScenario();
+        $other = $this->makeItem('その他', 2, 100);
+        $expected = [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1];
+
+        $component = Livewire::actingAs($user)
+            ->test(PurchaseForm::class)
+            ->set('quantities.'.$other->id, 3)
+            ->assertSet('quantities', $expected)
+            ->set('quantities.999999', 1)
+            ->assertSet('quantities', $expected)
+            ->set('quantities', $expected + [$other->id => 5])
+            ->assertSet('quantities', $expected);
+
+        // 画面に出る商品（送信される items[]）は読み込んだ商品だけ
+        $component->assertViewHas('lines', fn ($lines): bool => $lines->pluck('item.id')->sort()->values()->all() === collect($expected)->keys()->sort()->values()->all());
+        $this->assertStringNotContainsString('value="'.$other->id.'"', $component->html());
+    }
+
+    /**
+     * 読み込んだ商品のIDはクライアントから書き換えられない
+     */
+    #[Test]
+    public function 読み込んだ商品のidは書き換えられない(): void
+    {
+        [$user] = $this->cartScenario();
+
+        $this->expectException(CannotUpdateLockedPropertyException::class);
+
+        Livewire::actingAs($user)
+            ->test(PurchaseForm::class)
+            ->set('itemIds', [1, 2, 3, 999]);
+    }
+
+    /**
+     * 「注文を確定する」は送信中に押せなくする（二重送信の防止）
+     */
+    #[Test]
+    public function 注文を確定するボタンは送信中に押せなくなる(): void
+    {
+        [$user] = $this->cartScenario();
+
+        $html = Livewire::actingAs($user)->test(PurchaseForm::class)->html();
+
+        $this->assertStringContainsString('x-on:submit="submitting = true"', $html);
+        $this->assertMatchesRegularExpression('#<button[^>]*x-bind:disabled="submitting \|\| false"[^>]*>\s*注文を確定する#', $html);
+    }
+
+    /**
      * 画面にない商品の数量は変更できない
      */
     #[Test]

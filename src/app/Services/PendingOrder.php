@@ -60,6 +60,14 @@ final readonly class PendingOrder
     }
 
     /**
+     * 銀行振込の PaymentIntent ID だけを付けた新しい注文を返す（作った時点で支払い済みになり、振込先の案内が無いとき）
+     */
+    public function withPaymentIntentId(string $paymentIntentId): self
+    {
+        return $this->copy($this->checkoutSessionId, $paymentIntentId, null);
+    }
+
+    /**
      * 銀行振込の PaymentIntent ID と振込先を外した新しい注文を返す（「戻る」で PaymentIntent をキャンセルしたあと）
      */
     public function withoutBankTransfer(): self
@@ -91,6 +99,14 @@ final readonly class PendingOrder
             $bankTransfer,
             $this->orderId,
         );
+    }
+
+    /**
+     * 作った時点で支払い済みだった銀行振込の注文（PaymentIntent があり、振込先の案内がない）かどうか
+     */
+    public function isPaidBankTransfer(): bool
+    {
+        return $this->paymentMethod->usesBankTransfer() && $this->paymentIntentId !== null && $this->bankTransfer === null;
     }
 
     /**

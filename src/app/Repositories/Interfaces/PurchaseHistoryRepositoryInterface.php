@@ -15,7 +15,7 @@ interface PurchaseHistoryRepositoryInterface
      *
      * @param  array{user_id: int, delivery_name: string, delivery_prefecture: string, delivery_city: string, delivery_tell: string, payment_method: string, shipping_fee: int, cod_fee: int, total_price: int}  $history
      * @param  list<array{item_id: int, quantity: int, price: int, subtotal: int}>  $items
-     * @param  array{stripe_payment_intent_id: string, bank_name: string, branch_name: string, account_type: string, account_number: string, account_holder_name: string, amount: int}|null  $bankTransfer  銀行振込の振込先（銀行振込以外は null）
+     * @param  array{stripe_payment_intent_id: string, bank_name: string|null, branch_name: string|null, account_type: string|null, account_number: string|null, account_holder_name: string|null, amount: int}|null  $bankTransfer  銀行振込の振込先（銀行振込以外は null。PaymentIntent を作った時点で支払い済みだった注文は、振込先の各項目が null）
      *
      * @throws Throwable 保存に失敗したとき（どちらも保存されない）
      */

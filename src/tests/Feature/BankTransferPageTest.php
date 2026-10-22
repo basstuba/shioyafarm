@@ -286,7 +286,7 @@ class BankTransferPageTest extends TestCase
 
         $this->get(route('shop.checkout.thanks'))->assertOk()->assertViewIs('shop.purchase_thanks');
         $this->assertNull(session('pending_order'));
-        $this->assertNull(session('cart'));
+        $this->assertEmpty(session('cart'));
         $this->assertSame(1, Purchase_history::count());
         $this->assertSame(1, Purchase_bank_transfer::count());
     }
@@ -372,6 +372,6 @@ class BankTransferPageTest extends TestCase
         $history = Purchase_history::sole();
         $this->assertSame('customer_balance', $history->payment_method);
         $this->assertSame(3723, $history->total_price);
-        $this->assertNull(session('cart'));
+        $this->assertEmpty(session('cart'));
     }
 }

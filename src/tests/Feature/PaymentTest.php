@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\PaymentMethod;
 use App\Models\Delivery_address;
 use App\Models\Item;
+use App\Models\Purchase_bank_transfer;
 use App\Models\Purchase_history;
 use App\Models\User;
 use App\Services\Payment\BankTransferInstructions;
@@ -12,7 +13,9 @@ use App\Services\Payment\BankTransferIntentData;
 use App\Services\Payment\CheckoutSessionData;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentGatewayInterface;
+use App\Services\PurchaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -182,6 +185,105 @@ class PaymentTest extends TestCase
     }
 
     /**
+     * 銀行振込：PaymentIntent を作った時点で Stripe の顧客残高から支払い済み（succeeded・processing）になっていたときは、
+     * 金額が合っていれば取り消さず、振込先なしで購入データを保存してサンクスページ（/purchase/thanks）へ移動する
+     */
+    #[Test]
+    public function 銀行振込が作成時点で支払い済みなら保存してサンクスページへ移動する(): void
+    {
+        foreach (['succeeded', 'processing'] as $status) {
+            [$user, $items] = $this->cartScenario();
+            $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock) use ($status): void {
+                $this->stubCustomer($mock, 'cus_'.$status);
+                $mock->shouldReceive('createBankTransferIntent')->once()->with('cus_'.$status, 3723)->andReturn($this->bankIntent('pi_paid_'.$status, $status, 3723, false));
+                $mock->shouldNotReceive('cancelPaymentIntent');
+            });
+
+            $this->actingAs($user)
+                ->post(route('shop.checkout.payment'), $this->paymentData($user, $this->cartQuantities($items), ['payment_method' => 'customer_balance']))
+                ->assertRedirect(route('shop.checkout.thanks'))
+                ->assertSessionHas(PurchaseService::THANKS_FLASH_KEY, true)
+                ->assertSessionHasNoErrors();
+
+            $history = Purchase_history::where('user_id', $user->id)->sole();
+            $this->assertSame('customer_balance', $history->payment_method);
+            $this->assertSame(3723, $history->total_price);
+            $this->assertSame(3, $history->purchaseHistoryItems()->count());
+
+            // 振込先の案内が無いため、振込先の各項目は null で PaymentIntent ID と金額だけ保存する
+            $transfer = Purchase_bank_transfer::where('purchase_history_id', $history->id)->sole();
+            $this->assertSame('pi_paid_'.$status, $transfer->stripe_payment_intent_id);
+            $this->assertSame(3723, $transfer->amount);
+            $this->assertNull($transfer->bank_name);
+            $this->assertNull($transfer->account_number);
+
+            // 保存待ちの注文は残らず、購入したカートの商品は減る
+            $this->assertNull(session('pending_order'));
+            $this->assertEmpty(session('cart'));
+            $this->get(route('shop.checkout.thanks'))->assertOk()->assertViewIs('shop.purchase_thanks');
+        }
+    }
+
+    /**
+     * 銀行振込が作成時点で支払い済みでも、金額が合わなければ保存せず、PaymentIntent を取り消してエラーにする
+     */
+    #[Test]
+    public function 銀行振込が作成時点で支払い済みでも金額が違えば保存しない(): void
+    {
+        [$user, $items] = $this->cartScenario();
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $this->stubCustomer($mock);
+            $mock->shouldReceive('createBankTransferIntent')->once()->andReturn($this->bankIntent('pi_paid', 'succeeded', 100, false));
+            $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_paid');
+        });
+
+        $this->actingAs($user)
+            ->from(route('shop.checkout.index'))
+            ->post(route('shop.checkout.payment'), $this->paymentData($user, $this->cartQuantities($items), ['payment_method' => 'customer_balance']))
+            ->assertRedirect(route('shop.checkout.index'))
+            ->assertSessionHasErrors('payment');
+
+        $this->assertSame(0, Purchase_history::count());
+        $this->assertNull(session('pending_order'));
+    }
+
+    /**
+     * 作成時点で支払い済みの銀行振込を保存できなかった（ロックを取れない）ときは、保存待ちの注文を残して、押し直しを促さないエラーにする。
+     * 購入ページを開いたときに保存されるが（PurchaseOrderTokenTest）、別のタブなど、開き直さずに別の画面（別のトークン）から確定したときも、
+     * 前の注文として支払い済みを確認して保存される（顧客残高が使われたのに注文が消えない）
+     */
+    #[Test]
+    public function 支払い済みの銀行振込を保存できなければ次の確定で保存される(): void
+    {
+        config(['purchase.complete_lock_wait' => 0]);
+        [$user, $items] = $this->cartScenario();
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $this->stubCustomer($mock);
+            $mock->shouldReceive('createBankTransferIntent')->once()->andReturn($this->bankIntent('pi_paid', 'succeeded', 3723, false));
+            // 次の確定：前の銀行振込のキャンセルは失敗し（入金済み）、状態を確認して保存する
+            $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_paid')->andThrow(new PaymentGatewayException('入金済み'));
+            $mock->shouldReceive('retrieveBankTransferIntent')->twice()->with('pi_paid')->andReturn($this->bankIntent('pi_paid', 'succeeded', 3723, false));
+        });
+        $lock = Cache::lock('purchase-complete:'.$user->id, 30);
+        $this->assertTrue($lock->get());
+
+        $this->actingAs($user)
+            ->from(route('shop.checkout.index'))
+            ->post(route('shop.checkout.payment'), $this->paymentData($user, $this->cartQuantities($items), ['payment_method' => 'customer_balance']))
+            ->assertSessionHasErrors(['payment' => PurchaseService::PAID_PENDING_MESSAGE]);
+
+        $this->assertSame(0, Purchase_history::count());
+        $this->assertSame('pi_paid', session('pending_order')['payment_intent_id']);
+
+        $lock->release();
+        $this->post(route('shop.checkout.payment'), $this->paymentData($user, $this->cartQuantities($items), ['payment_method' => 'cod']))
+            ->assertRedirect(route('shop.checkout.thanks'));
+
+        $this->assertSame(1, Purchase_bank_transfer::where('stripe_payment_intent_id', 'pi_paid')->count());
+        $this->assertSame(2, Purchase_history::count());
+    }
+
+    /**
      * 銀行振込：PaymentIntent に渡す金額は、サーバーで再計算した合計（改ざんされた金額は使わない）
      */
     #[Test]
@@ -208,8 +310,8 @@ class PaymentTest extends TestCase
         [$user, $items] = $this->cartScenario();
 
         foreach ([
-            $this->bankIntent('pi_a', 'succeeded', 3723, false),
-            $this->bankIntent('pi_b', 'requires_action', 3723, false),
+            $this->bankIntent('pi_a', 'requires_action', 3723, false),
+            $this->bankIntent('pi_b', 'canceled', 3723, false),
             $this->bankIntent('pi_c', 'requires_action', 100, true),
         ] as $intent) {
             $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock) use ($intent): void {
@@ -267,7 +369,7 @@ class PaymentTest extends TestCase
         $data = $this->paymentData($user, $this->cartQuantities($items), ['payment_method' => 'customer_balance']);
 
         $this->actingAs($user)->post(route('shop.checkout.payment'), $data)->assertRedirect(route('shop.checkout.bank-transfer'));
-        $this->post(route('shop.checkout.payment'), $data)->assertRedirect(route('shop.checkout.bank-transfer'));
+        $this->post(route('shop.checkout.payment'), [...$data, 'order_token' => $this->newOrderToken($user)])->assertRedirect(route('shop.checkout.bank-transfer'));
 
         $this->assertSame('pi_second', session('pending_order')['payment_intent_id']);
     }
@@ -296,25 +398,25 @@ class PaymentTest extends TestCase
     }
 
     /**
-     * 代金引換：Stripe を通さずに購入完了ページへ移動し、手数料込みの保存待ちの注文を入れる（S-17）
+     * 代金引換：Stripe を通さず、ここで手数料込みの購入データを保存してサンクスページへ移動する（S-17）
      */
     #[Test]
-    public function 代金引換は_stripeを通さず購入完了ページへ移動する(): void
+    public function 代金引換は_stripeを通さず購入データを保存してサンクスページへ移動する(): void
     {
         [$user, $items] = $this->cartScenario();
         $this->gatewayNeverCalled();
 
         $this->actingAs($user)
             ->post(route('shop.checkout.payment'), $this->paymentData($user, $this->cartQuantities($items), ['payment_method' => 'cod']))
-            ->assertRedirect(route('shop.checkout.success'));
+            ->assertRedirect(route('shop.checkout.thanks'))
+            ->assertSessionHas(PurchaseService::THANKS_FLASH_KEY, true);
 
-        $pending = session('pending_order');
-        $this->assertSame('cod', $pending['payment_method']);
-        $this->assertNull($pending['checkout_session_id']);
-        $this->assertSame(1850, $pending['shipping_fee']);
-        $this->assertSame(config('shipping.cod_fee'), $pending['cod_fee']);
-        $this->assertSame(4053, $pending['total_price']);
-        $this->assertSame(0, Purchase_history::count());
+        $history = Purchase_history::sole();
+        $this->assertSame('cod', $history->payment_method);
+        $this->assertSame(1850, $history->shipping_fee);
+        $this->assertSame(config('shipping.cod_fee'), $history->cod_fee);
+        $this->assertSame(4053, $history->total_price);
+        $this->assertNull(session('pending_order'));
     }
 
     /**
@@ -371,13 +473,13 @@ class PaymentTest extends TestCase
                     ['item_id' => $items['carrot']->id, 'quantity' => 1, 'price' => 1],
                 ],
             ]))
-            ->assertRedirect(route('shop.checkout.success'));
+            ->assertRedirect(route('shop.checkout.thanks'));
 
-        $pending = session('pending_order');
-        $this->assertSame(4053, $pending['total_price']);
-        $this->assertSame(1850, $pending['shipping_fee']);
-        $this->assertSame([330, 795, 418], array_column($pending['items'], 'price'));
-        $this->assertSame([660, 795, 418], array_column($pending['items'], 'subtotal'));
+        $history = Purchase_history::sole();
+        $this->assertSame(4053, $history->total_price);
+        $this->assertSame(1850, $history->shipping_fee);
+        $this->assertSame([330, 795, 418], $history->purchaseHistoryItems->pluck('price')->all());
+        $this->assertSame([660, 795, 418], $history->purchaseHistoryItems->pluck('subtotal')->all());
     }
 
     /**
@@ -431,13 +533,13 @@ class PaymentTest extends TestCase
                 'address_id' => 'delivery_'.$tokyo->id,
                 'payment_method' => 'cod',
             ]))
-            ->assertRedirect(route('shop.checkout.success'));
+            ->assertRedirect(route('shop.checkout.thanks'));
 
-        $pending = session('pending_order');
-        $this->assertSame('東京都', $pending['delivery_prefecture']);
-        $this->assertSame('千代田区1-1', $pending['delivery_city']);
-        $this->assertSame(2370, $pending['shipping_fee']);
-        $this->assertSame(1873 + 2370 + 330, $pending['total_price']);
+        $history = Purchase_history::sole();
+        $this->assertSame('東京都', $history->delivery_prefecture);
+        $this->assertSame('千代田区1-1', $history->delivery_city);
+        $this->assertSame(2370, $history->shipping_fee);
+        $this->assertSame(1873 + 2370 + 330, $history->total_price);
     }
 
     /**
@@ -504,7 +606,7 @@ class PaymentTest extends TestCase
                     'payment_method' => 'cod',
                 ]))
                 ->assertSessionHasNoErrors()
-                ->assertRedirect(route('shop.checkout.success'));
+                ->assertRedirect(route('shop.checkout.thanks'));
         }
     }
 
@@ -543,7 +645,7 @@ class PaymentTest extends TestCase
             $this->actingAs($user)
                 ->post(route('shop.checkout.payment'), $this->paymentData($user, [$items['potato']->id => $quantity], ['payment_method' => 'cod']))
                 ->assertSessionHasNoErrors()
-                ->assertRedirect(route('shop.checkout.success'));
+                ->assertRedirect(route('shop.checkout.thanks'));
         }
     }
 

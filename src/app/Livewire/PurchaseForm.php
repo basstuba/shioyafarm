@@ -24,6 +24,7 @@ use Livewire\Component;
  * 数量の変更・住所の切り替え・支払方法の選択で、ページを再読み込みせずに小計・送料・代引手数料・合計を更新する。
  * 「注文を確定する」は通常のフォーム送信（POST /payment）で、PurchaseRequest が検証する。
  * 検証エラーで戻ったときと、Stripe の決済ページから「戻る」で戻ったときは、入力していた内容を復元する。
+ * 購入ページを開くたびに、二重送信を防ぐ注文トークンを発行してフォームに入れる（PurchaseRequest の order_token）。
  */
 class PurchaseForm extends Component
 {
@@ -36,9 +37,20 @@ class PurchaseForm extends Component
     public ?int $itemId = null;
 
     /**
+     * 購入ページを開いたときに読み込んだ商品ID（クライアントからは変更できない）
+     *
+     * 数量の入力欄に載せてよい商品は、これだけ。
+     *
+     * @var list<int>
+     */
+    #[Locked]
+    public array $itemIds = [];
+
+    /**
      * 商品ごとの数量（商品ID => 数量）
      *
      * 入力途中の不正な値（0・11など）もそのまま持つ。金額の計算では1〜10に収める。
+     * キーは読み込んだ商品ID（itemIds）だけ。それ以外のキーが送られてきたら取り除く（updatedQuantities）。
      *
      * @var array<int, int|string>
      */
@@ -55,6 +67,14 @@ class PurchaseForm extends Component
 
     /** 支払方法 */
     public string $paymentMethod = PaymentMethod::Card->value;
+
+    /**
+     * 注文トークン（「注文を確定する」を1回しか受け付けないための、1回限りのトークン）
+     *
+     * 購入ページを開いたとき（mount）に1回だけ発行する。再描画では変えず、クライアントからも変更できない。
+     */
+    #[Locked]
+    public string $orderToken = '';
 
     /** 住所追加モーダルを開いているか */
     public bool $showAddressModal = false;
@@ -78,6 +98,7 @@ class PurchaseForm extends Component
         $this->itemId = $itemId;
         $this->source = $source->value;
         $this->quantities = $purchaseService->initialQuantities($source, $itemId);
+        $this->itemIds = array_keys($this->quantities);
         $this->deliveryName = $user->last_name.$user->first_name;
         $this->deliveryTell = $user->tell;
         $this->addressId = $addressService->userAddressId($user);
@@ -97,6 +118,20 @@ class PurchaseForm extends Component
         }
 
         $this->restoreOldInput($user, $addressService);
+
+        // 検証エラーで戻ったときは、使っていないトークンならそのまま使い回す。それ以外は新しく発行する
+        $previousToken = session()->getOldInput('order_token');
+        $this->orderToken = $purchaseService->issueOrderToken($user, is_string($previousToken) ? $previousToken : null);
+    }
+
+    /**
+     * 数量が更新されたとき、読み込んだ商品以外のキーを取り除く
+     *
+     * クライアントが任意の商品IDを追加して、購入ページに表示していない商品の数量を送れないようにする。
+     */
+    public function updatedQuantities(): void
+    {
+        $this->quantities = array_intersect_key($this->quantities, array_flip($this->itemIds));
     }
 
     /**

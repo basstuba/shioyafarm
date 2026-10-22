@@ -31,6 +31,9 @@ return [
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
+        // Stripe への通信のタイムアウト（秒）。ロックの有効期限（config/purchase.php）を決める元になる
+        'connect_timeout' => 5,
+        'timeout' => 20,
     ],
 
     'slack' => [

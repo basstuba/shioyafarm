@@ -24,7 +24,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentGatewayInterface::class, function (): StripePaymentGateway {
             $secret = config('services.stripe.secret');
 
-            return new StripePaymentGateway(is_string($secret) ? $secret : null);
+            return new StripePaymentGateway(
+                is_string($secret) ? $secret : null,
+                (int) config('services.stripe.timeout'),
+                (int) config('services.stripe.connect_timeout'),
+            );
         });
     }
 

@@ -17,7 +17,7 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
      *
      * @param  array{user_id: int, delivery_name: string, delivery_prefecture: string, delivery_city: string, delivery_tell: string, payment_method: string, shipping_fee: int, cod_fee: int, total_price: int}  $history
      * @param  list<array{item_id: int, quantity: int, price: int, subtotal: int}>  $items
-     * @param  array{stripe_payment_intent_id: string, bank_name: string, branch_name: string, account_type: string, account_number: string, account_holder_name: string, amount: int}|null  $bankTransfer
+     * @param  array{stripe_payment_intent_id: string, bank_name: string|null, branch_name: string|null, account_type: string|null, account_number: string|null, account_holder_name: string|null, amount: int}|null  $bankTransfer
      */
     #[Override]
     public function createWithItems(array $history, array $items, ?array $bankTransfer = null): Purchase_history

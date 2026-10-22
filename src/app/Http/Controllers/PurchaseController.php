@@ -22,10 +22,13 @@ class PurchaseController extends Controller
      *
      * `?restore=1`（Stripe Checkout の cancel_url）で開かれたときは、復元の合図をフラッシュに置き換えてリダイレクトする。
      * 商品IDなしはカートの中身、商品IDありはその商品1個からの購入。
-     * 数量・住所・支払方法の操作と金額の更新は Livewire の purchase-form コンポーネントが担当する。
+     * 数量・住所・支払方法の操作と金額の更新は Livewire の purchase-form コンポーネントが担当する
+     * （注文トークンの発行もそこで行う）。
+     * 作った時点で支払い済みだった銀行振込の注文が、保存できないまま保存待ちに残っているときは、先に保存する
+     * （保存できたらサンクスページへ。まだ処理中ならフォームを出さず、再読み込みを案内する。押し直して注文が重複するのを防ぐ）。
      * カートが空ならカートページへ戻す。存在しない商品・予約限定の商品は404。
      */
-    public function index(Request $request, PurchaseService $purchaseService, ?int $item = null): View|RedirectResponse
+    public function index(Request $request, PurchaseService $purchaseService, ?int $item = null): View|RedirectResponse|Response
     {
         Log::debug('PurchaseController index start');
 
@@ -38,8 +41,13 @@ class PurchaseController extends Controller
         }
 
         $user = $request->user();
-        if ($user !== null) {
-            $purchaseService->discardStaleCodOrder($user);
+        abort_if($user === null, 403);
+
+        $paidPendingResponse = $this->paidPendingResponse($purchaseService->settlePaidBankTransfer($user));
+        if ($paidPendingResponse !== null) {
+            Log::debug('PurchaseController index end (paid pending order)');
+
+            return $paidPendingResponse;
         }
 
         if ($item === null) {
@@ -137,9 +145,9 @@ class PurchaseController extends Controller
     }
 
     /**
-     * 銀行振込の購入完了ページ（サンクスページ）を表示
+     * 銀行振込・代金引換の購入完了ページ（サンクスページ）を表示
      *
-     * 「振込み」で保存した直後（フラッシュあり）だけ表示する。再読み込み・直接アクセスはトップページへ戻す。
+     * 銀行振込は「振込み」、代金引換は「注文を確定する」で保存した直後（フラッシュあり）だけ表示する。再読み込み・直接アクセスはトップページへ戻す。
      */
     public function thanks(): View|RedirectResponse
     {
@@ -157,9 +165,10 @@ class PurchaseController extends Controller
     }
 
     /**
-     * 購入完了ページを表示（カード・代金引換：決済を確認して購入データを保存する）
+     * 購入完了ページを表示（クレジットカード専用：決済を確認して購入データを保存する）
      *
-     * カードは Stripe の success_url から来る。銀行振込は「振込み」（POST）でだけ保存するため、ここでは保存せず案内ページへ戻す。
+     * Stripe の success_url から来る。銀行振込は「振込み」（POST）、代金引換は「注文を確定する」（POST）でだけ保存するため、
+     * ここでは保存しない（銀行振込は案内ページへ、代金引換の古い保存待ちの注文は購入ページへ戻す）。
      * 保存待ちの注文が無いとき（再読み込み・直接アクセス）は何も保存せずトップページへ戻す。
      * 決済が未完了のときは購入ページへ戻してエラーを表示する。Stripe に問い合わせられなかったとき（支払い済みかどうか不明）は、
      * 再決済をさせず、保存待ちの注文を残したまま、再読み込みを案内する。
@@ -183,6 +192,24 @@ class PurchaseController extends Controller
             CheckoutResult::VerificationFailed => response()->view('shop.payment_pending', ['message' => 'お支払いの確認に失敗しました。時間をおいてこのページを再読み込みしてください。お支払い済みの場合は、再度のお手続きは不要です'], 503),
             CheckoutResult::Busy => response()->view('shop.payment_pending', ['message' => 'ただいまご注文を処理しています。しばらく待ってから、このページを再読み込みしてください'], 503),
             CheckoutResult::SessionMismatch, CheckoutResult::NotPaid => $this->notPaidResponse($user, $purchaseService),
+        };
+    }
+
+    /**
+     * 支払い済みで保存待ちに残っていた銀行振込の注文を保存した結果に応じた応答（購入ページを開いたとき）
+     *
+     * 保存できたらサンクスページへ。まだ保存できない、または確認できないときは、購入ページを出さずに再読み込みを案内する
+     * （フォームを出すと、押し直して新しい注文が重複して作られるため）。対象の注文がない、またはお支払いを確認できなかったときは null。
+     */
+    private function paidPendingResponse(?CheckoutResult $result): RedirectResponse|Response|null
+    {
+        return match ($result) {
+            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => redirect()
+                ->route('shop.checkout.thanks')
+                ->with(PurchaseService::THANKS_FLASH_KEY, true),
+            CheckoutResult::Busy => response()->view('shop.payment_pending', ['message' => 'お支払いは完了しています。ただいま確定処理中です。しばらく待ってから、このページを再読み込みしてください'], 503),
+            CheckoutResult::VerificationFailed => response()->view('shop.payment_pending', ['message' => 'お支払いの確認に失敗しました。時間をおいてこのページを再読み込みしてください。お支払い済みの場合は、再度のお手続きは不要です'], 503),
+            default => null,
         };
     }
 

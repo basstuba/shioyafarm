@@ -52,6 +52,23 @@ class PendingOrderTest extends TestCase
     }
 
     /**
+     * 作った時点で支払い済みだった銀行振込の注文（PaymentIntent があり、振込先がない）だけを判別できる
+     */
+    #[Test]
+    public function 支払い済みの銀行振込の注文を判別できる(): void
+    {
+        $bank = new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 1358);
+        $card = $this->makeOrder();
+        $transfer = new PendingOrder(1, PurchaseSource::Item, 'user_1', '塩谷太郎', '09012345678', '北海道', '札幌市1-1', PaymentMethod::CustomerBalance, $card->items, 418, 940, 0, 1358);
+
+        $this->assertFalse($card->isPaidBankTransfer());
+        $this->assertFalse($transfer->isPaidBankTransfer());
+        $this->assertFalse($transfer->withBankTransfer('pi_test_1', $bank)->isPaidBankTransfer());
+        $this->assertTrue($transfer->withPaymentIntentId('pi_test_1')->isPaidBankTransfer());
+        $this->assertFalse($transfer->withPaymentIntentId('pi_test_1')->withoutBankTransfer()->isPaidBankTransfer());
+    }
+
+    /**
      * 銀行振込の PaymentIntent ID と振込先を付けて配列にしても復元でき、外すと元に戻る
      */
     #[Test]

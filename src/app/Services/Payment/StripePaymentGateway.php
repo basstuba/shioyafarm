@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use Override;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\HttpClient\CurlClient;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Stripe\StripeObject;
@@ -16,8 +17,14 @@ use Stripe\StripeObject;
  */
 class StripePaymentGateway implements PaymentGatewayInterface
 {
+    /**
+     * @param  int  $timeout  1回の通信の全体のタイムアウト（秒）
+     * @param  int  $connectTimeout  接続のタイムアウト（秒）
+     */
     public function __construct(
         private readonly ?string $secret,
+        private readonly int $timeout = 20,
+        private readonly int $connectTimeout = 5,
     ) {}
 
     /**
@@ -251,6 +258,10 @@ class StripePaymentGateway implements PaymentGatewayInterface
     /**
      * Stripe のクライアントを作る（キー未設定でも、使うときまではエラーにしない）
      *
+     * 通信のタイムアウトは SDK の既定（接続30秒・全体80秒）より短くする。
+     * 「注文を確定する」は Stripe への問い合わせを続けて行う間ずっとロックを持つため、1回ごとの待ち時間に上限を付けて、
+     * ロックの有効期限（config/purchase.php の begin_lock_ttl）に収まるようにする。
+     *
      * @throws PaymentGatewayException キーが設定されていないとき
      */
     private function client(): StripeClient
@@ -258,6 +269,8 @@ class StripePaymentGateway implements PaymentGatewayInterface
         if ($this->secret === null || $this->secret === '') {
             throw new PaymentGatewayException('STRIPE_SECRET が設定されていません');
         }
+
+        CurlClient::instance()->setTimeout($this->timeout)->setConnectTimeout($this->connectTimeout);
 
         return new StripeClient($this->secret);
     }
