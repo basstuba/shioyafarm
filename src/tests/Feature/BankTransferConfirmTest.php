@@ -110,7 +110,7 @@ class BankTransferConfirmTest extends TestCase
         $this->assertSame(3723, $history->total_price);
         $this->assertSame(3, $history->purchaseHistoryItems()->count());
         $this->assertNull(session('pending_order'));
-        $this->assertNull(session('cart'));
+        $this->assertEmpty(session('cart'));
     }
 
     /**
@@ -325,7 +325,7 @@ class BankTransferConfirmTest extends TestCase
         $this->assertSame(1, Purchase_bank_transfer::count());
         // 2つ目のリクエストも、保存待ちの注文とカートを片づける
         $this->assertNull(session('pending_order'));
-        $this->assertNull(session('cart'));
+        $this->assertEmpty(session('cart'));
     }
 
     /**

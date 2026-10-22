@@ -71,17 +71,19 @@ Claudeが決めた事項（OKをもらう）：
 | S-13 | AC-7 | PC/SP | S-2の状態 | 氏名を空にして「注文を確定する」。電話番号を「090-1234-5678」「123456789」にして押す | それぞれエラーが表示され、Stripeへ移動せず、購入データも作られない。入力していた値は残る |
 | S-14 | AC-7 | PC | S-2の状態 | 数量に0、11を入力して「注文を確定する」を押す | 数量のエラーが表示され、注文されない |
 | S-15 | AC-8, AC-11, AC-13 | PC/SP | S-2の状態。Stripeのテストキーが設定済み | クレジットカードを選び「注文を確定する」→ Stripeでテストカード 4242 4242 4242 4242 で支払う | Stripeの決済ページに3商品と送料1,850円、合計3,723円が表示される。支払い後サンクスページが表示される。purchase_histories に1件（payment_method=card、お届け先が入力どおり、shipping_fee=1850、cod_fee=0、total_price=3723）、purchase_history_items に3件（単価・数量・小計が購入ページと同じ）が保存され、カートが空になる |
-| S-16 | AC-9, AC-11 | PC/SP | S-2の状態。Stripeで銀行振込が有効 | 銀行振込を選び「注文を確定する」→「振込先のご案内」で「振込み」を押す | 振込先のご案内に銀行名・支店名・口座種別・口座番号・口座名義と振込金額3,723円が表示される。「振込み」でサンクスページが表示され、payment_method=customer_balance、shipping_fee=1850、cod_fee=0、total_price=3723 の購入データ（商品3件）と、振込先のご案内に表示されたものと同じ振込先・振込金額3,723円の purchase_bank_transfers 1件が保存され、カートが空になる |
-| S-17 | AC-10, AC-11 | PC/SP | S-2の状態 | 代金引換を選び「注文を確定する」 | Stripeを通らずにサンクスページが表示され、payment_method=cod、shipping_fee=1850、cod_fee=330、total_price=4053 の購入データ（商品3件）が保存され、カートが空になる |
+| S-16 | AC-9, AC-11 | PC/SP | S-2の状態。Stripeで銀行振込が有効 | 銀行振込を選び「注文を確定する」→「振込先のご案内」で「振込み」を押す | 振込先のご案内に銀行名・支店名・口座種別・口座番号・口座名義と振込金額3,723円が表示される。「振込み」でサンクスページ（/purchase/thanks）が表示され、payment_method=customer_balance、shipping_fee=1850、cod_fee=0、total_price=3723 の購入データ（商品3件）と、振込先のご案内に表示されたものと同じ振込先・振込金額3,723円の purchase_bank_transfers 1件が保存され、カートが空になる |
+| S-17 | AC-10, AC-11 | PC/SP | S-2の状態 | 代金引換を選び「注文を確定する」 | Stripeを通らずにサンクスページ（/purchase/thanks）が表示され、payment_method=cod、shipping_fee=1850、cod_fee=330、total_price=4053 の購入データ（商品3件）が保存され、カートが空になる |
 | S-18 | AC-11 | PC | ログイン済み。カートに玉ねぎ5kg×1 | 商品詳細（人参2kg）から代金引換で購入する | 購入データは人参2kg×1だけ。カートには玉ねぎ5kg×1が残っている |
 | S-19 | AC-12 | PC | S-2の状態 | クレジットカードで「注文を確定する」→ Stripeの決済ページで「戻る」を押す | 購入ページへ戻り、入力していた内容が残っている。購入データは作られない |
-| S-20 | AC-12 | PC | S-17の直後 | サンクスページを再読み込みする。別の機会に /purchase/success を直接開く | トップページへリダイレクトされ、購入データは増えない |
+| S-20 | AC-12 | PC | S-17の直後 | サンクスページを再読み込みする。別の機会に /purchase/success と /purchase/thanks を直接開く | トップページへリダイレクトされ、購入データは増えない |
 | S-21 | AC-13 | PC/SP | S-17の直後 | サンクスページを見て「ホームに戻る」を押す | 背景画像の上に「ご注文ありがとうございました。心を込めてお届けいたします。」「商品はお支払い確定後3~5営業日以内、代金引換の場合はご注文確定後3~5営業日以内に発送いたします。」が表示され、トップページへ移動する |
 | S-22 | AC-14 | PC/SP | S-2の状態 | 購入ページ・住所追加モーダル・サンクスページを開く | 横スクロールが出ず、文字・ボタンが画面に収まっている |
 | S-23 | AC-12 | PC | S-2の状態。Stripeのテストキーが設定済み | クレジットカードを選び「注文を確定する」→ Stripeでテストカード 4000 0000 0000 0002（有効期限は未来の日付、CVCは任意の3桁）で支払う | Stripeの画面にカードが拒否された旨が表示され、サンクスページへは移動しない。購入データは作られず、カートもそのまま |
 | S-24 | AC-9, AC-12 | PC/SP | S-2の状態 | 銀行振込を選び「注文を確定する」→「振込先のご案内」で「戻る」を押す | 購入ページへ戻り、入力していた内容（氏名・電話番号・住所・支払方法・数量）が残っている。購入データは作られず、カートもそのまま |
-| S-25 | AC-12 | PC | S-16の直後 | サンクスページを再読み込みする。ブラウザの戻るで「振込先のご案内」を開き直し、「振込み」を押す | トップページ（または購入ページ）へ移動し、購入データは増えない |
+| S-25 | AC-12 | PC | S-16の直後 | サンクスページを再読み込みする。ブラウザの戻るで「振込先のご案内」を開き直し、「振込み」を押す | どちらもトップページへ移動し、購入データは増えない |
 | S-26 | AC-15 | PC/SP | S-2の状態 | クレジットカードを選び「注文を確定する」 | Stripeの決済ページの金額が円（￥3,723）で表示される（他の通貨にならない） |
+| S-27 | AC-11 | PC | S-2の状態 | 購入ページを開いたまま別のタブでじゃがいも10kg×1をカートに追加し、購入ページで代金引換の「注文を確定する」を押す | 購入データは購入ページに表示されていた3商品だけ。カートにはじゃがいも10kg×1が残る |
+| S-28 | AC-12 | PC | S-2の状態 | 代金引換で「注文を確定する」をすばやく2回押す | 押した直後にボタンが無効になり、購入データは1件だけ作られる |
 
 ## 実施結果
 
@@ -165,18 +167,88 @@ Claudeが決めた事項（OKをもらう）：
 - コンソールエラー：なし（この再実施でStripeのAPIの402などは出していない）
 - 追加したデータ（前の分に加えて）：purchase_histories に1件（id=12 UAT購入PC代引3、cod）、purchase_history_items に3件。Stripeのテスト環境にCheckout Sessionと銀行振込のPaymentIntent（「戻る」で取り消した分）が数件できている。ログインユーザーのカートは空
 
+## 再実施4（2026-10-22）
+
+コードレビューの指摘の修正後に再実施した。「振込先のご案内」の「振込み」が POST（/purchase/bank-transfer/confirm、CSRFあり）になり、銀行振込のサンクスページが /purchase/thanks（フラッシュで1回だけ表示）に変わった。「戻る」は従来どおり POST（/purchase/bank-transfer/cancel）、カードのサンクスページは従来どおり /purchase/success?session_id=…。前の結果はそのまま残している。
+
+変更点の確認：S-16（PC/SP）、S-20（PC/SP）、S-24（PC/SP）、S-25（PC）。回帰確認：S-15（PC）、S-17（PC）、S-19（PC）、S-23（PC）。
+
+| ID | PC | SP | 備考 | スクリーンショット |
+|---|---|---|---|---|
+| S-16 | OK | OK | PC：銀行振込で確定すると /purchase/bank-transfer（同じタブ）に銀行名「いろは銀行」・支店名「中央支店」・口座種別「普通」・口座番号 TEST48213081・口座名義「ストライプジャパン（カ　シュウノウダイコウ」・振込金額 3,723円、注文内容（小計1,873円・送料1,850円・合計3,723円）、お届け先が表示される。「戻る」「振込み」はどれもPOSTのフォームでCSRFトークンあり。「振込み」を押すと /purchase/thanks に移動し、ご注文ありがとうございました等の文言が表示される。purchase_histories id=13（customer_balance、shipping_fee=1850、cod_fee=0、total_price=3723、delivery_name=UAT振込R4PC）、items 3件（7: 1個×418=418、5: 1個×795=795、1: 2個×330=660）、purchase_bank_transfers id=4（purchase_history_id=13、いろは銀行・中央支店・futsu・TEST48213081・amount=3723で、案内ページの表示と一致）、カートが空。SP：同じ流れで /purchase/thanks へ。purchase_histories id=16（delivery_name=UAT振込R4SP、1850/0/3723）、items 3件、purchase_bank_transfers id=6（TEST48213081、amount=3723）、カートが空。SPの案内ページ・サンクスとも横スクロールなし、「戻る」「振込み」は200×44px、本文16px、サンクスの「ホームに戻る」は高さ44px。PCの案内ページの2つのボタンは高さ40px | screenshots/purchase/R4-S-16-guide-pc.png, screenshots/purchase/R4-S-16-pc.png, screenshots/purchase/R4-S-16-guide-sp.png, screenshots/purchase/R4-S-16-sp.png |
+| S-20 | OK | OK | PC：代金引換（S-17）の直後、サンクスページ（/purchase/success）を再読み込みするとトップページ（/）へ移動。続けて /purchase/success と /purchase/thanks を直接開いてもどちらもトップページへ移動（/purchase/success?session_id=cs_test_dummy も同様にトップへ）。購入データは増えない（purchase_histories 15件・items 43件・purchase_bank_transfers 5件のまま）。SP：銀行振込（S-16のSP）の直後、/purchase/thanks を再読み込みするとトップページへ。続けて /purchase/success と /purchase/thanks を直接開いてもトップページへ。購入データは増えない（16件・46件・6件のまま） | screenshots/purchase/R4-S-20-reload-pc.png, screenshots/purchase/R4-S-20-pc.png, screenshots/purchase/R4-S-20-sp.png |
+| S-24 | OK | OK | 「振込先のご案内」で「戻る」を押すと /purchase に戻り、氏名・電話番号・住所・支払方法（銀行振込）・数量（2、1、1）・金額（小計1,873円・送料1,850円・合計3,723円）が残っている。購入データは増えず、purchase_bank_transfers も増えず、カートもそのまま（PC：氏名「UAT振込R4戻るPC」、SP：氏名「UAT振込R4戻るSP」。SPは横スクロールなし） | screenshots/purchase/R4-S-24-guide-pc.png, screenshots/purchase/R4-S-24-pc.png, screenshots/purchase/R4-S-24-guide-sp.png, screenshots/purchase/R4-S-24-sp.png |
+| S-25 | OK | 対象外 | S-16と同じ流れで保存後（purchase_histories id=14、delivery_name=UAT振込R4再読込、purchase_bank_transfers id=5）、/purchase/thanks を再読み込みするとトップページ（/）へ移動。ブラウザの戻るで「振込先のご案内」（/purchase/bank-transfer、保存前の表示のまま TEST48213081）が開き、「振込み」を押すとトップページ（/）へ移動した。購入データは増えない（保存後は purchase_histories 14件・items 40件・purchase_bank_transfers 5件のまま） | screenshots/purchase/R4-S-25-thanks-pc.png, screenshots/purchase/R4-S-25-reload-pc.png, screenshots/purchase/R4-S-25-guide-reopen-pc.png, screenshots/purchase/R4-S-25-pc.png |
+| S-15（回帰） | OK | 対象外 | Stripeの決済ページに円表示（￥3,723、じゃがいも2kg ￥330×2=￥660、玉ねぎ5kg ￥795、人参2kg ￥418、送料 ￥1,850）。4242 4242 4242 4242 で支払うとサンクスページ（/purchase/success?session_id=…）が表示され、purchase_histories id=17（card、shipping_fee=1850、cod_fee=0、total_price=3723、delivery_name=UAT成功R4カード）、items 3件（7: 418、5: 795、1: 2個×330=660）、カートが空。purchase_bank_transfers は増えない（6件のまま）。サンクスページの再読み込み・同じURLの開き直しはトップページへ移動し、データは増えない | screenshots/purchase/R4-S-15-stripe-pc.png, screenshots/purchase/R4-S-15-pc.png |
+| S-17（回帰） | OK | 対象外 | 代金引換（小計1,873円・送料1,850円・代引手数料330円・合計4,053円）で Stripeを通らずサンクスページ（/purchase/success）へ。purchase_histories id=15（cod、1850/330/4053、delivery_name=UAT代引R4PC）、items 3件（7: 418、5: 795、1: 2個×330=660）、カートが空。purchase_bank_transfers は増えない（5件のまま） | screenshots/purchase/R4-S-17-pc.png |
+| S-19（回帰） | OK | 対象外 | Stripeの決済ページの「戻る」で /purchase に戻り、氏名（UAT戻るR4カード）・電話番号・住所・支払方法（クレジットカード）・数量・金額（合計3,723円）が残っている。購入データは増えない（16件のまま） | screenshots/purchase/R4-S-19-stripe-pc.png, screenshots/purchase/R4-S-19-pc.png |
+| S-23（回帰） | OK | 対象外 | 4000 0000 0000 0002（有効期限12/30、CVC 123）で「クレジットカードが拒否されました。デビットカードでの支払いをお試しください。」と表示され、サンクスへは移動しない。購入データは増えず（16件のまま）、カートも3商品のまま残っている | screenshots/purchase/R4-S-23-pc.png |
+
+- 気づいた点（合否には含めていない）：(1) 代金引換とクレジットカードのサンクスページのURLは従来どおり /purchase/success（カードは ?session_id=… 付き）で、/purchase/thanks になるのは銀行振込のみ。(2) 銀行振込の口座番号は、この再実施で作った3件（保存済み id=4・5・6）すべて TEST48213081 で同じだった（同じStripe顧客に対して同じ仮想口座が割り当てられているように見える。以前の再実施では注文ごとに異なる番号だった。購入データ・案内ページの表示とは一致している）。
+- コンソールエラー：なし（S-23でStripeのAPIが返す402が1件のみで、カード拒否の想定どおり）
+- メール（Mailpit）：対象外（注文確認メールはこのブランチでは作らない）
+- 追加したデータ（前の分に加えて）：purchase_histories に5件（id=13 UAT振込R4PC（customer_balance）、id=14 UAT振込R4再読込（customer_balance）、id=15 UAT代引R4PC（cod）、id=16 UAT振込R4SP（customer_balance）、id=17 UAT成功R4カード（card））、purchase_history_items に15件、purchase_bank_transfers に3件（id=4〜6。purchase_history_id=13、14、16）。Stripeのテスト環境にCheckout Sessionと銀行振込のPaymentIntent（「戻る」で取り消した分を含む）、拒否されたカードのCheckout Sessionが数件できている。ログインユーザー（uat-buy@example.com）のカートは空
+
+## 再実施5（2026-10-22）
+
+再レビューの指摘の修正後に再実施した。代金引換は「注文を確定する」（POST /payment）の時点で保存してサンクスページを /purchase/thanks（フラッシュで1回だけ表示）にし、/purchase/success はクレジットカード専用にした。購入後のカートは丸ごと空にせず、購入した商品の数量だけを減らす。「注文を確定する」は押した直後に無効になり、サーバー側もユーザー単位のロックで二重の処理を防ぐ。前の結果はそのまま残している。
+
+変更点の確認：S-17（PC/SP）、S-18（PC）、S-20（PC/SP）、S-21（PC/SP）、S-27（PC。新規）、S-28（PC。新規）。回帰確認：S-15、S-16、S-19、S-24、S-25（いずれもPC）。
+
+| ID | PC | SP | 備考 | スクリーンショット |
+|---|---|---|---|---|
+| S-17 | OK | OK | PC：代金引換（小計1,873円・送料1,850円・代引手数料330円・合計4,053円）で Stripeを通らずサンクスページへ。サンクスページのURLは **/purchase/thanks**。purchase_histories id=18（payment_method=cod、shipping_fee=1850、cod_fee=330、total_price=4053、delivery_name=UAT代引R5PC、tell=09011112222）、items 3件（1: 2個×330=660、5: 1個×795=795、7: 1個×418=418）、purchase_bank_transfers は増えない（6件のまま）。購入した数量だけ減った結果、カートは空（カートページに「カートに商品はありません」）。PCのこのサンクスページでは再読み込みはしていない（S-20は別の購入で確認）。SP：同じ流れで /purchase/thanks へ。id=24（delivery_name=UAT代引R5SP、1850/330/4053）、items 3件（660・795・418）、カートが空。SPは購入ページ・サンクスとも横スクロールなし（scrollWidth＝clientWidth＝414）、「注文を確定する」は200×44px、サンクスの「ホームに戻る」は高さ44px（hrefは http://localhost/） | screenshots/purchase/R5-S-17-pc.png, screenshots/purchase/R5-S-17-purchase-sp.png, screenshots/purchase/R5-S-17-sp.png |
+| S-18 | OK | 対象外 | カートに玉ねぎ5kg×1がある状態で、商品詳細（人参2kg）の「購入する」（/purchase/7）から代金引換。送料940円・代引手数料330円・合計1,688円で /purchase/thanks へ。purchase_histories id=19（cod、940/330/1688、delivery_name=UAT代引R5詳細）、itemsは人参2kg×1（418）のみ。カートには玉ねぎ5kg×1（795円）が残った | screenshots/purchase/R5-S-18-pc.png, screenshots/purchase/R5-S-18-cart-pc.png |
+| S-20 | OK | OK | PC：代金引換（S-27の購入）の直後、サンクスページ（/purchase/thanks）を再読み込みするとトップページ（/）へ移動。続けて /purchase/success を直接開いても、/purchase/thanks を直接開いても、/purchase/success?session_id=cs_test_dummy を開いても、**トップページ（/）へリダイレクト**され、購入ページ・エラー表示にはならない。購入データは増えない（20件・56件・6件のまま）。SP：代金引換（id=25、delivery_name=UAT代引R5SP再読込）の直後、/purchase/thanks を再読み込み→トップページ。続けて /purchase/success と /purchase/thanks を直接開いてもトップページ。購入データは増えない（25件・71件・6件のまま）、SPのトップは横スクロールなし | screenshots/purchase/R5-S-20-reload-pc.png, screenshots/purchase/R5-S-20-success-pc.png, screenshots/purchase/R5-S-20-pc.png, screenshots/purchase/R5-S-20-reload-sp.png, screenshots/purchase/R5-S-20-sp.png |
+| S-21 | OK | OK | PC：背景画像の上に「ご注文ありがとうございました。心を込めてお届けいたします。」と「商品はお支払い確定後3~5営業日以内、代金引換の場合はご注文確定後3~5営業日以内に発送いたします。」が表示され、「ホームに戻る」を押すとトップページ（/）へ移動。SP：同じ文言が背景画像の上に表示され、横スクロールなし。「ホームに戻る」を押してトップページ（/）へ移動（押す前のサンクス画面は R5-S-17-sp.png、R5-S-21-sp.png はSPの別の購入のサンクス画面） | screenshots/purchase/R5-S-21-pc.png, screenshots/purchase/R5-S-21-sp.png, screenshots/purchase/R5-S-17-sp.png |
+| S-27 | OK | 対象外 | カート：じゃがいも2kg×2・玉ねぎ5kg×1・人参2kg×1（S-2の状態）。購入ページを開いたまま、別タブでじゃがいも10kg×1をカートに追加（別タブのカートには4商品）。元のタブで代金引換の「注文を確定する」→ /purchase/thanks。purchase_histories id=20（cod、1850/330/4053、delivery_name=UAT代引R5別タブ）、items 3件（1: 2個×330、5: 1個×795、7: 1個×418）で、じゃがいも10kgは含まれない。カートにはじゃがいも10kg×1（1,320円）だけが残った | screenshots/purchase/R5-S-27-before-pc.png, screenshots/purchase/R5-S-27-pc.png |
+| S-28 | OK | 対象外 | 代金引換で「注文を確定する」を dblclick（連続2クリック）。3回行い、いずれも購入データは1件だけ（id=21、22、23。delivery_name=UAT代引R5連打／連打2／連打3、それぞれ1850/330/4053、items 3件）。3回目は、クリック・submit・disabled属性の変化を記録して確認：1回目のクリックの時点では disabled=false、同じ瞬間（submitイベント）に disabled が true に変わり、2回目のクリックはクリックイベントとして届かなかった（記録されたクリックは1回だけ）。ボタンは `x-bind:disabled="submitting || false"`（Alpine）で、submit後に押せなくなる。ボタンが無効の画面の撮影はできていない（送信が速くてサンクスへ移動する）。1回目と2回目は無効状態の直接確認なし（件数1件のみ確認） | screenshots/purchase/R5-S-28-before-pc.png, screenshots/purchase/R5-S-28-pc.png |
+| S-15（回帰） | OK | 対象外 | Stripeの決済ページに円表示（￥3,723、じゃがいも2kg 数量2・単価￥330・￥660、玉ねぎ5kg ￥795、人参2kg ￥418、送料 ￥1,850）。4242 4242 4242 4242 で支払うとサンクスページ（/purchase/success?session_id=…）が表示され、purchase_histories id=28（card、1850/0/3723、delivery_name=UAT成功R5カード）、items 3件（660・795・418）、カートが空。purchase_bank_transfers は増えない（8件のまま）。再読み込みするとトップページへ移動し、データは増えない | screenshots/purchase/R5-S-15-stripe-pc.png, screenshots/purchase/R5-S-15-stripe-filled-pc.png, screenshots/purchase/R5-S-15-pc.png |
+| S-16（回帰） | OK | 対象外 | 銀行振込で確定すると /purchase/bank-transfer に銀行名「いろは銀行」・支店名「中央支店」・口座種別「普通」・口座番号 TEST48213081・口座名義「ストライプジャパン（カ　シュウノウダイコウ」・振込金額 3,723円、注文内容（小計1,873円・送料1,850円・合計3,723円）、お届け先が表示される。「振込み」で /purchase/thanks へ。purchase_histories id=26（customer_balance、1850/0/3723、delivery_name=UAT振込R5PC）、items 3件（660・795・418）、purchase_bank_transfers id=7（purchase_history_id=26、いろは銀行・中央支店・futsu・TEST48213081・amount=3723、stripe_payment_intent_id あり。案内ページの表示と一致）、カートが空 | screenshots/purchase/R5-S-16-guide-pc.png, screenshots/purchase/R5-S-16-pc.png |
+| S-19（回帰） | OK | 対象外 | Stripeの決済ページの「戻る」で /purchase に戻り、氏名（UAT戻るR5カード）・住所・支払方法（クレジットカード）・数量（2、1、1）・金額（合計3,723円）が残っている。購入データは増えない（27件のまま）、カートもそのまま | screenshots/purchase/R5-S-19-stripe-pc.png, screenshots/purchase/R5-S-19-pc.png |
+| S-24（回帰） | OK | 対象外 | 「振込先のご案内」で「戻る」（POST /purchase/bank-transfer/cancel）を押すと /purchase に戻り、氏名（UAT振込R5戻る）・住所・支払方法（銀行振込）・数量（2、1、1）・金額（小計1,873円・送料1,850円・合計3,723円）が残っている。購入データも purchase_bank_transfers も増えず（25件・71件・6件のまま）、カートもそのまま | screenshots/purchase/R5-S-24-guide-pc.png, screenshots/purchase/R5-S-24-pc.png |
+| S-25（回帰） | OK | 対象外 | (1) S-16と同じ流れで保存後（id=26）、/purchase/thanks を再読み込みするとトップページ（/）へ移動。続けてブラウザの戻るでもトップページ（/）が表示され、案内ページは出なかった。(2) 別の銀行振込（purchase_histories id=27、purchase_bank_transfers id=8、delivery_name=UAT振込R5再読込）で、同じ案内ページを2つ目のタブにも開いておき、1つ目のタブで「振込み」→サンクス→ブラウザの戻る：案内ページ（/purchase/bank-transfer）はすぐトップページ（/）へリダイレクトされた。2つ目のタブに残っていた案内ページで「振込み」を押すと、トップページ（/）へ移動した。購入データは増えない（保存後は27件・77件・8件のまま）。なお前回（再実施4）は戻るで保存前の案内ページが表示されたが、今回は案内ページが開かずトップへリダイレクトされた（ブラウザのキャッシュの違いと思われる。どちらもトップへ移動する点は期待結果どおり） | screenshots/purchase/R5-S-25-reload-pc.png, screenshots/purchase/R5-S-25-thanks-pc.png, screenshots/purchase/R5-S-25-back-pc.png, screenshots/purchase/R5-S-25-tab2-pc.png |
+
+- 気づいた点（合否には含めていない）：(1) S-28 の1回目・2回目は、ボタンが無効になった様子（disabled属性の値）を直接は取れていない（ページ遷移でログが消えたため）。3回目で、submitと同時に disabled が true になり2回目のクリックが届かないことを確認した。購入データが1件のみである点は3回とも確認できている。(2) 銀行振込の口座番号は、この再実施でも保存済み2件（id=7、8）とも TEST48213081 で、案内ページの表示と一致している（再実施4と同じ）。
+- コンソールエラー：なし（Stripeの決済ページで警告が2件出たが、エラーは0件）
+- メール（Mailpit）：対象外（注文確認メールはこのブランチでは作らない）
+- 追加したデータ（前の分に加えて）：purchase_histories に11件（id=18 UAT代引R5PC（cod）、id=19 UAT代引R5詳細（cod）、id=20 UAT代引R5別タブ（cod）、id=21〜23 UAT代引R5連打／連打2／連打3（cod）、id=24 UAT代引R5SP（cod）、id=25 UAT代引R5SP再読込（cod）、id=26 UAT振込R5PC（customer_balance）、id=27 UAT振込R5再読込（customer_balance）、id=28 UAT成功R5カード（card））、purchase_history_items に31件（id=19の1件は人参2kg×1のみ、残りは各3件）、purchase_bank_transfers に2件（id=7、8。purchase_history_id=26、27）。この結果、purchase_histories は28件・purchase_history_items は80件・purchase_bank_transfers は8件。Stripeのテスト環境にCheckout Session（戻った分1件、支払い済み1件）と銀行振込のPaymentIntent（「戻る」で取り消した分を含む3件）ができている。ログインユーザー（uat-buy@example.com）のカートは空
+
+## 再実施6（2026-10-22）
+
+二重送信の対策として、1回限りの注文トークンを入れた。購入ページを表示するたびにフォームの hidden の order_token に発行し、POST /payment で1回だけ使える。注文確定のロックは、すぐにエラーにせず最大10秒待つ形にし、同じセッションのリクエストは順番に処理する。あわせて、Stripe の通信タイムアウトを短くし、代金引換の保存失敗時の後始末も直した。この修正後に、PCで回帰確認した。前の結果はそのまま残している。
+
+対象：S-17、S-27、S-28、S-15、S-16、S-19、S-24（「戻る」の後に確定し直す流れを含む）、古い画面からの再送信。いずれもPC。カートはS-2の状態（じゃがいも2kg×2、玉ねぎ5kg×1、人参2kg×1。住所は北海道）から始めた。
+
+| ID | PC | SP | 備考 | スクリーンショット |
+|---|---|---|---|---|
+| S-17 | OK | 対象外 | 購入ページのフォームに hidden の order_token（40文字）が入っている（source=cart、items 3件の hidden も同じフォーム）。代金引換（小計1,873円・送料1,850円・代引手数料330円・合計4,053円）で確定すると Stripeを通らず /purchase/thanks へ。purchase_histories id=29（cod、shipping_fee=1850、cod_fee=330、total_price=4053、delivery_name=UAT代引R6PC、tell=09011112222）、items 3件（1: 2個×330=660、5: 1個×795=795、7: 1個×418=418）、purchase_bank_transfers は増えない（8件のまま）、カートは空。コンソールエラーなし | screenshots/purchase/R6-S-17-before-pc.png, screenshots/purchase/R6-S-17-pc.png |
+| S-27 | OK | 対象外 | 購入ページ（代金引換を選択済み、小計1,873円）を開いたまま、別タブでじゃがいも10kg×1をカートに追加（別タブのカートは4商品・小計3,193円）。元のタブで「注文を確定する」→ /purchase/thanks。purchase_histories id=32（cod、1850/330/4053、delivery_name=UAT代引R6別タブ）、items 3件（1: 2個×330、5: 1個×795、7: 1個×418）でじゃがいも10kgは含まれない。カートにはじゃがいも10kg×1（1,320円）だけが残った | screenshots/purchase/R6-S-27-before-pc.png, screenshots/purchase/R6-S-27-tab2-cart-pc.png, screenshots/purchase/R6-S-27-pc.png |
+| S-28（dblclick） | OK | 対象外 | 代金引換で「注文を確定する」を dblclick（連続2クリック）。購入データは1件だけ（id=30、delivery_name=UAT代引R6連打、1850/330/4053、items 3件）。クリックとsubmitを記録したところ、クリックイベントは1回だけ（click と submit が同時刻、disabled=false の時点）で、2回目のクリックはサーバーへ届かなかった。**2回目のリクエストは届かなかったため、「サンクスページ」か「この画面は古くなっています」かの分岐は発生せず、1回目の結果であるサンクスページ（/purchase/thanks）が表示された** | screenshots/purchase/R6-S-28-pc.png |
+| S-28（ボタン無効化を経由しない2重送信） | OK | 対象外 | 同じフォーム内容（同じ order_token）を、ブラウザの fetch で POST /payment に同時に2回送った（Promise.all。ボタンの無効化を経由しない）。**2回とも最終的にサンクスページ（/purchase/thanks、HTTP 200）が返り、「古くなっています」にはならなかった**。購入データは1件だけ（id=31、delivery_name=UAT代引R6二重、1850/330/4053、items 3件）、purchase_bank_transfers は増えない。続けて、同じ内容をもう一度（3回目）送っても、サンクスページが返るだけで購入データは増えない（保存済みのトークンは、再送信されるとサンクスページへ誘導される）。カートは空 | screenshots/purchase/R6-S-28-direct-before-pc.png |
+| 古い画面からの再送信（S-17の後） | OK | 対象外 | (1) S-17（id=29）の直後にブラウザの戻るを押すと、購入ページではなく /cart（「カートに商品はありません」）が表示された（Playwrightのブラウザは前のページをキャッシュから出さず、購入ページを読み直す。カートが空なので /purchase がカートページへ戻す）。再送信できる購入ページ自体が出ないため、購入データは増えない。もう一度戻っても /cart のまま。(2) 古い画面の再現として、保存済みの order_token（id=31の分）を含む同じフォームを、カートに商品を入れ直した状態で POST /payment に送ると、購入ページ・エラーではなく**サンクスページ（/purchase/thanks）が返り、購入データは増えず（31件のまま）、カートは4商品のまま**。(3) order_token を別の値にして送ると、購入ページ（/purchase）に戻り「この画面は古くなっています。もう一度内容を確認してください」が表示され、購入データは増えない。(4) order_token を付けずに送ると、元のページ（送信元の /cart）へ戻され、購入データは増えない。(5) 別々のタブで購入ページを2回開く（それぞれ別の order_token が発行される）と、2つのタブから1回ずつ確定でき、2件保存される（/purchase/{item} から代引：id=33 UAT代引R6古い画面B、id=34 UAT代引R6古い画面A、いずれもじゃがいも10kg×1だけ、送料1,530円・代引330円・合計3,180円）。トークンは表示ごとに別々に発行され、それぞれ1回使えるため、設計どおりの動きと思われる | screenshots/purchase/R6-stale-tabA-pc.png |
+| S-19 | OK | 対象外 | クレジットカードで確定→Stripeの決済ページ（円表示 ￥3,723）で「戻る」を押すと /purchase に戻り、氏名（UAT成功R6カード）・電話番号・住所（北海道札幌市UAT1-1）・支払方法（クレジットカード）・数量（2、1、1）・合計3,723円が残っている。購入データは増えない（34件のまま）。戻った購入ページの order_token は、確定時の値とは別の新しい値に変わっていた。**そのまま支払方法を代金引換に切り替え（合計4,053円）て「注文を確定する」を押すと、サンクスページ（/purchase/thanks）へ移動**。purchase_histories id=35（cod、1850/330/4053、delivery_name=UAT成功R6カード）、items 3件（660・795・418）が1件保存され、カートは空 | screenshots/purchase/R6-S-19-stripe-pc.png, screenshots/purchase/R6-S-19-pc.png, screenshots/purchase/R6-S-19-reconfirm-pc.png |
+| S-24 | OK | 対象外 | 銀行振込で確定→「振込先のご案内」（振込金額3,723円）で「戻る」を押すと /purchase に戻り、氏名（UAT振込R6戻る）・電話番号・住所・支払方法（銀行振込）・数量（2、1、1）・合計3,723円が残っている。order_token は新しい値。購入データも purchase_bank_transfers も増えず（purchase_histories 36件・items 100件・purchase_bank_transfers 8件のまま）、カートもそのまま。**続けて支払方法を代金引換に切り替えて「注文を確定する」を押すと、サンクスページ（/purchase/thanks）へ移動**。purchase_histories id=37（cod、1850/330/4053、delivery_name=UAT振込R6戻る）、items 3件が1件保存され、カートは空 | screenshots/purchase/R6-S-24-guide-pc.png, screenshots/purchase/R6-S-24-pc.png, screenshots/purchase/R6-S-24-reconfirm-pc.png |
+| S-15（回帰） | OK | 対象外 | Stripeの決済ページに円表示（￥3,723、じゃがいも2kg 数量2・単価￥330・￥660、玉ねぎ5kg ￥795、人参2kg ￥418、送料 ￥1,850）。4242 4242 4242 4242（有効期限12/30、CVC 123）で支払うとサンクスページ（/purchase/success?session_id=…）が表示され、purchase_histories id=36（card、1850/0/3723、delivery_name=UAT成功R6カード2）、items 3件（660・795・418）、カートが空。purchase_bank_transfers は増えない（8件のまま）。同じ success URL を開き直すとトップページ（/）へ移動し、データは増えない | screenshots/purchase/R6-S-15-stripe-pc.png, screenshots/purchase/R6-S-15-pc.png |
+| S-16（回帰） | OK | 対象外 | 銀行振込で確定すると /purchase/bank-transfer に銀行名「いろは銀行」・支店名「中央支店」・口座種別「普通」・口座番号 TEST48213081・口座名義「ストライプジャパン（カ　シュウノウダイコウ」・振込金額 3,723円、注文内容（小計1,873円・送料1,850円・合計3,723円）、お届け先が表示される。「振込み」で /purchase/thanks へ。purchase_histories id=38（customer_balance、1850/0/3723、delivery_name=UAT振込R6PC）、items 3件（660・795・418）、purchase_bank_transfers id=9（purchase_history_id=38、いろは銀行・中央支店・futsu・TEST48213081・amount=3723、stripe_payment_intent_id あり。案内ページの表示と一致）、カートが空 | screenshots/purchase/R6-S-16-guide-pc.png, screenshots/purchase/R6-S-16-pc.png |
+
+- 気づいた点（合否には含めていない）：(1) 同じ order_token の再送信（保存済み）は、エラーにならずサンクスページへ誘導される。サンクスページはフラッシュで1回だけ表示される仕様のため、S-28の2回目のリクエストでも「古くなっています」にはならず、サンクスページになった。(2) order_token を付けずに送った場合は「古くなっています」の案内が出ず、送信元のページ（今回は /cart）へ戻るだけだった（購入データは増えない）。実際のフォームには必ず order_token が入っているため、通常は起きない。(3) 「戻る」で購入ページに戻ると order_token が新しく発行される（確定時のものとは別の値）。(4) Playwrightでは、サンクスページの後のブラウザの戻るで古い購入ページ自体は表示されなかった（読み直しでカートページへ戻った）。実際のブラウザのキャッシュ（bfcache）が効く場合の見え方は、ユーザーの実機確認に任せる。
+- コンソールエラー：なし（Stripeの決済ページで `<link rel=preload> uses an unsupported as value` の警告が出たのみ）
+- メール（Mailpit）：対象外（注文確認メールはこのブランチでは作らない）
+- 追加したデータ（前の分に加えて）：purchase_histories に10件（id=29 UAT代引R6PC、id=30 UAT代引R6連打、id=31 UAT代引R6二重、id=32 UAT代引R6別タブ、id=33 UAT代引R6古い画面B、id=34 UAT代引R6古い画面A、id=35 UAT成功R6カード（いずれもcod）、id=36 UAT成功R6カード2（card）、id=37 UAT振込R6戻る（cod）、id=38 UAT振込R6PC（customer_balance））、purchase_history_items に26件（id=33・34は各1件、残り8件は各3件）、purchase_bank_transfers に1件（id=9。purchase_history_id=38）。この結果、purchase_histories は38件・purchase_history_items は106件・purchase_bank_transfers は9件。Stripeのテスト環境にCheckout Session（戻った分1件、支払い済み1件）と銀行振込のPaymentIntent（「戻る」で取り消した分1件、保存した分1件）ができている。ログインユーザー（uat-buy@example.com）のカートは空
+
 ## ユーザー確認チェックリスト
 
-- [ ] カート・商品詳細の「購入する」から購入ページへの流れが自然
-- [ ] 数量・住所・支払方法を変えたときに、送料・合計がすぐ変わるのがわかりやすい
-- [ ] 代引手数料の表示がわかりやすい
-- [ ] 住所追加モーダルの操作と、追加後に住所が選ばれる動きがわかりやすい
-- [ ] エラーメッセージの文言と位置がわかりやすい
-- [ ] Stripeの決済ページ（クレジットカード・銀行振込）に表示される商品名・送料・金額に違和感がない
-- [ ] サンクスページの文言と背景画像の見え方に違和感がない
-- [ ] SPで、数量入力・住所の選択・支払方法のカード・「注文を確定する」が押しやすい（見た目の細部は11月1日以降にFigmaで仕上げる前提）
+- [x] カート・商品詳細の「購入する」から購入ページへの流れが自然
+- [x] 数量・住所・支払方法を変えたときに、送料・合計がすぐ変わるのがわかりやすい
+- [x] 代引手数料の表示がわかりやすい
+- [x] 住所追加モーダルの操作と、追加後に住所が選ばれる動きがわかりやすい
+- [x] エラーメッセージの文言と位置がわかりやすい
+- [x] Stripeの決済ページ（クレジットカード・銀行振込）に表示される商品名・送料・金額に違和感がない
+- [x] サンクスページの文言と背景画像の見え方に違和感がない
+- [x] SPで、数量入力・住所の選択・支払方法のカード・「注文を確定する」が押しやすい（見た目の細部は11月1日以降にFigmaで仕上げる前提）
 
 ## 判定
 
-- 受け入れ：未 / 済（ユーザーが記入する）
-- コメント：
+- 受け入れ：済
+- コメント：チェック項目をすべてクリアしているので受け入れ済としますが、フロントエンド実装後に再度チェックします

@@ -305,31 +305,35 @@ class PurchaseRestoreTest extends TestCase
     }
 
     /**
-     * 使われなくなった代金引換の保存待ちの注文は、購入ページを開いたときに捨てる（あとから購入完了を開いても保存されない）
+     * 保存待ちの注文に代金引換が残っている古いセッションで GET /purchase/success を開いても、購入データを保存しない。
+     * 購入ページへ戻して、お支払いを確認できなかったことを案内する
      */
     #[Test]
-    public function 残っている代金引換の注文は購入ページを開くと捨てられる(): void
+    public function 残っている代金引換の注文は購入完了ページを開いても保存されない(): void
     {
         $this->putOrder(PaymentMethod::Cod);
 
-        $this->actingAs($this->user)->get(route('shop.checkout.index', $this->carrot))->assertOk();
+        $this->actingAs($this->user)
+            ->get(route('shop.checkout.success'))
+            ->assertRedirect(route('shop.checkout.index', $this->carrot))
+            ->assertSessionHasErrors('payment');
 
-        $this->assertNull(session('pending_order'));
-        $this->get(route('shop.checkout.success'))->assertRedirect(route('top.index'));
         $this->assertSame(0, Purchase_history::count());
     }
 
     /**
-     * 「注文を確定する」直後（代金引換）は、購入完了ページへ移動して保存できる
+     * 「注文を確定する」（代金引換）は、その場で保存してサンクスページへ移動する。購入完了ページ（success）を開き直しても二重に保存されない
      */
     #[Test]
-    public function 代金引換は確定直後の購入完了で保存できる(): void
+    public function 代金引換は確定した場で保存されサンクスページへ移動する(): void
     {
         $this->actingAs($this->user)
             ->post(route('shop.checkout.payment'), $this->paymentData($this->user, [$this->carrot->id => 1], ['source' => 'item', 'payment_method' => 'cod']))
-            ->assertRedirect(route('shop.checkout.success'));
+            ->assertRedirect(route('shop.checkout.thanks'));
 
-        $this->get(route('shop.checkout.success'))->assertOk();
+        $this->assertSame(1, Purchase_history::count());
+
+        $this->get(route('shop.checkout.success'))->assertRedirect(route('top.index'));
 
         $this->assertSame(1, Purchase_history::count());
     }

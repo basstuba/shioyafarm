@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Enums\BankTransferCancelResult;
 use App\Enums\CheckoutResult;
+use App\Enums\OrderTokenStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
 use App\Models\Item;
 use App\Models\User;
 use App\Repositories\Interfaces\ItemRepositoryInterface;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
+use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentGatewayInterface;
 use Closure;
@@ -39,8 +41,17 @@ class PurchaseService
      */
     public const string RESTORE_FLASH_KEY = 'restore_pending_order';
 
-    /** 銀行振込のサンクスページを「保存した直後の1回だけ」表示するための合図（セッションのフラッシュのキー） */
+    /** サンクスページ（銀行振込・代金引換）を「保存した直後の1回だけ」表示するための合図（セッションのフラッシュのキー） */
     public const string THANKS_FLASH_KEY = 'purchase_completed';
+
+    /** 別のリクエストが処理中のときのエラーメッセージ（注文は作られていないので、もう一度押してよい） */
+    private const string BUSY_MESSAGE = 'ただいまご注文を処理しています。しばらく待ってから、もう一度お試しください';
+
+    /** 注文トークンが使用済み・不正・期限切れのときのエラーメッセージ（購入ページを開き直したときに、新しいトークンになる） */
+    public const string STALE_MESSAGE = 'この画面は古くなっています。もう一度内容を確認してください';
+
+    /** 支払い済みの銀行振込を保存できなかったときのエラーメッセージ（押し直しは促さない。保存待ちの注文は残してあり、購入ページを開き直したときに保存する） */
+    public const string PAID_PENDING_MESSAGE = 'お支払いは完了しています。ただいま確定処理中のため、しばらくしてから購入ページを開き直してください';
 
     public function __construct(
         private readonly ItemRepositoryInterface $itemRepository,
@@ -50,6 +61,8 @@ class PurchaseService
         private readonly DeliveryAddressService $deliveryAddressService,
         private readonly PaymentGatewayInterface $paymentGateway,
         private readonly PendingOrderStore $pendingOrderStore,
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly OrderTokenStore $orderTokenStore,
     ) {}
 
     /**
@@ -149,51 +162,120 @@ class PurchaseService
     }
 
     /**
-     * 使われなくなった代金引換の保存待ちの注文を捨てる
+     * 購入ページに入れる注文トークンを発行する
      *
-     * 代金引換の保存待ちの注文は、購入完了ページへ移動するまでの間だけ使う。購入ページを開き直したときに残っていたら、
-     * あとから購入完了ページを開いても保存されないよう消す。
-     * カード・銀行振込の注文は、決済ページ側で支払いが済む可能性があるため残す（購入完了ページで決済を確認して保存する）。
+     * 購入ページを開くたびに新しく発行する。ただし、検証エラーなどで戻ってきたとき（フォームの入力を復元するとき）は、
+     * 前のトークンがまだ使われていなければそのまま使い回す。
+     *
+     * @param  string|null  $previous  前の画面で送られたトークン（検証エラーで戻ったときの入力）
      */
-    public function discardStaleCodOrder(User $user): void
+    public function issueOrderToken(User $user, ?string $previous = null): string
     {
-        $order = $this->getPendingOrder($user);
-        if ($order !== null && $order->paymentMethod === PaymentMethod::Cod) {
-            $this->pendingOrderStore->forget();
+        if ($previous !== null && $this->orderTokenStore->status($user->id, $previous) === OrderTokenStatus::Issued) {
+            return $previous;
         }
+
+        return $this->orderTokenStore->issue($user->id);
     }
 
     /**
-     * 「注文を確定する」の処理：注文を再計算して保存待ちにし、遷移先のURLを返す
+     * 「注文を確定する」の処理：注文を再計算し、移動先を返す
      *
-     * - 代金引換：購入完了ページのURL（Stripe を通さない）
-     * - クレジットカード：Stripe Checkout の決済ページのURL
-     * - 銀行振込：Stripe に PaymentIntent を作って振込先を取得し、「振込先のご案内」ページのURL
+     * - 代金引換：Stripe を通さず、ここで購入データを保存して、サンクスページへ移動する
+     * - クレジットカード：保存待ちにして、Stripe Checkout の決済ページへ移動する（購入データは購入完了ページで保存する）
+     * - 銀行振込：Stripe に PaymentIntent を作って振込先を取得し、保存待ちにして「振込先のご案内」ページへ移動する。
+     *   作った時点で Stripe の顧客残高から支払い済みになっていたときは、ここで購入データを保存して、サンクスページへ移動する。
      *
+     * 会員ごとの排他ロックの中で処理する（ボタンの連打・複数タブでの同時送信で、決済ページや PaymentIntent を二重に作らない）。
+     * ロックは数秒（purchase.begin_lock_wait）待ち、取れなければ「処理中」のエラーにする。
+     * ロックの中で、購入ページが発行した1回限りの注文トークンを使用済みにする。使用済み・不正・期限切れのトークンでは注文を作らない
+     * （直前の送信で購入データを保存済みなら、サンクスページへ移動する。そうでなければ購入ページへ戻して、画面が古いことを案内する）。
      * 前の保存待ちの注文を上書きする前に、前の注文の決済を片づける（前の Checkout Session の失効、前の銀行振込のキャンセル。
      * すでに支払い済みだった場合は、その注文の購入データを先に保存する）。
      *
      * @param  array<string, mixed>  $data  PurchaseRequest の検証済みの値
      *
-     * @throws ValidationException 住所・商品が正しくないとき、前の注文の決済を片づけられなかったとき
+     * @throws ValidationException 住所・商品が正しくないとき、注文トークンが使えないとき、前の注文の決済を片づけられなかったとき、別のリクエストが処理中のとき
      * @throws PaymentGatewayException Stripe の Checkout Session・PaymentIntent を作れなかったとき
      */
-    public function beginCheckout(User $user, array $data): string
+    public function beginCheckout(User $user, array $data): CheckoutDestination
     {
-        $order = $this->createPendingOrder($user, $data);
+        $lock = Cache::lock('purchase-begin:'.$user->id, (int) config('purchase.begin_lock_ttl'));
+        try {
+            $lock->block((int) config('purchase.begin_lock_wait'));
+        } catch (LockTimeoutException) {
+            Log::warning('注文確定処理のロックを取得できませんでした', ['user_id' => $user->id]);
 
+            throw ValidationException::withMessages(['payment' => self::BUSY_MESSAGE]);
+        }
+
+        try {
+            return $this->beginCheckoutLocked($user, $data);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * beginCheckout の本体（会員ごとのロックを取った状態で呼ぶ）
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ValidationException
+     * @throws PaymentGatewayException
+     */
+    private function beginCheckoutLocked(User $user, array $data): CheckoutDestination
+    {
+        /** @var array{order_token: string, source: string, items: list<array{item_id: int|string}>} $data */
+        $token = $data['order_token'];
+        $status = $this->orderTokenStore->status($user->id, $token);
+
+        if ($status === OrderTokenStatus::Completed) {
+            // 直前の送信で保存済み（同じ画面からの再送信）。注文は作らず、サンクスページへ
+            return new CheckoutDestination(route('shop.checkout.thanks'), true);
+        }
+
+        if ($status !== OrderTokenStatus::Issued) {
+            Log::warning('使用済み・不正な注文トークンで注文が送信されました', ['user_id' => $user->id]);
+
+            $itemId = $data['source'] === PurchaseSource::Item->value ? (int) ($data['items'][0]['item_id'] ?? 0) : null;
+
+            throw ValidationException::withMessages(['order_token' => self::STALE_MESSAGE])
+                ->redirectTo(route('shop.checkout.index', $itemId > 0 ? $itemId : null));
+        }
+
+        // 住所・商品の検証に通らなかったときはトークンを使わない（購入ページで直して、そのまま送り直せる）
+        /** @var array<string, mixed> $data */
+        $order = $this->createPendingOrder($user, $data);
+        $this->orderTokenStore->markUsed($user->id, $token);
+
+        $destination = $this->proceedCheckout($user, $order);
+
+        if ($destination->completed) {
+            $this->orderTokenStore->markCompleted($user->id, $token);
+        }
+
+        return $destination;
+    }
+
+    /**
+     * 前の注文の決済を片づけてから、支払方法ごとに注文を進める
+     *
+     * @throws ValidationException
+     * @throws PaymentGatewayException
+     */
+    private function proceedCheckout(User $user, PendingOrder $order): CheckoutDestination
+    {
         $this->retirePreviousOrder($user);
 
         if (! $order->paymentMethod->usesBankTransfer() && ! $order->paymentMethod->usesCheckout()) {
-            $this->pendingOrderStore->put($order);
-
-            return route('shop.checkout.success');
+            return $this->saveNow($user, $order, false);
         }
 
         $customerId = $this->ensureStripeCustomer($user);
 
         if ($order->paymentMethod->usesBankTransfer()) {
-            return $this->beginBankTransfer($customerId, $order);
+            return $this->beginBankTransfer($user, $customerId, $order);
         }
 
         $session = $this->paymentGateway->createCheckoutSession(
@@ -211,7 +293,59 @@ class PurchaseService
 
         $this->pendingOrderStore->put($order->withCheckoutSessionId($session->id));
 
-        return $session->url;
+        return new CheckoutDestination($session->url);
+    }
+
+    /**
+     * 保存待ちの注文を、Stripe への確認なしでその場で保存する（代金引換、作った時点で支払い済みだった銀行振込）
+     *
+     * 保存できなかったとき（別のリクエストが処理中・例外）の扱いは、支払い済みかどうかで分ける。
+     * - 支払い済みでない（代金引換）：保存待ちの注文を必ず消す（例外のときも）。まだ何も請求していないため、残すと古い注文が
+     *   購入ページに復元されたり、次の注文の片づけの対象になったりする。押し直してよいと案内する。
+     * - 支払い済み（銀行振込）：保存待ちの注文を残す。購入ページを開いたときに保存する（settlePaidBankTransfer）。
+     *   押し直しは促さない（新しい注文が重複して作られるため）。
+     *
+     * @param  bool  $alreadyPaid  Stripe の顧客残高から支払い済みか
+     *
+     * @throws ValidationException 保存できなかったとき
+     */
+    private function saveNow(User $user, PendingOrder $order, bool $alreadyPaid): CheckoutDestination
+    {
+        $this->pendingOrderStore->put($order);
+
+        $saved = false;
+        try {
+            $saved = $this->completeWithLock($user, fn (): ?CheckoutResult => null)->isSaved();
+        } finally {
+            if (! $saved && ! $alreadyPaid) {
+                $this->pendingOrderStore->forget();
+            }
+        }
+
+        if (! $saved) {
+            throw ValidationException::withMessages(['payment' => $alreadyPaid ? self::PAID_PENDING_MESSAGE : self::BUSY_MESSAGE]);
+        }
+
+        return new CheckoutDestination(route('shop.checkout.thanks'), true);
+    }
+
+    /**
+     * 作った時点で支払い済みだった銀行振込の注文が、保存待ちのまま残っていれば、保存する
+     *
+     * 保存のロックを取れなかった注文（saveNow）を、購入ページを開いたときに保存する。
+     * 振込先の案内を待つ注文ではなく、支払い済み（PaymentIntent があり、振込先がない）の注文だけが対象。
+     * 保存前に Stripe から PaymentIntent を取得し直して、状態と金額を確認する。
+     *
+     * @return CheckoutResult|null 対象の保存待ちの注文がなければ null
+     */
+    public function settlePaidBankTransfer(User $user): ?CheckoutResult
+    {
+        $order = $this->getPendingOrder($user);
+        if ($order === null || ! $order->isPaidBankTransfer()) {
+            return null;
+        }
+
+        return $this->confirmBankTransfer($user);
     }
 
     /**
@@ -247,14 +381,14 @@ class PurchaseService
     }
 
     /**
-     * 購入完了の処理（クレジットカード・代金引換）：決済を確認して購入データを保存する
+     * 購入完了の処理（クレジットカード）：決済を確認して購入データを保存する
      *
      * 保存待ちの注文が無ければ何もしない（再読み込みで二重に保存しない）。
      * - クレジットカード：セッションIDの一致と、Checkout Session が支払い済み（complete かつ paid）であることを確認してから保存する。
-     * - 代金引換：確認なしで保存する。
      * - 銀行振込：ここでは保存しない（案内ページの「振込み」＝ confirmBankTransfer でだけ保存する）。
+     * - 代金引換：ここでは保存しない（「注文を確定する」＝ beginCheckout で保存する。保存待ちに残っていた古い注文は NotPaid として扱う）。
      * 会員ごとの排他ロックの中で、保存待ちの注文を確認し直して保存するため、同時に届いたリクエストでも二重に保存しない。
-     * 保存したら保存待ちの注文を消し、カートから購入した場合はカートを空にする。
+     * 保存したら保存待ちの注文を消し、カートから購入した場合は購入した数量だけカートから減らす。
      */
     public function completeCheckout(User $user, ?string $sessionId): CheckoutResult
     {
@@ -263,7 +397,7 @@ class PurchaseService
                 return CheckoutResult::UseBankTransferConfirmation;
             }
 
-            return $order->paymentMethod->usesCheckout() ? $this->verifyCheckout($order, $sessionId) : null;
+            return $order->paymentMethod->usesCheckout() ? $this->verifyCheckout($order, $sessionId) : CheckoutResult::NotPaid;
         });
     }
 
@@ -343,13 +477,19 @@ class PurchaseService
     }
 
     /**
-     * 保存後の片づけ：保存待ちの注文を消し、カートから購入した場合はカートを空にする
+     * 保存後の片づけ：保存待ちの注文を消し、カートから購入した場合は購入した商品の数量だけをカートから減らす
+     *
+     * カートを空にはしない（購入していない商品や、前の注文を保存する間に入れ替わった新しい注文の商品を消さないため）。
      */
     private function finish(PendingOrder $order): void
     {
         $this->pendingOrderStore->forget();
         if ($order->source === PurchaseSource::Cart) {
-            $this->cartService->clear();
+            $purchased = [];
+            foreach ($order->items as $item) {
+                $purchased[$item['item_id']] = ($purchased[$item['item_id']] ?? 0) + $item['quantity'];
+            }
+            $this->cartService->reduceQuantities($purchased);
         }
     }
 
@@ -406,7 +546,6 @@ class PurchaseService
      * 会員の Stripe Customer を用意する（会員ごとに使い回す）
      *
      * 保存済みの Customer ID を再利用し、無い・Stripe 側で削除されていたときは作り直して保存する。
-     * stripe_customer_id は fillable に含めないため、forceFill で保存する。
      *
      * @throws PaymentGatewayException
      */
@@ -415,20 +554,30 @@ class PurchaseService
         $customerId = $this->paymentGateway->ensureCustomer($user->email, $user->stripe_customer_id);
 
         if ($customerId !== $user->stripe_customer_id) {
-            $user->forceFill(['stripe_customer_id' => $customerId])->save();
+            $this->userRepository->updateStripeCustomerId($user, $customerId);
         }
 
         return $customerId;
     }
 
     /**
-     * 銀行振込の PaymentIntent を作って振込先を保存待ちの注文に入れ、「振込先のご案内」ページのURLを返す
+     * 銀行振込の PaymentIntent を作る
+     *
+     * - 振込待ち（requires_action で振込先あり）：振込先を保存待ちの注文に入れ、「振込先のご案内」ページへ移動する。
+     * - 作った時点で顧客残高から支払い済み（succeeded・processing）：金額が合っていれば、振込先なしで購入データを保存し、
+     *   サンクスページへ移動する（残高が使われたのに注文が残らない状態を避ける）。保存できなかったときは保存待ちの注文を残す（saveNow）。
+     * - それ以外：作った PaymentIntent を取り消してエラーにする。
      *
      * @throws PaymentGatewayException PaymentIntent を作れなかった・振込先を取得できなかったとき
+     * @throws ValidationException 支払い済みだったが、別のリクエストが処理中で保存できなかったとき（押し直しは促さない）
      */
-    private function beginBankTransfer(string $customerId, PendingOrder $order): string
+    private function beginBankTransfer(User $user, string $customerId, PendingOrder $order): CheckoutDestination
     {
         $intent = $this->paymentGateway->createBankTransferIntent($customerId, $order->totalPrice);
+
+        if (in_array($intent->status, ['succeeded', 'processing'], true) && $intent->id !== '' && $intent->amount === $order->totalPrice) {
+            return $this->saveNow($user, $order->withPaymentIntentId($intent->id), true);
+        }
 
         if ($intent->status !== 'requires_action' || $intent->instructions === null || $intent->amount !== $order->totalPrice) {
             // 想定外の状態のまま残さないよう、作った PaymentIntent は取り消す
@@ -443,7 +592,7 @@ class PurchaseService
 
         $this->pendingOrderStore->put($order->withBankTransfer($intent->id, $intent->instructions));
 
-        return route('shop.checkout.bank-transfer');
+        return new CheckoutDestination(route('shop.checkout.bank-transfer'));
     }
 
     /**
@@ -482,7 +631,9 @@ class PurchaseService
     /**
      * 前のカードの Checkout Session を失効させる（支払い済みなら、その注文を保存する）
      *
-     * Stripe に問い合わせられないときはログだけ残して進める（支払い済みかどうかを確認できないため）。
+     * Stripe に問い合わせられないときは、支払い済みかどうかを確認できないため、新しい注文に進まない。
+     *
+     * @throws ValidationException 前の Checkout Session を確認できなかったとき
      */
     private function retireCheckoutSession(User $user, string $sessionId): void
     {
@@ -501,7 +652,7 @@ class PurchaseService
         } catch (PaymentGatewayException $e) {
             Log::error('前の Checkout Session を確認できませんでした', ['message' => $e->getMessage()]);
 
-            return;
+            throw ValidationException::withMessages(['payment' => '前回のお支払いの確認ができませんでした。しばらく時間をおいてから、もう一度お試しください']);
         }
 
         if ($session->isComplete()) {
@@ -643,23 +794,24 @@ class PurchaseService
      * 銀行振込の注文のときだけ、purchase_bank_transfers に保存する行を作る（案内ページに表示した振込先・金額と同じ値）
      *
      * 口座種別は Stripe の値（futsu / toza）のまま保存する。
+     * PaymentIntent を作った時点で支払い済みだった注文は、振込先の案内が無いため、振込先の各項目を null にして PaymentIntent ID と合計金額だけ保存する。
      *
-     * @return array{stripe_payment_intent_id: string, bank_name: string, branch_name: string, account_type: string, account_number: string, account_holder_name: string, amount: int}|null
+     * @return array{stripe_payment_intent_id: string, bank_name: string|null, branch_name: string|null, account_type: string|null, account_number: string|null, account_holder_name: string|null, amount: int}|null
      */
     private function bankTransferRow(PendingOrder $order): ?array
     {
-        if (! $order->paymentMethod->usesBankTransfer() || $order->paymentIntentId === null || $order->bankTransfer === null) {
+        if (! $order->paymentMethod->usesBankTransfer() || $order->paymentIntentId === null) {
             return null;
         }
 
         return [
             'stripe_payment_intent_id' => $order->paymentIntentId,
-            'bank_name' => $order->bankTransfer->bankName,
-            'branch_name' => $order->bankTransfer->branchName,
-            'account_type' => $order->bankTransfer->accountType,
-            'account_number' => $order->bankTransfer->accountNumber,
-            'account_holder_name' => $order->bankTransfer->accountHolderName,
-            'amount' => $order->bankTransfer->amount,
+            'bank_name' => $order->bankTransfer?->bankName,
+            'branch_name' => $order->bankTransfer?->branchName,
+            'account_type' => $order->bankTransfer?->accountType,
+            'account_number' => $order->bankTransfer?->accountNumber,
+            'account_holder_name' => $order->bankTransfer?->accountHolderName,
+            'amount' => $order->bankTransfer->amount ?? $order->totalPrice,
         ];
     }
 

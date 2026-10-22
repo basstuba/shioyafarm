@@ -30,7 +30,7 @@ class PurchaseRetirePreviousOrderTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * 代金引換で「注文を確定する」（前の注文を片づけたあとに、Stripe を通さず購入完了ページへ移動する）
+     * 代金引換で「注文を確定する」（前の注文を片づけたあとに、Stripe を通さずその場で保存してサンクスページへ移動する）
      *
      * @param  array<string, Item>  $items
      */
@@ -52,11 +52,34 @@ class PurchaseRetirePreviousOrderTest extends TestCase
             $mock->shouldReceive('expireCheckoutSession')->once()->with('cs_test_old')->andReturn(new CheckoutSessionData('cs_test_old', null, 'expired', 'unpaid'));
         });
 
-        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.success'));
+        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.thanks'));
 
-        $this->assertSame('cod', session('pending_order')['payment_method']);
-        $this->assertNull(session('pending_order')['checkout_session_id']);
-        $this->assertSame(0, Purchase_history::count());
+        // 前のカードの注文は保存されず、新しい注文（代金引換）だけが保存されている
+        $this->assertSame('cod', Purchase_history::sole()->payment_method);
+        $this->assertNull(session('pending_order'));
+    }
+
+    /**
+     * 前の注文を保存しても、カートから消えるのは前の注文で購入した商品の数量だけ。購入していない商品はカートに残る
+     */
+    #[Test]
+    public function 前の注文の保存でカートの他の商品は消えない(): void
+    {
+        [$user, $items] = $this->makeCartScenario();
+        $other = $this->makeItem('かぼちゃ', 3, 500);
+        session(['cart' => [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1, $other->id => 2]]);
+        $this->putPending($user, $items, PaymentMethod::Card, 'cs_test_paid');
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('retrieveCheckoutSession')->twice()->with('cs_test_paid')->andReturn(new CheckoutSessionData('cs_test_paid', null, 'complete', 'paid'));
+        });
+
+        // 新しい注文は、商品詳細から購入するかぼちゃ（カートの商品ではない）
+        $this->actingAs($user)
+            ->post(route('shop.checkout.payment'), $this->paymentData($user, [$other->id => 1], ['source' => 'item', 'payment_method' => 'cod']))
+            ->assertRedirect(route('shop.checkout.thanks'));
+
+        $this->assertSame(2, Purchase_history::count());
+        $this->assertSame([$other->id => 2], session('cart'));
     }
 
     /**
@@ -81,7 +104,7 @@ class PurchaseRetirePreviousOrderTest extends TestCase
                 }
             });
 
-            $this->actingAs($user)->post(route('shop.checkout.payment'), [...$data, 'payment_method' => $method])->assertRedirect();
+            $this->actingAs($user)->post(route('shop.checkout.payment'), [...$data, 'payment_method' => $method, 'order_token' => $this->newOrderToken($user)])->assertRedirect();
         }
 
         $this->assertSame('pi_new', session('pending_order')['payment_intent_id']);
@@ -100,10 +123,10 @@ class PurchaseRetirePreviousOrderTest extends TestCase
             $mock->shouldReceive('expireCheckoutSession')->once()->andThrow(new PaymentGatewayException('失効できません'));
         });
 
-        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.success'));
+        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.thanks'));
 
-        $this->assertSame(0, Purchase_history::count());
-        $this->assertSame('cod', session('pending_order')['payment_method']);
+        $this->assertSame('cod', Purchase_history::sole()->payment_method);
+        $this->assertNull(session('pending_order'));
     }
 
     /**
@@ -124,16 +147,15 @@ class PurchaseRetirePreviousOrderTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('shop.checkout.payment'), $this->paymentData($user, $quantities, ['payment_method' => 'cod']))
-            ->assertRedirect(route('shop.checkout.success'));
+            ->assertRedirect(route('shop.checkout.thanks'));
 
         // 前の注文（カード・山田花子宛て）が保存されている
-        $history = Purchase_history::sole();
-        $this->assertSame('card', $history->payment_method);
+        $history = Purchase_history::where('payment_method', 'card')->sole();
         $this->assertSame('山田花子', $history->delivery_name);
         $this->assertSame(3723, $history->total_price);
-        // 新しい注文（代金引換）が保存待ちになっている
-        $this->assertSame('cod', session('pending_order')['payment_method']);
-        $this->assertSame(4053, session('pending_order')['total_price']);
+        // 新しい注文（代金引換）も保存されている
+        $this->assertSame(4053, Purchase_history::where('payment_method', 'cod')->sole()->total_price);
+        $this->assertNull(session('pending_order'));
     }
 
     /**
@@ -153,27 +175,43 @@ class PurchaseRetirePreviousOrderTest extends TestCase
             $mock->shouldReceive('expireCheckoutSession')->once()->andThrow(new PaymentGatewayException('Only open sessions can be expired'));
         });
 
-        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.success'));
+        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.thanks'));
 
-        $this->assertSame(1, Purchase_history::count());
-        $this->assertSame('card', Purchase_history::sole()->payment_method);
+        // 前のカードの注文と、新しい代金引換の注文
+        $this->assertSame(2, Purchase_history::count());
+        $this->assertSame(1, Purchase_history::where('payment_method', 'card')->count());
     }
 
     /**
-     * 前の Session を Stripe に問い合わせられなかったとき（通信エラー）は、ログだけ残して新しい注文を進める
+     * 前の Session を Stripe に問い合わせられなかったとき（通信エラー）は、支払い済みかどうかを確認できないため、
+     * 新しい注文（代金引換・カード・銀行振込）を進めずにエラーにする。前の注文は残す
      */
     #[Test]
-    public function 前のsessionを確認できなくても新しい注文は進める(): void
+    public function 前のsessionを確認できなければ新しい注文は進めない(): void
     {
         [$user, $items] = $this->makeCartScenario();
-        $this->putPending($user, $items, PaymentMethod::Card, 'cs_test_old');
-        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('retrieveCheckoutSession')->once()->andThrow(new PaymentGatewayException('通信エラー'));
-        });
+        $data = $this->paymentData($user, [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1]);
 
-        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.success'));
+        foreach (['cod', 'card', 'customer_balance'] as $method) {
+            $this->putPending($user, $items, PaymentMethod::Card, 'cs_test_old');
+            $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+                $this->stubCustomer($mock);
+                $mock->shouldReceive('retrieveCheckoutSession')->once()->with('cs_test_old')->andThrow(new PaymentGatewayException('通信エラー'));
+                $mock->shouldNotReceive('expireCheckoutSession');
+                $mock->shouldNotReceive('createCheckoutSession');
+                $mock->shouldNotReceive('createBankTransferIntent');
+            });
 
-        $this->assertSame('cod', session('pending_order')['payment_method']);
+            $this->actingAs($user)
+                ->from(route('shop.checkout.index'))
+                ->post(route('shop.checkout.payment'), [...$data, 'payment_method' => $method, 'order_token' => $this->newOrderToken($user)])
+                ->assertRedirect(route('shop.checkout.index'))
+                ->assertSessionHasErrors(['payment' => '前回のお支払いの確認ができませんでした。しばらく時間をおいてから、もう一度お試しください']);
+
+            // 前の注文は残り、新しい注文は保存されない
+            $this->assertSame('cs_test_old', session('pending_order')['checkout_session_id']);
+            $this->assertSame(0, Purchase_history::count());
+        }
     }
 
     /**
@@ -216,11 +254,13 @@ class PurchaseRetirePreviousOrderTest extends TestCase
             $mock->shouldReceive('retrieveBankTransferIntent')->twice()->with('pi_test_paid')->andReturn(new BankTransferIntentData('pi_test_paid', 'succeeded', 3723, null));
         });
 
-        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.success'));
+        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.thanks'));
 
-        $this->assertSame('customer_balance', Purchase_history::sole()->payment_method);
+        // 前の銀行振込の注文と、新しい代金引換の注文
+        $this->assertSame('customer_balance', Purchase_history::where('payment_method', 'customer_balance')->sole()->payment_method);
         $this->assertSame(1, Purchase_bank_transfer::count());
-        $this->assertSame('cod', session('pending_order')['payment_method']);
+        $this->assertSame(1, Purchase_history::where('payment_method', 'cod')->count());
+        $this->assertNull(session('pending_order'));
     }
 
     /**
@@ -269,9 +309,11 @@ class PurchaseRetirePreviousOrderTest extends TestCase
             $mock->shouldReceive('retrieveBankTransferIntent')->once()->andReturn(new BankTransferIntentData('pi_test_old', 'canceled', 3723, null));
         });
 
-        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.success'));
+        $this->orderByCod($user, $items)->assertRedirect(route('shop.checkout.thanks'));
 
-        $this->assertSame('cod', session('pending_order')['payment_method']);
-        $this->assertNull(session('pending_order')['payment_intent_id']);
+        // 前の銀行振込の注文は保存されず、新しい注文（代金引換）だけが保存されている
+        $this->assertSame('cod', Purchase_history::sole()->payment_method);
+        $this->assertSame(0, Purchase_bank_transfer::count());
+        $this->assertNull(session('pending_order'));
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Purchase_history;
 use App\Services\Payment\BankTransferInstructions;
 use App\Services\Payment\BankTransferIntentData;
 use App\Services\Payment\CheckoutSessionData;
+use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentGatewayInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -24,23 +25,20 @@ class PurchaseCompletionLockTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * 同時に届いた2つ目のリクエスト（セッションに保存待ちの注文が残っている）は、代金引換でも二重に保存されず、500にもならない
+     * 代金引換の「注文を確定する」は、その場で購入データを保存し、保存待ちの注文を残さず、購入したカートの商品を減らす
      */
     #[Test]
-    public function 代金引換の同時リクエストでも二重に保存されない(): void
+    public function 代金引換の注文を確定すると保存され保存待ちは残らない(): void
     {
         [$user, $items] = $this->makeCartScenario();
-        $order = $this->putPending($user, $items, PaymentMethod::Cod);
-        $cart = session('cart');
 
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertOk()->assertViewIs('shop.purchase_thanks');
-
-        session(['pending_order' => $order->toArray(), 'cart' => $cart]);
-        $this->get(route('shop.checkout.success'))->assertOk()->assertViewIs('shop.purchase_thanks');
+        $this->actingAs($user)
+            ->post(route('shop.checkout.payment'), $this->paymentData($user, [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1], ['payment_method' => 'cod']))
+            ->assertRedirect(route('shop.checkout.thanks'));
 
         $this->assertSame(1, Purchase_history::count());
         $this->assertNull(session('pending_order'));
-        $this->assertNull(session('cart'));
+        $this->assertEmpty(session('cart'));
     }
 
     /**
@@ -72,30 +70,34 @@ class PurchaseCompletionLockTest extends TestCase
     {
         [$user, $items] = $this->makeCartScenario();
 
-        $this->putPending($user, $items, PaymentMethod::Cod);
-        $this->actingAs($user)->get(route('shop.checkout.success'))->assertOk();
+        $data = $this->paymentData($user, [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1], ['payment_method' => 'cod']);
 
-        $this->putPending($user, $items, PaymentMethod::Cod);
-        $this->get(route('shop.checkout.success'))->assertOk();
+        $this->actingAs($user)->post(route('shop.checkout.payment'), $data)->assertRedirect(route('shop.checkout.thanks'));
+        // 別の画面（別の注文トークン）からの注文なので、別の注文として保存される
+        $this->post(route('shop.checkout.payment'), [...$data, 'order_token' => $this->newOrderToken($user)])->assertRedirect(route('shop.checkout.thanks'));
 
         $this->assertSame(2, Purchase_history::count());
     }
 
     /**
      * ロックを取れない（別のリクエストが処理中のまま待っても終わらない）ときは、500にせず、保存もせずに「処理中」を案内する。
-     * 保存待ちの注文は残す（カード・代金引換）
+     * 保存待ちの注文は残す
      */
     #[Test]
     public function ロックを取れないときは処理中を案内する(): void
     {
         config(['purchase.complete_lock_wait' => 0]);
         [$user, $items] = $this->makeCartScenario();
-        $this->putPending($user, $items, PaymentMethod::Cod);
+        $this->putPending($user, $items, PaymentMethod::Card, 'cs_test_paid');
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('retrieveCheckoutSession')->once()->with('cs_test_paid')
+                ->andReturn(new CheckoutSessionData('cs_test_paid', null, 'complete', 'paid'));
+        });
         $lock = Cache::lock('purchase-complete:'.$user->id, 30);
         $this->assertTrue($lock->get());
 
         $this->actingAs($user)
-            ->get(route('shop.checkout.success'))
+            ->get(route('shop.checkout.success', ['session_id' => 'cs_test_paid']))
             ->assertStatus(503)
             ->assertViewIs('shop.payment_pending')
             ->assertSee('ただいまご注文を処理しています')
@@ -106,8 +108,86 @@ class PurchaseCompletionLockTest extends TestCase
 
         // ロックが解放されたあとは保存できる
         $lock->release();
-        $this->get(route('shop.checkout.success'))->assertOk();
+        $this->get(route('shop.checkout.success', ['session_id' => 'cs_test_paid']))->assertOk();
         $this->assertSame(1, Purchase_history::count());
+    }
+
+    /**
+     * 代金引換の「注文を確定する」で保存のロックを取れないときは、保存せず、保存待ちの注文も残さず、購入ページへ戻して「処理中」を案内する
+     */
+    #[Test]
+    public function 代金引換で保存のロックを取れないときは購入ページへ戻る(): void
+    {
+        config(['purchase.complete_lock_wait' => 0]);
+        [$user, $items] = $this->makeCartScenario();
+        $lock = Cache::lock('purchase-complete:'.$user->id, 30);
+        $this->assertTrue($lock->get());
+
+        $this->actingAs($user)
+            ->from(route('shop.checkout.index'))
+            ->post(route('shop.checkout.payment'), $this->paymentData($user, [$items['potato']->id => 2], ['payment_method' => 'cod']))
+            ->assertRedirect(route('shop.checkout.index'))
+            ->assertSessionHasErrors('payment');
+
+        $this->assertSame(0, Purchase_history::count());
+        $this->assertNull(session('pending_order'));
+    }
+
+    /**
+     * 「注文を確定する」の処理中（会員ごとのロックが取られている間）に届いた再送信は、待っても取れなければ、何も作らず、
+     * 購入ページへ戻して「処理中」を案内する（注文トークンは使わないので、ロックが解放されたあとに同じ画面から確定できる）
+     */
+    #[Test]
+    public function 注文確定の処理中の再送信は処理中を案内する(): void
+    {
+        config(['purchase.begin_lock_wait' => 0]);
+        [$user, $items] = $this->makeCartScenario();
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $mock->shouldNotReceive('ensureCustomer');
+            $mock->shouldNotReceive('createCheckoutSession');
+            $mock->shouldNotReceive('createBankTransferIntent');
+        });
+        $lock = Cache::lock('purchase-begin:'.$user->id, 30);
+        $this->assertTrue($lock->get());
+        $data = $this->paymentData($user, [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1]);
+
+        foreach (['card', 'customer_balance', 'cod'] as $method) {
+            $this->actingAs($user)
+                ->from(route('shop.checkout.index'))
+                ->post(route('shop.checkout.payment'), [...$data, 'payment_method' => $method])
+                ->assertRedirect(route('shop.checkout.index'))
+                ->assertSessionHasErrors(['payment' => 'ただいまご注文を処理しています。しばらく待ってから、もう一度お試しください']);
+        }
+
+        $this->assertSame(0, Purchase_history::count());
+        $this->assertNull(session('pending_order'));
+
+        // ロックを解放すれば、もう一度確定できる
+        $lock->release();
+        $this->post(route('shop.checkout.payment'), [...$data, 'payment_method' => 'cod'])->assertRedirect(route('shop.checkout.thanks'));
+        $this->assertSame(1, Purchase_history::count());
+    }
+
+    /**
+     * 「注文を確定する」の処理のあとは（Stripe のエラーで失敗したときも）ロックが解放されている
+     */
+    #[Test]
+    public function 注文確定のあとはロックが解放される(): void
+    {
+        [$user, $items] = $this->makeCartScenario();
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $this->stubCustomer($mock);
+            $mock->shouldReceive('createCheckoutSession')->once()->andThrow(new PaymentGatewayException('通信エラー'));
+        });
+
+        $this->actingAs($user)
+            ->from(route('shop.checkout.index'))
+            ->post(route('shop.checkout.payment'), $this->paymentData($user, [$items['potato']->id => 2]))
+            ->assertSessionHasErrors('payment');
+
+        $lock = Cache::lock('purchase-begin:'.$user->id, 30);
+        $this->assertTrue($lock->get());
+        $lock->release();
     }
 
     /**

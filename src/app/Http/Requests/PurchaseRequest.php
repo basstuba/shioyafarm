@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
+use App\Services\PurchaseService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Rule;
  *
  * 設計書の「商品ID・商品数量」は、カートの複数商品を購入するため `items.*.item_id` / `items.*.quantity` の配列にしている。
  * 金額（単価・送料・合計）はフォームの値を受け取らず、サーバー側でDBと config/shipping.php から再計算する。
+ * 注文トークン（order_token）は、購入ページが発行した1回限りのトークンで、二重送信による注文の重複を防ぐ。
  */
 class PurchaseRequest extends FormRequest
 {
@@ -41,6 +43,8 @@ class PurchaseRequest extends FormRequest
             'address_id' => ['required', 'string', 'regex:/^(user|delivery)_[0-9]+$/'],
             'delivery_tell' => 'required|digits_between:10,11|max:15',
             'payment_method' => ['required', 'string', 'max:25', Rule::in(PaymentMethod::values())],
+            // 購入ページが発行した1回限りの注文トークン（使用済みかどうかは、排他ロックの中で確認する）
+            'order_token' => 'required|string|max:100',
         ];
     }
 
@@ -77,6 +81,9 @@ class PurchaseRequest extends FormRequest
             'delivery_tell.max' => 'お届け先電話番号は15文字以内で入力してください',
             'payment_method.required' => 'お支払い方法を選択してください',
             'payment_method.in' => 'お支払い方法を選択してください',
+            'order_token.required' => PurchaseService::STALE_MESSAGE,
+            'order_token.string' => PurchaseService::STALE_MESSAGE,
+            'order_token.max' => PurchaseService::STALE_MESSAGE,
         ];
     }
 }

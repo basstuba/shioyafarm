@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Stripe\ApiRequestor;
 use Stripe\HttpClient\ClientInterface;
+use Stripe\HttpClient\CurlClient;
 
 /**
  * Stripe の決済サービスのテスト
@@ -24,6 +25,8 @@ class StripePaymentGatewayTest extends TestCase
     protected function tearDown(): void
     {
         ApiRequestor::setHttpClient(null);
+        // SDK の既定のタイムアウトに戻す（他のテストに影響させない）
+        CurlClient::instance()->setTimeout(CurlClient::DEFAULT_TIMEOUT)->setConnectTimeout(CurlClient::DEFAULT_CONNECT_TIMEOUT);
         parent::tearDown();
     }
 
@@ -110,6 +113,23 @@ class StripePaymentGatewayTest extends TestCase
             ['name' => 'じゃがいも 2kg', 'unit_amount' => 330, 'quantity' => 2],
             ['name' => '送料', 'unit_amount' => 940, 'quantity' => 1],
         ];
+    }
+
+    /**
+     * Stripe への通信のタイムアウトは、指定した値（接続・全体）にする。既定は接続5秒・全体20秒（SDK の既定は接続30秒・全体80秒）
+     */
+    #[Test]
+    public function stripeへの通信のタイムアウトを設定する(): void
+    {
+        $this->fakeStripe(['get /v1/checkout/sessions/cs_test_t' => ['id' => 'cs_test_t', 'status' => 'open', 'payment_status' => 'unpaid']]);
+
+        (new StripePaymentGateway('sk_test_dummy', 7, 3))->retrieveCheckoutSession('cs_test_t');
+        $this->assertSame(7, CurlClient::instance()->getTimeout());
+        $this->assertSame(3, CurlClient::instance()->getConnectTimeout());
+
+        (new StripePaymentGateway('sk_test_dummy'))->retrieveCheckoutSession('cs_test_t');
+        $this->assertSame(20, CurlClient::instance()->getTimeout());
+        $this->assertSame(5, CurlClient::instance()->getConnectTimeout());
     }
 
     /**

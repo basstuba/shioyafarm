@@ -133,7 +133,7 @@ class StripeCustomerTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('shop.checkout.payment'), $this->paymentData($user, [$items['potato']->id => 2, $items['onion']->id => 1, $items['carrot']->id => 1], ['payment_method' => 'cod']))
-            ->assertRedirect(route('shop.checkout.success'));
+            ->assertRedirect(route('shop.checkout.thanks'));
 
         $this->assertNull($user->fresh()->stripe_customer_id);
     }

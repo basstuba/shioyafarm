@@ -3,7 +3,7 @@
 namespace App\Enums;
 
 /**
- * 購入完了処理（カードの GET /purchase/success、代引の購入完了、銀行振込の「振込み」）の結果
+ * 購入完了処理（カードの GET /purchase/success、銀行振込の「振込み」、代金引換・支払い済み銀行振込の「注文を確定する」）の結果
  */
 enum CheckoutResult
 {
@@ -28,7 +28,7 @@ enum CheckoutResult
     /** 同時に届いた別のリクエストが処理中で、待っても終わらなかった */
     case Busy;
 
-    /** 銀行振込の注文で、購入データの保存は案内ページの「振込み」（POST）でだけ行う */
+    /** 銀行振込の注文で、GET /purchase/success では保存しない（案内ページの「振込み」でだけ保存する） */
     case UseBankTransferConfirmation;
 
     /**

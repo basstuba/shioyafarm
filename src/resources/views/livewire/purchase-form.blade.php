@@ -6,10 +6,13 @@
             <a href="{{ route('shop.items.index') }}" class="inline-flex min-h-11 items-center font-maru text-base underline md:text-lg">商品一覧に戻る</a>
         </div>
     @else
-        {{-- 数量・住所・支払方法の操作は Livewire、「注文を確定する」は通常のフォーム送信（エラーはサーバー側で検証して表示する） --}}
-        <form method="POST" action="{{ route('shop.checkout.payment') }}" novalidate class="flex flex-col gap-6 md:gap-8">
+        {{-- 数量・住所・支払方法の操作は Livewire、「注文を確定する」は通常のフォーム送信（エラーはサーバー側で検証して表示する）。
+             送信中は「注文を確定する」を押せなくする（二重送信の防止。ブラウザの「戻る」で戻ったときは押せる状態に戻す） --}}
+        <form method="POST" action="{{ route('shop.checkout.payment') }}" novalidate class="flex flex-col gap-6 md:gap-8" x-data="{ submitting: false }" x-on:submit="submitting = true" x-on:pageshow.window="submitting = false">
             @csrf
             <input type="hidden" name="source" value="{{ $source }}">
+            {{-- 二重送信を防ぐ1回限りの注文トークン（購入ページを開いたときに発行し、再描画では変わらない） --}}
+            <input type="hidden" name="order_token" value="{{ $orderToken }}">
 
             <div class="flex flex-col gap-6 rounded-[20px] bg-white px-4 py-6 shadow-card md:gap-8 md:px-10 md:py-10">
                 <h1 class="font-maru text-2xl text-accent md:text-3xl">ご注文内容</h1>
@@ -143,6 +146,9 @@
 
             <div class="flex flex-col items-center gap-5 text-center">
                 <p class="font-maru text-base text-primary-hover md:text-lg">ご注文内容をご確認のうえ、よろしければ「注文を確定する」ボタンを押してください</p>
+                @error('order_token')
+                    <p class="text-base text-danger" role="alert">{{ $message }}</p>
+                @enderror
                 @error('payment')
                     <p class="text-base text-danger" role="alert">{{ $message }}</p>
                 @enderror
@@ -150,7 +156,7 @@
                     <p class="text-base text-danger" role="alert">{{ $message }}</p>
                 @enderror
                 {{-- 送料を計算できない住所のときは押せない（サーバー側でも、送料を計算できない住所の注文はエラーにする） --}}
-                <x-filled-button :disabled="$shippingError !== null" class="disabled:cursor-not-allowed disabled:opacity-60">注文を確定する</x-filled-button>
+                <x-filled-button :disabled="$shippingError !== null" x-bind:disabled="submitting || {{ $shippingError !== null ? 'true' : 'false' }}" class="disabled:cursor-not-allowed disabled:opacity-60">注文を確定する</x-filled-button>
                 <a href="{{ route('shop.items.index') }}" class="inline-flex min-h-11 items-center font-maru text-base underline md:text-lg">商品一覧に戻る</a>
             </div>
         </form>
