@@ -92,4 +92,23 @@ class ReservationLimitServiceTest extends TestCase
         $this->assertSame(5, $service->remaining($item));
         $this->assertTrue($service->isClosed($other));
     }
+
+    /**
+     * 残数を取得済みのときは、集計せずに残数から受付終了と数量の上限を求める
+     */
+    #[Test]
+    public function 残数から受付終了と数量の上限を求める(): void
+    {
+        $service = app(ReservationLimitService::class);
+
+        $this->assertTrue($service->isClosedByRemaining(0));
+        $this->assertFalse($service->isClosedByRemaining(1));
+        $this->assertFalse($service->isClosedByRemaining(null));
+
+        $this->assertSame(0, $service->maxQuantityByRemaining(0));
+        $this->assertSame(3, $service->maxQuantityByRemaining(3));
+        $this->assertSame(10, $service->maxQuantityByRemaining(10));
+        $this->assertSame(10, $service->maxQuantityByRemaining(200));
+        $this->assertSame(10, $service->maxQuantityByRemaining(null));
+    }
 }

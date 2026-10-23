@@ -155,6 +155,29 @@ S-12 は、UAT予約商品（id=12）が前回までのS-13で予約可能数に
 - コンソールエラー：なし（browser_console_messages で error 0件）
 - 追加したデータ（再実施2）：items に1件（id=13「UAT予約商品R2」。is_reserved_only=true、weight=5、price=1000、reservation_limit=3、img_url は北の恵みセットと同じ）。reservations に2件（id=12 別会員 uat-header@example.com（user_id=2）の「UAT既存予約R2」（item=13、数量1、card）、id=13 UAT再実施2-S15（user_id=3、customer_balance））。これで reservations は13件。reservation_bank_transfers に1件（id=8。reservation_id=13）。purchase_histories に1件（id=43 UAT再実施2-P-S17代引（cod））、purchase_history_items に3件。Stripeのテスト環境に銀行振込のPaymentIntentが1件できている。uat-buy@example.com のカートは空（確認のため、じゃがいも2kg×2・玉ねぎ5kg・人参2kgを追加して購入で消化した）
 
+## リファクタ後の再実施（refactor/checkout、2026-10-23）
+
+実施日：2026-10-23（PCのみ）。変更内容：購入・予約のコントローラーの応答（リダイレクト先・エラー文言・フラッシュ・503の再読み込み案内）を共通クラス（CheckoutResponder）にまとめた／数量を1〜10に収める処理を CartService::clampQuantity にまとめた／予約ページの最初の表示でコントローラーが取得した商品と数量の上限を Livewire に渡すようにした（数量の変更時は従来どおり再集計）。前の結果はそのまま残している。
+
+S-12・S-13 は、UAT予約商品R2（id=13）の残数が足りなくなる流れを避けるため、新しく「UAT予約商品R3」（id=14。予約限定、重さ5kg、価格1,000円、予約可能数3）を追加し、別の会員（uat-header@example.com）の予約を数量1で1件追加して実施した。
+
+| ID | PC | SP | 備考 | スクリーンショット |
+|---|---|---|---|---|
+| S-2 | OK | -（対象外） | 商品詳細（北の恵みセット10kg）の「予約する」（リンク先 /reservation/11）から予約ページへ。北の恵みセット 10kg×1、小計1,450円・送料1,530円・合計2,980円。氏名「UAT購入太郎」・電話09011112222・住所「北海道札幌市UAT1-1」（確認用お届け先住所も同じ）。支払方法はクレジットカード・銀行振込の2つのみ（代金引換なし）。数量の入力上限は10。横スクロールなし（scrollWidth=clientWidth） | screenshots/reservation/R3-S-2-pc.png |
+| S-4 | OK | -（対象外） | 数量を2にして欄を離れると、再読み込みなし（ページ上の目印が残る）で小計2,900円・送料2,190円・合計5,090円に更新 | screenshots/reservation/R3-S-4-pc.png |
+| S-10 | OK | -（対象外） | 氏名を変え、数量に0・11を入力して欄を離れずに「予約を確定する」を直接クリック。0は「商品の数は1個以上にしてください」、11は「商品の数は10個以下にしてください」が表示され、氏名（UAT R3-S10-0／UAT R3-S10-11）・数量（0／11）の入力が残る。通信は livewire/update のあとに reservation/payment のPOSTが1回。予約データは増えない（15件のまま） | screenshots/reservation/R3-S-10-0-pc.png、screenshots/reservation/R3-S-10-11-pc.png |
+| S-12 | OK | -（対象外） | UAT予約商品R3（id=14、別会員の予約1件あり）の予約ページで数量の入力上限は2（初期表示は小計1,000円・送料1,230円・合計2,230円）。数量3にして欄を離れると「予約可能数を超えています（残り2個）（数量は1個のままです）」、「予約を確定する」後は「予約可能数を超えています（残り2個）」が表示され、予約されない（数量欄は3のまま、予約データは増えない） | screenshots/reservation/R3-S-12-blur-pc.png、screenshots/reservation/R3-S-12-pc.png |
+| S-13 | OK | -（対象外） | 数量2・銀行振込で予約を完了（振込先のご案内：振込金額3,530円＝小計2,000円＋送料1,530円 → 「振込み」で /reservation/thanks）。reservations id=16（delivery_name=UAT R3-S13、item=14、quantity=2、customer_balance、shipping_fee=1530、total_price=3530）、reservation_bank_transfers id=9（reservation_id=16、amount=3530）が保存され、item=14 の合計数量は3。商品詳細（/items/14）は「予約受付終了」で「予約する」リンクなし。/reservation/14 を直接開くと /items/14 へ戻り「この商品の予約受付は終了しました」が表示 | screenshots/reservation/R3-S-13-bank-pc.png、screenshots/reservation/R3-S-13-thanks-pc.png、screenshots/reservation/R3-S-13-detail-pc.png、screenshots/reservation/R3-S-13-redirect-pc.png |
+| S-14 | OK | -（対象外） | カードで確定→Stripeの決済ページに「北の恵みセット 10kg ￥1,450」「送料 ￥1,530」、合計￥2,980（円表示）。4242 4242 4242 4242 で支払い後 /reservation/success?session_id=… にサンクスページが表示。reservations id=17（delivery_name=UAT R3-S14カード、item=11、quantity=1、price=1450、subtotal=1450、shipping_fee=1530、total_price=2980、payment_method=card、お届け先は北海道札幌市UAT1-1）が保存。カートの確認：S-14のあとにカートへ人参2kg×1を入れ、続くS-15（予約）のあとにカートページを開いたところ人参2kg×1のまま（S-14の直後ではなくS-15後の確認） | screenshots/reservation/R3-S-14-stripe-pc.png、screenshots/reservation/R3-S-14-pc.png |
+| S-15 | OK | -（対象外） | 銀行振込で確定→振込先のご案内（いろは銀行／中央支店／普通／TEST48213081／ストライプジャパン（カ　シュウノウダイコウ／振込金額2,980円、ご予約内容 北の恵みセット 10kg × 1個、小計1,450円・送料1,530円・合計2,980円、お届け先）。「振込み」で /reservation/thanks。reservations id=18（delivery_name=UAT R3-S15振込、customer_balance、shipping_fee=1530、total_price=2980）、reservation_bank_transfers id=10（reservation_id=18、amount=2980）。予約後もカートは人参2kg×1のまま（予約してもカートは変わらない） | screenshots/reservation/R3-S-15-bank-pc.png、screenshots/reservation/R3-S-15-pc.png |
+| S-16 | OK | -（対象外） | 氏名「UAT予約戻る」・電話08012345678・数量2・東京都UAT区登録町9-9-9・銀行振込で確定（振込金額5,610円）→「戻る」で /reservation/11 に戻り、氏名・電話・数量・住所・支払方法（銀行振込）がすべて残り、金額も小計2,900円・送料2,710円・合計5,610円のまま。予約データは増えない（19件のまま）、reservation_bank_transfers も増えない（11件のまま） | screenshots/reservation/R3-S-16-bank-pc.png、screenshots/reservation/R3-S-16-pc.png |
+| S-17 | OK | -（対象外） | カードで確定→Stripeの決済ページ（ヘッダーの「戻る」リンク）で戻ると /reservation/11 に戻り、氏名「UAT予約Stripe戻るR3」・支払方法（クレジットカード）が残る。予約データは増えない（19件のまま） | screenshots/reservation/R3-S-17-pc.png |
+| S-19 | OK | -（対象外） | カード：成功直後のあと、サンクスページの再読み込み・同じURL（session_id付き）の開き直し・/reservation/success・/reservation/thanks の直接アクセスはすべてトップページ（/）へ。銀行振込（予約id=19、delivery_name=UAT R3-S19振込）：サンクスページの再読み込みでトップへ、ブラウザの戻るで「振込先のご案内」（/reservation/bank-transfer）が開き、「振込み」を押すとトップへ。続けて /reservation/success と /reservation/thanks を直接開いてもトップへ。予約データは増えない（19件・reservation_bank_transfers 11件のまま） | screenshots/reservation/R3-S-19-reload-pc.png |
+
+- コンソールエラー：なし（browser_console_messages で error 0件）
+- メール（MailHog）：対象外
+- 追加したデータ（リファクタ後の再実施）：items に1件（id=14「UAT予約商品R3」。is_reserved_only=true、weight=5、price=1000、reservation_limit=3、img_url は北の恵みセットと同じ）。reservations に5件（id=15 別会員 uat-header@example.com（user_id=2）の「UAT既存予約R3」（item=14、数量1、card）、id=16 UAT R3-S13（item=14、数量2、customer_balance）、id=17 UAT R3-S14カード（item=11、card）、id=18 UAT R3-S15振込（item=11、customer_balance）、id=19 UAT R3-S19振込（item=11、customer_balance）。id=16〜19 は user_id=3）。これで reservations は19件（id=14 は本実施前にユーザーが手で登録した test@test.com（user_id=1）の予約）。reservation_bank_transfers に3件（id=9〜11。reservation_id=16、18、19）。uat-buy@example.com のセッションのカートは、S-14以降の確認用に人参2kg×1を追加し、その後の購入のUATで消化した。Stripeのテスト環境にCheckout Session（支払い済み1件、「戻る」1件）と銀行振込のPaymentIntent（「戻る」の分を含む数件）ができている
+
 ## ユーザー確認チェックリスト
 
 - [x] 商品詳細の「予約する」から予約ページ、サンクスページまでの流れが自然

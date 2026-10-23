@@ -318,4 +318,19 @@ class CartServiceTest extends TestCase
 
         $this->assertSame([], $this->session->get('cart'));
     }
+
+    /**
+     * 数量は1〜10に収める（範囲内はそのまま、範囲外は下限・上限）
+     */
+    #[Test]
+    public function 数量を1から10に収める(): void
+    {
+        $this->assertSame(1, CartService::clampQuantity(-5));
+        $this->assertSame(1, CartService::clampQuantity(0));
+        $this->assertSame(1, CartService::clampQuantity(1));
+        $this->assertSame(5, CartService::clampQuantity(5));
+        $this->assertSame(10, CartService::clampQuantity(10));
+        $this->assertSame(10, CartService::clampQuantity(11));
+        $this->assertSame(10, CartService::clampQuantity(999));
+    }
 }

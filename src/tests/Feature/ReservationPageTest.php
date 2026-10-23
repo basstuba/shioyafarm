@@ -8,6 +8,7 @@ use App\Services\Payment\BankTransferIntentData;
 use App\Services\Payment\PaymentGatewayInterface;
 use App\Services\ReservationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\PurchaseTestHelpers;
@@ -304,5 +305,26 @@ class ReservationPageTest extends TestCase
 
         $this->assertSame(1, Reservation::count());
         $this->assertNull(session('pending_reservation'));
+    }
+
+    /**
+     * 予約ページの表示（GET）では、商品の取得と予約済みの数量の集計を、それぞれ1回だけ行う
+     */
+    #[Test]
+    public function 予約ページの表示で商品と集計を重複して問い合わせない(): void
+    {
+        $this->makeAreas();
+        $item = $this->makeReservable(limit: 5);
+        $this->makeReservedBy($item, 2);
+        $user = $this->makeUser();
+
+        DB::enableQueryLog();
+        $response = $this->actingAs($user)->get(route('shop.reservation.index', $item));
+        $queries = collect(DB::getQueryLog())->pluck('query');
+        DB::disableQueryLog();
+
+        $response->assertOk()->assertSee('max="3"', false);
+        $this->assertSame(1, $queries->filter(fn (string $query): bool => str_contains($query, 'from `reservations`') || str_contains($query, 'from "reservations"'))->count());
+        $this->assertSame(1, $queries->filter(fn (string $query): bool => str_contains($query, 'from `items`') || str_contains($query, 'from "items"'))->count());
     }
 }

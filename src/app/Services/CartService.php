@@ -30,6 +30,14 @@ class CartService
     ) {}
 
     /**
+     * 数量を1〜10に収める（入力途中の不正な値の金額計算用）
+     */
+    public static function clampQuantity(int $quantity): int
+    {
+        return max(self::MIN_QUANTITY, min(self::MAX_QUANTITY, $quantity));
+    }
+
+    /**
      * カートの商品を1個追加する
      *
      * すでにある商品は数量を1増やす。上限に達している商品、存在しない商品、予約限定の商品は追加しない。
@@ -78,7 +86,7 @@ class CartService
             return;
         }
 
-        $quantities[$itemId] = max(self::MIN_QUANTITY, min(self::MAX_QUANTITY, $quantity));
+        $quantities[$itemId] = self::clampQuantity($quantity);
         $this->session->put(self::SESSION_KEY, $quantities);
     }
 
@@ -179,7 +187,7 @@ class CartService
         $quantities = [];
         foreach ($stored as $itemId => $quantity) {
             if (is_int($itemId) && $itemId > 0 && is_int($quantity)) {
-                $quantities[$itemId] = max(self::MIN_QUANTITY, min(self::MAX_QUANTITY, $quantity));
+                $quantities[$itemId] = self::clampQuantity($quantity);
             }
         }
         ksort($quantities);

@@ -75,30 +75,6 @@ class ReservationService extends CheckoutService
     }
 
     /**
-     * 予約可能数に達していて、予約を受け付けていないかどうか
-     */
-    public function isClosed(Item $item): bool
-    {
-        return $this->limitService->isClosed($item);
-    }
-
-    /**
-     * 数量の入力の上限（10と残数の小さい方）
-     */
-    public function maxQuantity(Item $item): int
-    {
-        return $this->limitService->maxQuantity($item);
-    }
-
-    /**
-     * 数量を1〜10に収める（入力途中の不正な値の金額計算用）
-     */
-    public function clampQuantity(int $quantity): int
-    {
-        return max(CartService::MIN_QUANTITY, min(CartService::MAX_QUANTITY, $quantity));
-    }
-
-    /**
      * 金額の内訳（小計・送料・合計）を計算する
      *
      * 都道府県が null のときは送料を0円にする（送料を計算できない住所で、小計だけを表示するとき用）。
