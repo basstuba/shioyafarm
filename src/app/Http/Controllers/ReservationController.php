@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\BankTransferCancelResult;
-use App\Enums\CheckoutResult;
 use App\Http\Requests\ReservationRequest;
-use App\Models\User;
-use App\Services\Payment\PaymentGatewayException;
+use App\Http\Responses\CheckoutResponder;
+use App\Services\ReservationLimitService;
 use App\Services\ReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,8 +29,9 @@ class ReservationController extends Controller
      * 作った時点で支払い済みだった銀行振込の予約が、保存できないまま保存待ちに残っているときは、先に保存する
      * （保存できたらサンクスページへ。まだ処理中ならフォームを出さず、再読み込みを案内する。押し直して予約が重複するのを防ぐ）。
      * 存在しない商品・予約限定でない商品は404。予約可能数に達している商品は、商品詳細へ戻して受付終了を案内する。
+     * 取得した商品と数量の上限は予約フォームにも渡し、最初の表示で商品の取得と予約数の集計を繰り返さない。
      */
-    public function index(Request $request, ReservationService $reservationService, int $item): View|RedirectResponse|Response
+    public function index(Request $request, ReservationService $reservationService, ReservationLimitService $limitService, int $item): View|RedirectResponse|Response
     {
         Log::debug('ReservationController index start');
 
@@ -41,21 +40,23 @@ class ReservationController extends Controller
         if ($request->query->has('restore')) {
             Log::debug('ReservationController index end (redirect)');
 
-            return redirect()->route('shop.reservation.index', $item)->with(ReservationService::RESTORE_FLASH_KEY, true);
+            return CheckoutResponder::forReservation($reservationService)->restoreIndex($item);
         }
 
         $user = $request->user();
         abort_if($user === null, 403);
 
-        $paidPendingResponse = $this->paidPendingResponse($reservationService->settlePaidBankTransfer($user));
+        $paidPendingResponse = CheckoutResponder::forReservation($reservationService)->paidPending($reservationService->settlePaidBankTransfer($user));
         if ($paidPendingResponse !== null) {
             Log::debug('ReservationController index end (paid pending reservation)');
 
             return $paidPendingResponse;
         }
 
+        // 商品の取得と予約済みの数量の集計は、ここで1回ずつだけ行い、フォーム（Livewire）にも渡す
         $foundItem = $reservationService->findReservableItem($item);
-        if ($reservationService->isClosed($foundItem)) {
+        $remaining = $limitService->remaining($foundItem);
+        if ($limitService->isClosedByRemaining($remaining)) {
             Log::debug('ReservationController index end (closed)');
 
             return redirect()
@@ -65,7 +66,11 @@ class ReservationController extends Controller
 
         Log::debug('ReservationController index end');
 
-        return view('shop.reservation', ['itemId' => $foundItem->id]);
+        return view('shop.reservation', [
+            'itemId' => $foundItem->id,
+            'item' => $foundItem,
+            'maxQuantity' => $limitService->maxQuantityByRemaining($remaining),
+        ]);
     }
 
     /**
@@ -86,21 +91,11 @@ class ReservationController extends Controller
         $user = $request->user();
         abort_if($user === null, 403);
 
-        try {
-            $destination = $reservationService->beginCheckout($user, $request->validated());
-        } catch (PaymentGatewayException $e) {
-            Log::error('決済ページを開けませんでした', ['message' => $e->getMessage()]);
-
-            return back()
-                ->withInput()
-                ->withErrors(['payment' => '決済ページを開けませんでした。しばらく時間をおいてから、もう一度お試しください']);
-        }
+        $response = CheckoutResponder::forReservation($reservationService)->payment($user, $request->validated());
 
         Log::debug('ReservationController payment end');
 
-        $response = redirect()->away($destination->url);
-
-        return $destination->completed ? $response->with(ReservationService::THANKS_FLASH_KEY, true) : $response;
+        return $response;
     }
 
     /**
@@ -123,14 +118,7 @@ class ReservationController extends Controller
 
         Log::debug('ReservationController reservationSuccess end', ['result' => $result->name]);
 
-        return match ($result) {
-            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => view('shop.reservation_thanks'),
-            CheckoutResult::NoPendingOrder => redirect()->route('top.index'),
-            CheckoutResult::UseBankTransferConfirmation => redirect()->route('shop.reservation.bank-transfer'),
-            CheckoutResult::VerificationFailed => response()->view('shop.payment_pending', ['message' => 'お支払いの確認に失敗しました。時間をおいてこのページを再読み込みしてください。お支払い済みの場合は、再度のお手続きは不要です'], 503),
-            CheckoutResult::Busy => response()->view('shop.payment_pending', ['message' => 'ただいまご予約を処理しています。しばらく待ってから、このページを再読み込みしてください'], 503),
-            CheckoutResult::SessionMismatch, CheckoutResult::NotPaid => $this->notPaidResponse($user, $reservationService),
-        };
+        return CheckoutResponder::forReservation($reservationService)->success($result, $user);
     }
 
     /**
@@ -188,14 +176,7 @@ class ReservationController extends Controller
 
         Log::debug('ReservationController cancelBankTransfer end');
 
-        return match ($result) {
-            null => redirect()->route('top.index'),
-            BankTransferCancelResult::Cancelled => $this->restoreResponse($user, $reservationService),
-            BankTransferCancelResult::Paid => $this->bankTransferConfirmResponse($reservationService->confirmBankTransfer($user), $user, $reservationService),
-            BankTransferCancelResult::Failed => redirect()
-                ->route('shop.reservation.bank-transfer')
-                ->withErrors(['payment' => '振込みの取り消しができませんでした。しばらく時間をおいてから、もう一度お試しください']),
-        };
+        return CheckoutResponder::forReservation($reservationService)->cancelBankTransfer($result, $user);
     }
 
     /**
@@ -214,7 +195,7 @@ class ReservationController extends Controller
 
         Log::debug('ReservationController confirmBankTransfer end', ['result' => $result->name]);
 
-        return $this->bankTransferConfirmResponse($result, $user, $reservationService);
+        return CheckoutResponder::forReservation($reservationService)->bankTransferConfirm($result, $user);
     }
 
     /**
@@ -235,64 +216,5 @@ class ReservationController extends Controller
         Log::debug('ReservationController thanks end');
 
         return view('shop.reservation_thanks');
-    }
-
-    /**
-     * 支払い済みで保存待ちに残っていた銀行振込の予約を保存した結果に応じた応答（予約ページを開いたとき）
-     *
-     * 保存できたらサンクスページへ。まだ保存できない、または確認できないときは、予約ページを出さずに再読み込みを案内する
-     * （フォームを出すと、押し直して新しい予約が重複して作られるため）。対象の予約がない、またはお支払いを確認できなかったときは null。
-     */
-    private function paidPendingResponse(?CheckoutResult $result): RedirectResponse|Response|null
-    {
-        return match ($result) {
-            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => redirect()
-                ->route('shop.reservation.thanks')
-                ->with(ReservationService::THANKS_FLASH_KEY, true),
-            CheckoutResult::Busy => response()->view('shop.payment_pending', ['message' => 'お支払いは完了しています。ただいま確定処理中です。しばらく待ってから、このページを再読み込みしてください'], 503),
-            CheckoutResult::VerificationFailed => response()->view('shop.payment_pending', ['message' => 'お支払いの確認に失敗しました。時間をおいてこのページを再読み込みしてください。お支払い済みの場合は、再度のお手続きは不要です'], 503),
-            default => null,
-        };
-    }
-
-    /**
-     * 銀行振込の「振込み」の結果に応じた移動先
-     */
-    private function bankTransferConfirmResponse(CheckoutResult $result, User $user, ReservationService $reservationService): RedirectResponse
-    {
-        return match ($result) {
-            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => redirect()
-                ->route('shop.reservation.thanks')
-                ->with(ReservationService::THANKS_FLASH_KEY, true),
-            CheckoutResult::NoPendingOrder => redirect()->route('top.index'),
-            CheckoutResult::VerificationFailed => redirect()
-                ->route('shop.reservation.bank-transfer')
-                ->withErrors(['payment' => 'お支払いの確認に失敗しました。時間をおいて、もう一度「振込み」を押してください']),
-            CheckoutResult::Busy => redirect()
-                ->route('shop.reservation.bank-transfer')
-                ->withErrors(['payment' => 'ただいまご予約を処理しています。しばらく待ってから、もう一度「振込み」を押してください']),
-            CheckoutResult::SessionMismatch, CheckoutResult::NotPaid, CheckoutResult::UseBankTransferConfirmation => $this->notPaidResponse($user, $reservationService),
-        };
-    }
-
-    /**
-     * お支払いを確認できなかったとき：予約ページへ戻してエラーを表示する（入力は1回だけ復元する）
-     */
-    private function notPaidResponse(User $user, ReservationService $reservationService): RedirectResponse
-    {
-        return $this->restoreResponse($user, $reservationService)
-            ->withErrors(['payment' => 'お支払いを確認できませんでした。お手数ですが、もう一度「予約を確定する」からお進みください']);
-    }
-
-    /**
-     * 保存待ちの予約の予約ページへ戻す（入力は1回だけ復元する。保存待ちの予約がなければトップページへ）
-     */
-    private function restoreResponse(User $user, ReservationService $reservationService): RedirectResponse
-    {
-        $itemId = $reservationService->getPendingOrder($user)?->itemId();
-
-        return $itemId === null
-            ? redirect()->route('top.index')
-            : redirect()->route('shop.reservation.index', $itemId)->with(ReservationService::RESTORE_FLASH_KEY, true);
     }
 }

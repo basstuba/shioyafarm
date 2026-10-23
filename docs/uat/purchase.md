@@ -237,6 +237,29 @@ Claudeが決めた事項（OKをもらう）：
 - メール（Mailpit）：対象外（注文確認メールはこのブランチでは作らない）
 - 追加したデータ（前の分に加えて）：purchase_histories に10件（id=29 UAT代引R6PC、id=30 UAT代引R6連打、id=31 UAT代引R6二重、id=32 UAT代引R6別タブ、id=33 UAT代引R6古い画面B、id=34 UAT代引R6古い画面A、id=35 UAT成功R6カード（いずれもcod）、id=36 UAT成功R6カード2（card）、id=37 UAT振込R6戻る（cod）、id=38 UAT振込R6PC（customer_balance））、purchase_history_items に26件（id=33・34は各1件、残り8件は各3件）、purchase_bank_transfers に1件（id=9。purchase_history_id=38）。この結果、purchase_histories は38件・purchase_history_items は106件・purchase_bank_transfers は9件。Stripeのテスト環境にCheckout Session（戻った分1件、支払い済み1件）と銀行振込のPaymentIntent（「戻る」で取り消した分1件、保存した分1件）ができている。ログインユーザー（uat-buy@example.com）のカートは空
 
+## リファクタ後の再実施（refactor/checkout、2026-10-23）
+
+実施日：2026-10-23（PCのみ）。変更内容：購入・予約のコントローラーの応答（リダイレクト先・エラー文言・フラッシュ・503の再読み込み案内）を共通クラス（CheckoutResponder）にまとめた／数量を1〜10に収める処理を CartService::clampQuantity にまとめた／予約ページの最初の表示でコントローラーが取得した商品と数量の上限を Livewire に渡すようにした。前の結果はそのまま残している。
+
+スクリーンショットは、再実施3で使った `R3-` の名前とぶつかるため、`R7-` の接頭辞で保存した。カートはS-2の状態（じゃがいも2kg×2、玉ねぎ5kg×1、人参2kg×1。住所は北海道）から始め、購入のたびに入れ直した。
+
+| ID | PC | SP | 備考 | スクリーンショット |
+|---|---|---|---|---|
+| S-2 | OK | -（対象外） | カートページの「購入する」から /purchase へ。3商品（じゃがいも2kg 660円、玉ねぎ5kg 795円、人参2kg 418円）、小計1,873円・送料1,850円・合計3,723円。氏名「UAT購入太郎」・電話09011112222・住所「北海道札幌市UAT1-1」、確認用お届け先住所も北海道から始まる。横スクロールなし | screenshots/purchase/R7-S-2-pc.png |
+| S-6 | OK | -（対象外） | じゃがいも2kgの数量を2→3に変えて欄を離れると、再読み込みなし（ページ上の目印が残る）で小計2,203円・送料1,850円・合計4,053円に更新。カートページでもじゃがいも2kgが3個で小計2,203円（その後、数量は購入ページで2に戻して以降のシナリオを実施） | screenshots/purchase/R7-S-6-pc.png、screenshots/purchase/R7-S-6-cart-pc.png |
+| S-14 | OK | -（対象外） | 氏名を変え、数量に0・11を入力して欄を離れずに「注文を確定する」を直接クリック。0は「商品の数は1個以上にしてください」、11は「商品の数は10個以下にしてください」が表示され、氏名（UAT R3-P-S14-0／UAT R3-P-S14-11）・数量（0／11）の入力が残る。通信は livewire/update のあとに /payment のPOSTが1回。購入データは作られない（43件のまま）。購入ページを開き直すと数量は2・1・1、合計3,723円（カートは変わらない） | screenshots/purchase/R7-S-14-0-pc.png、screenshots/purchase/R7-S-14-11-pc.png |
+| S-15 | OK | -（対象外） | クレジットカードで確定→Stripeの決済ページに円表示（￥3,723、じゃがいも2kg ￥330×2=￥660、玉ねぎ5kg ￥795、人参2kg ￥418、送料 ￥1,850）。4242 4242 4242 4242 で支払うとサンクスページ（/purchase/success?session_id=…）が表示され、purchase_histories id=44（card、shipping_fee=1850、cod_fee=0、total_price=3723、delivery_name=UAT R3-P-S15カード、お届け先は北海道札幌市UAT1-1）、items 3件（item 1: 2個×330=660、item 5: 1個×795=795、item 7: 1個×418=418）、カートが空。サンクスページの再読み込み・同じURLの開き直しはトップページ（/）へ移動し、データは増えない。purchase_bank_transfers は増えない（10件のまま） | screenshots/purchase/R7-S-15-stripe-pc.png、screenshots/purchase/R7-S-15-pc.png |
+| S-16 | OK | -（対象外） | 銀行振込で確定→/purchase/bank-transfer に いろは銀行／中央支店／普通／TEST48213081／ストライプジャパン（カ　シュウノウダイコウ／振込金額3,723円、注文内容（小計1,873円・送料1,850円・合計3,723円）、お届け先が表示。「振込み」で /purchase/thanks へ。purchase_histories id=45（customer_balance、1850/0/3723、delivery_name=UAT R3-P-S16振込）、items 3件（660・795・418）、purchase_bank_transfers id=11（purchase_history_id=45、いろは銀行・中央支店・futsu・TEST48213081・amount=3723で案内の表示と一致、stripe_payment_intent_id あり）、カートが空 | screenshots/purchase/R7-S-16-guide-pc.png、screenshots/purchase/R7-S-16-pc.png |
+| S-17 | OK | -（対象外） | 代金引換を選ぶと「代引手数料 330円」の行が出て小計1,873円・送料1,850円・代引手数料330円・合計4,053円。確定するとStripeを通らず /purchase/thanks へ（POSTは /payment の1回のみ）。purchase_histories id=46（cod、shipping_fee=1850、cod_fee=330、total_price=4053、delivery_name=UAT R3-P-S17代引）、items 3件（660・795・418）、カートが空。purchase_bank_transfers は増えない（11件のまま） | screenshots/purchase/R7-S-17-before-pc.png、screenshots/purchase/R7-S-17-pc.png |
+| S-19 | OK | -（対象外） | クレジットカードで確定→Stripeの決済ページ（円表示 ￥3,723）の「戻る」で /purchase に戻り、氏名（UAT R3-P-S19戻る）・支払方法（クレジットカード）・数量（2、1、1）・金額（小計1,873円・送料1,850円・合計3,723円）が残っている。購入データは増えない（43件のまま）、カートもそのまま | screenshots/purchase/R7-S-19-stripe-pc.png、screenshots/purchase/R7-S-19-pc.png |
+| S-20 | OK | -（対象外） | 代金引換（S-17）の直後、サンクスページ（/purchase/thanks）を再読み込みするとトップページ（/）へ。続けて /purchase/success と /purchase/thanks を直接開いてもどちらもトップページへ。購入データは増えない（46件・items 129件・purchase_bank_transfers 11件のまま） | screenshots/purchase/R7-S-20-pc.png |
+| S-24 | OK | -（対象外） | 銀行振込で確定→振込先のご案内（振込金額3,723円）の「戻る」で /purchase に戻り、氏名（UAT R3-P-S24）・電話番号・住所・支払方法（銀行振込）・数量（2、1、1）・金額（小計1,873円・送料1,850円・合計3,723円）が残っている。購入データも purchase_bank_transfers も増えず（43件・10件のまま）、カートもそのまま | screenshots/purchase/R7-S-24-guide-pc.png、screenshots/purchase/R7-S-24-pc.png |
+| S-25 | OK | -（対象外） | S-16と同じ流れで保存後（id=45）、/purchase/thanks を再読み込みするとトップページ（/）へ。ブラウザの戻るで「振込先のご案内」（/purchase/bank-transfer）が開き、「振込み」を押すとトップページ（/）へ移動した。購入データは増えない（45件・items 126件・purchase_bank_transfers 11件のまま） | screenshots/purchase/R7-S-25-reload-pc.png、screenshots/purchase/R7-S-25-guide-reopen-pc.png、screenshots/purchase/R7-S-25-pc.png |
+
+- コンソールエラー：なし（browser_console_messages で error 0件。この再実施でStripeのAPIの402などは出していない）
+- メール（Mailpit）：対象外
+- 追加したデータ（前の分に加えて）：purchase_histories に3件（id=44 UAT R3-P-S15カード（card）、id=45 UAT R3-P-S16振込（customer_balance）、id=46 UAT R3-P-S17代引（cod））、purchase_history_items に9件（id=121〜129。各3件）、purchase_bank_transfers に1件（id=11。purchase_history_id=45）。これで purchase_histories は46件・purchase_history_items は129件・purchase_bank_transfers は11件。Stripeのテスト環境にCheckout Session（支払い済み1件、「戻る」1件）と銀行振込のPaymentIntent（「戻る」で取り消した分を含む2件）ができている。ログインユーザー（uat-buy@example.com）のカートは空（確認のため、じゃがいも2kg×2・玉ねぎ5kg・人参2kgをその都度追加して購入で消化した）
+
 ## ユーザー確認チェックリスト
 
 - [x] カート・商品詳細の「購入する」から購入ページへの流れが自然

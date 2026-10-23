@@ -34,7 +34,15 @@ class ReservationLimitService
      */
     public function isClosed(Item $item): bool
     {
-        return $this->remaining($item) === 0;
+        return $this->isClosedByRemaining($this->remaining($item));
+    }
+
+    /**
+     * 残数から、予約を受け付けていないかどうかを判定する（残数を取得済みのとき用。集計を繰り返さない）
+     */
+    public function isClosedByRemaining(?int $remaining): bool
+    {
+        return $remaining === 0;
     }
 
     /**
@@ -42,6 +50,14 @@ class ReservationLimitService
      */
     public function maxQuantity(Item $item): int
     {
-        return min(CartService::MAX_QUANTITY, $this->remaining($item) ?? CartService::MAX_QUANTITY);
+        return $this->maxQuantityByRemaining($this->remaining($item));
+    }
+
+    /**
+     * 残数から、1回の予約で入力できる数量の上限を求める（残数を取得済みのとき用。集計を繰り返さない）
+     */
+    public function maxQuantityByRemaining(?int $remaining): int
+    {
+        return min(CartService::MAX_QUANTITY, $remaining ?? CartService::MAX_QUANTITY);
     }
 }
