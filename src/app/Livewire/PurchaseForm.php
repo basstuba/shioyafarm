@@ -190,9 +190,9 @@ class PurchaseForm extends Component
     public static function paymentOptions(): array
     {
         return [
-            ['value' => PaymentMethod::Card->value, 'label' => 'クレジットカード', 'description' => 'Visa / Master / JCB', 'icon' => 'image/icon/credit-card-icon.webp'],
-            ['value' => PaymentMethod::CustomerBalance->value, 'label' => '銀行振込', 'description' => '銀行口座にお振込み', 'icon' => 'image/icon/bank-icon.webp'],
-            ['value' => PaymentMethod::Cod->value, 'label' => '代金引換', 'description' => '受け取り時にお支払い', 'icon' => 'image/icon/box-icon.webp'],
+            ['value' => PaymentMethod::Card->value, 'label' => PaymentMethod::Card->label(), 'description' => 'Visa / Master / JCB', 'icon' => 'image/icon/credit-card-icon.webp'],
+            ['value' => PaymentMethod::CustomerBalance->value, 'label' => PaymentMethod::CustomerBalance->label(), 'description' => '銀行口座にお振込み', 'icon' => 'image/icon/bank-icon.webp'],
+            ['value' => PaymentMethod::Cod->value, 'label' => PaymentMethod::Cod->label(), 'description' => '受け取り時にお支払い', 'icon' => 'image/icon/box-icon.webp'],
         ];
     }
 

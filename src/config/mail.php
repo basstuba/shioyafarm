@@ -45,7 +45,9 @@ return [
             'encryption' => env('MAIL_ENCRYPTION', 'null'),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            // サンクスメールはレスポンスを返した後に送るので画面は待たないが、メールサーバーが応答しないとき、PHPのワーカーを占有する時間の上限になる（秒）
+            // 空や0以下（MAIL_TIMEOUT= など）のときは10秒にする
+            'timeout' => (int) env('MAIL_TIMEOUT') > 0 ? (int) env('MAIL_TIMEOUT') : 10,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
@@ -110,7 +112,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'shioyafarm@example.com'),
-        'name' => env('MAIL_FROM_NAME', '${APP_NAME}'),
+        'name' => env('MAIL_FROM_NAME', 'しおや農園'),
     ],
 
 ];
