@@ -37,6 +37,18 @@ enum PaymentMethod: string
     }
 
     /**
+     * 画面・メールに表示する名前
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Card => 'クレジットカード',
+            self::CustomerBalance => '銀行振込',
+            self::Cod => '代金引換',
+        };
+    }
+
+    /**
      * Stripe Checkout（Stripeのページ）で支払う方法かどうか
      */
     public function usesCheckout(): bool
