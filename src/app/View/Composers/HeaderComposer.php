@@ -26,9 +26,10 @@ class HeaderComposer
             // 送料案内・利用規約・プライバシーポリシー・特商法に基づく表記（ログイン中は「マイページ」を出す）
             'info.*' => $loggedIn ? Nav::topAuth() : Nav::top(),
 
-            // ショップ（カート・購入手続き）
+            // ショップ（カート・購入手続き・予約手続き）
             'shop.cart' => Nav::shopCart(),
             'shop.checkout.*' => Nav::shopCart(),
+            'shop.reservation.*' => Nav::shopCart(),
 
             // ショップ全般（ログイン済/未ログイン）
             'shop.*' => $loggedIn ? Nav::shopAuth() : Nav::shopGuest(),

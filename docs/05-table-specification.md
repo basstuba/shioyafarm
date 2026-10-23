@@ -70,6 +70,8 @@ ER図は [ER図](06-er-diagram.md) を参照。
 
 ## reservations（予約データ）
 
+予約は1件につき1商品。支払方法はクレジットカード（`card`）と銀行振込（`customer_balance`）のみで、代引手数料の列はない。
+
 | カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
 |---|---|:---:|:---:|:---:|---|
 | id | bigint unsigned | ○ | | | |
@@ -82,6 +84,8 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | quantity | integer | | | ○ | |
 | price | integer | | | ○ | |
 | subtotal | integer | | | ○ | |
+| shipping_fee | integer | | | ○ | |
+| total_price | integer | | | ○ | |
 | payment_method | varchar(25) | | | ○ | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
@@ -126,6 +130,26 @@ Stripe上の顧客残高で注文時に支払い済みになった場合は振�
 |---|---|:---:|:---:|:---:|---|
 | id | bigint unsigned | ○ | | | |
 | purchase_history_id | bigint unsigned | | ○ | ○ | purchase_histories(id) |
+| stripe_payment_intent_id | varchar(255) | | ○ | ○ | |
+| bank_name | varchar(255) | | | | |
+| branch_name | varchar(255) | | | | |
+| account_type | varchar(25) | | | | |
+| account_number | varchar(25) | | | | |
+| account_holder_name | varchar(255) | | | | |
+| amount | integer | | | ○ | |
+| created_at | timestamp | | | | |
+| updated_at | timestamp | | | | |
+
+## reservation_bank_transfers（予約の銀行振込の振込先データ）
+
+銀行振込（customer_balance）の予約だけ、予約1件につき1件作る。構成は purchase_bank_transfers と同じ（purchase_history_id の代わりに reservation_id）。
+
+Stripe上の顧客残高で予約時に支払い済みになった場合は振込先が発行されないため、振込先の5項目（bank_name〜account_holder_name）は null になる。
+
+| カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
+|---|---|:---:|:---:|:---:|---|
+| id | bigint unsigned | ○ | | | |
+| reservation_id | bigint unsigned | | ○ | ○ | reservations(id) |
 | stripe_payment_intent_id | varchar(255) | | ○ | ○ | |
 | bank_name | varchar(255) | | | | |
 | branch_name | varchar(255) | | | | |

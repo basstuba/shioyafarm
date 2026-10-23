@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ItemService;
+use App\Services\ReservationLimitService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -28,7 +29,7 @@ class ItemController extends Controller
     /**
      * 商品詳細ページを表示
      */
-    public function show(int $item, ItemService $itemService): View
+    public function show(int $item, ItemService $itemService, ReservationLimitService $reservationLimitService): View
     {
         Log::debug('ItemController start');
 
@@ -36,6 +37,10 @@ class ItemController extends Controller
 
         Log::debug('ItemController end');
 
-        return view('shop.item_detail', ['item' => $foundItem]);
+        return view('shop.item_detail', [
+            'item' => $foundItem,
+            // 予約限定の商品が予約可能数に達していたら、「予約する」を「予約受付終了」にする
+            'reservationClosed' => $foundItem->is_reserved_only && $reservationLimitService->isClosed($foundItem),
+        ]);
     }
 }

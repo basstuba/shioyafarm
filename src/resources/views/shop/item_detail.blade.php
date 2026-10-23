@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@use('App\Services\ReservationService')
+
 @section('page-title', '商品詳細 | Shioya Farm')
 
 @section('body-class', 'bg-cream-100')
@@ -19,11 +21,20 @@
                 </div>
             </div>
 
+            {{-- 予約ページを直接開かれた商品が、すでに予約可能数に達していたときの案内 --}}
+            @if (session(ReservationService::CLOSED_FLASH_KEY))
+                <p class="text-center text-base text-danger md:text-lg" role="alert">{{ session(ReservationService::CLOSED_FLASH_KEY) }}</p>
+            @endif
+
             @auth
-                {{-- 予約の機能ができたら href を差し替える --}}
                 <div class="flex flex-col items-center gap-4 md:flex-row md:justify-center md:gap-8">
                     @if ($item->is_reserved_only)
-                        <x-filled-button href="#">予約する</x-filled-button>
+                        @if ($reservationClosed)
+                            {{-- 予約可能数に達した商品は押せない --}}
+                            <x-filled-button type="button" disabled class="cursor-not-allowed opacity-60 hover:bg-action">予約受付終了</x-filled-button>
+                        @else
+                            <x-filled-button :href="route('shop.reservation.index', $item)">予約する</x-filled-button>
+                        @endif
                     @else
                         <livewire:add-to-cart-button :item-id="$item->id" />
                         <x-filled-button :href="route('shop.checkout.index', $item)">購入する</x-filled-button>
