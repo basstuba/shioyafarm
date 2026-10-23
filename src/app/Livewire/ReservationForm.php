@@ -10,6 +10,7 @@ use App\Models\Item;
 use App\Services\AreaService;
 use App\Services\CartService;
 use App\Services\DeliveryAddressService;
+use App\Services\ReservationLimitService;
 use App\Services\ReservationService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
@@ -54,14 +55,31 @@ class ReservationForm extends Component
     public string $orderToken = '';
 
     /**
+     * 予約ページを開いたとき（最初の表示）に、コントローラーが取得済みの商品
+     *
+     * public にしないので、後続の Livewire リクエスト（数量の変更など）には引き継がれない（そのときは毎回取得し直す）。
+     */
+    protected ?Item $preloadedItem = null;
+
+    /** 予約ページを開いたときに、コントローラーが求めておいた数量の上限（$preloadedItem と同じ扱い） */
+    protected ?int $preloadedMaxQuantity = null;
+
+    /**
      * 初期値を設定する
      *
      * 優先順位は、検証エラーで戻ったときの入力 > 「戻る」で戻った直後の保存待ちの予約 > 会員登録の内容。
+     * 商品と数量の上限は、予約ページのコントローラーが取得済みならそれを使う（商品の取得と予約数の集計を繰り返さない）。
      */
-    public function mount(ReservationService $reservationService, DeliveryAddressService $addressService, int $itemId): void
+    public function mount(ReservationService $reservationService, DeliveryAddressService $addressService, int $itemId, ?Item $item = null, ?int $maxQuantity = null): void
     {
         $user = $this->user();
-        $item = $reservationService->findReservableItem($itemId);
+        if ($item === null || $item->id !== $itemId || ! $item->is_reserved_only) {
+            $item = $reservationService->findReservableItem($itemId);
+            $maxQuantity = null;
+        }
+
+        $this->preloadedItem = $item;
+        $this->preloadedMaxQuantity = $maxQuantity;
 
         $this->itemId = $item->id;
         $this->fillDeliveryDefaults($user, $addressService);
@@ -137,7 +155,7 @@ class ReservationForm extends Component
         // 改ざんされた値・他人の住所のときは、会員登録の住所に戻す
         $address = $this->resolveAddress($user, $addressService);
 
-        $quantity = $reservationService->clampQuantity(is_numeric($this->quantity) ? (int) $this->quantity : 0);
+        $quantity = CartService::clampQuantity(is_numeric($this->quantity) ? (int) $this->quantity : 0);
 
         // 送料の地域が見つからない都道府県（設定にない住所）のときは、描画でエラーにせず、住所欄にエラーを出して予約を確定できなくする
         $shippingError = null;
@@ -178,19 +196,23 @@ class ReservationForm extends Component
      * 予約する商品（予約限定でなくなっていたときは404）
      *
      * 1回のリクエストの中では1回だけ取得する（数量の検証と描画で重複して問い合わせない）。
+     * 予約ページを開いたときは、コントローラーが取得済みの商品を使う。
      */
     #[Computed]
     public function item(): Item
     {
-        return app(ReservationService::class)->findReservableItem($this->itemId);
+        return $this->preloadedItem ?? app(ReservationService::class)->findReservableItem($this->itemId);
     }
 
     /**
      * 数量の入力の上限（10と残数の小さい方。残数の集計もリクエストの中で1回だけ行う）
+     *
+     * 予約ページを開いたときは、コントローラーが求めておいた値を使う。
+     * 後続のリクエスト（数量の変更など）では、毎回最新の予約数で集計し直す。
      */
     #[Computed]
     public function maxQuantity(): int
     {
-        return app(ReservationService::class)->maxQuantity($this->item);
+        return $this->preloadedMaxQuantity ?? app(ReservationLimitService::class)->maxQuantity($this->item);
     }
 }
