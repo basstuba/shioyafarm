@@ -7,15 +7,20 @@ use Illuminate\Contracts\Session\Session;
 /**
  * 保存待ちの注文をセッションに出し入れする
  *
- * セッションのキー `pending_order` に配列で保存する。
+ * 購入はセッションのキー `pending_order` に、予約は `pending_reservation` に配列で保存する（互いに干渉しない）。
+ * 予約用のキーは AppServiceProvider で ReservationService に渡している。
  */
 class PendingOrderStore
 {
-    /** セッションのキー */
-    private const string SESSION_KEY = 'pending_order';
+    /** 購入の保存待ちの注文のセッションのキー */
+    public const string PURCHASE_SESSION_KEY = 'pending_order';
+
+    /** 予約の保存待ちの注文のセッションのキー */
+    public const string RESERVATION_SESSION_KEY = 'pending_reservation';
 
     public function __construct(
         private readonly Session $session,
+        private readonly string $sessionKey = self::PURCHASE_SESSION_KEY,
     ) {}
 
     /**
@@ -23,7 +28,7 @@ class PendingOrderStore
      */
     public function get(): ?PendingOrder
     {
-        $stored = $this->session->get(self::SESSION_KEY);
+        $stored = $this->session->get($this->sessionKey);
 
         /** @var array<string, mixed>|null $stored */
         return is_array($stored) ? PendingOrder::fromArray($stored) : null;
@@ -34,7 +39,7 @@ class PendingOrderStore
      */
     public function put(PendingOrder $order): void
     {
-        $this->session->put(self::SESSION_KEY, $order->toArray());
+        $this->session->put($this->sessionKey, $order->toArray());
     }
 
     /**
@@ -42,6 +47,6 @@ class PendingOrderStore
      */
     public function forget(): void
     {
-        $this->session->forget(self::SESSION_KEY);
+        $this->session->forget($this->sessionKey);
     }
 }

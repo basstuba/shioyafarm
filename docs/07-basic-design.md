@@ -23,9 +23,14 @@
 | `/purchase/bank-transfer/cancel` | POST | PurchaseController | cancelBankTransfer | 必須 | 銀行振込の取り消し機能（購入ページへ戻る） |
 | `/purchase/bank-transfer/confirm` | POST | PurchaseController | confirmBankTransfer | 必須 | 銀行振込の購入履歴作成機能 |
 | `/purchase/thanks` | GET | PurchaseController | thanks | 必須 | 購入完了ページ表示（銀行振込・代金引換） |
-| `/reservation/{item_id}` | GET | ReservationController | index | 必須 | 予約ページ表示 |
-| `/reservation/success` | GET | ReservationController | reservationSuccess | 必須 | 予約履歴作成機能 |
-| `/payment` | POST | PaymentController | payment | 必須 | 決済機能（代金引換はここで購入履歴を作成） |
+| `/reservation/{item_id}` | GET | ReservationController | index | 必須 | 予約ページ表示（予約限定の商品のみ。予約可能数に達していたら商品詳細へ戻す） |
+| `/reservation/payment` | POST | ReservationController | payment | 必須 | 予約の決済機能（クレジットカード：決済ページへ、銀行振込：振込先のご案内へ） |
+| `/reservation/success` | GET | ReservationController | reservationSuccess | 必須 | 予約履歴作成機能（クレジットカード：Stripeの決済後に戻る先） |
+| `/reservation/bank-transfer` | GET | ReservationController | bankTransfer | 必須 | 予約の銀行振込の振込先のご案内ページ表示 |
+| `/reservation/bank-transfer/cancel` | POST | ReservationController | cancelBankTransfer | 必須 | 予約の銀行振込の取り消し機能（予約ページへ戻る） |
+| `/reservation/bank-transfer/confirm` | POST | ReservationController | confirmBankTransfer | 必須 | 予約の銀行振込の予約履歴作成機能 |
+| `/reservation/thanks` | GET | ReservationController | thanks | 必須 | 予約完了ページ表示（銀行振込） |
+| `/payment` | POST | PaymentController | payment | 必須 | 購入の決済機能（代金引換はここで購入履歴を作成） |
 | `/add-address` | POST | AddAddressController | store | 必須 | 配送先住所追加機能 |
 | `/mypage` | GET | MyPageController | index | 必須 | マイページ表示 |
 | `/mypage/edit` | GET | MyPageController | edit | 必須 | 登録情報変更ページ表示 |
@@ -76,6 +81,8 @@
 | Reservationsテーブル操作用モデル |
 | Purchase_historiesテーブル操作用モデル |
 | Purchase_history_itemsテーブル操作用モデル |
+| Purchase_bank_transfersテーブル操作用モデル |
+| Reservation_bank_transfersテーブル操作用モデル |
 | Delivery_addressesテーブル操作用モデル |
 | Areasテーブル操作用モデル |
 
@@ -165,12 +172,13 @@ user_idと合計金額はcontrollerで取得
 
 | フォーム | ルール |
 |---|---|
-| 商品ID | 入力必須、idの有無 |
-| 商品数量 | 入力必須、整数値、1以上、10以下 |
+| 注文トークン（order_token） | 入力必須、文字列、100文字以下（予約ページの表示ごとに発行する1回限りの値。使用済み・不正な値では予約を作らない） |
+| 商品ID | 入力必須、整数値、idの有無（予約限定の商品のみ） |
+| 商品数量 | 入力必須、整数値、1以上、10以下（確定時に、予約可能数の残数を超える場合はエラーにする） |
 | 配送先氏名 | 入力必須、文字列、255文字以下 |
 | 配送先住所 | 入力必須、文字列、接頭辞と正規表現の値 |
 | 配送先電話番号 | 入力必須、数字のみ、10〜11桁、15文字以下 |
-| 支払方法 | 入力必須、文字列、25文字以下、指定の値のみ |
+| 支払方法 | 入力必須、文字列、25文字以下、指定の値のみ（`card`、`customer_balance`） |
 
 ### DeliveryAddressRequest.php（配送先住所追加）
 

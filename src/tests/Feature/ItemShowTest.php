@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Item;
+use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -141,7 +142,57 @@ class ItemShowTest extends TestCase
         $response->assertDontSee('カートに入れる');
         $response->assertDontSee('購入する');
         $response->assertSee('>予約限定</span>', false);
-        $this->assertMatchesRegularExpression('#<a\s[^>]*href="\#"[^>]*>予約する</a>#s', $response->getContent());
+        // 「予約する」は予約ページへのリンク
+        $this->assertMatchesRegularExpression('#<a\s[^>]*href="'.preg_quote(route('shop.reservation.index', $item), '#').'"[^>]*>予約する</a>#s', $response->getContent());
+        $response->assertDontSee('予約受付終了');
+    }
+
+    /**
+     * 予約が予約可能数に達した商品は、「予約する」を「予約受付終了」にして押せなくする
+     */
+    #[Test]
+    public function 予約可能数に達した商品は予約受付終了になる(): void
+    {
+        $item = $this->reservedItem();
+        $item->update(['reservation_limit' => 3]);
+        Reservation::factory()->create(['item_id' => $item->id, 'quantity' => 3]);
+
+        $response = $this->actingAs(User::factory()->create())->get(route('shop.items.show', $item));
+
+        $response->assertSee('予約受付終了');
+        $response->assertDontSee('予約する');
+        $this->assertMatchesRegularExpression('#<button\s[^>]*disabled[^>]*>予約受付終了</button>#s', $response->getContent());
+        $response->assertDontSee('href="'.route('shop.reservation.index', $item).'"', false);
+    }
+
+    /**
+     * 残りがあるうちは「予約する」のまま。予約可能数が未設定の商品も予約できる
+     */
+    #[Test]
+    public function 予約可能数に残りがあれば予約するのまま(): void
+    {
+        $item = $this->reservedItem();
+        $item->update(['reservation_limit' => 3]);
+        Reservation::factory()->create(['item_id' => $item->id, 'quantity' => 2]);
+        $unlimited = Item::factory()->create(['is_reserved_only' => true, 'reservation_limit' => null]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('shop.items.show', $item))->assertSee('予約する')->assertDontSee('予約受付終了');
+        $this->actingAs($user)->get(route('shop.items.show', $unlimited))->assertSee('予約する')->assertDontSee('予約受付終了');
+    }
+
+    /**
+     * 予約ページから受付終了で戻されたとき、商品詳細に案内を表示する
+     */
+    #[Test]
+    public function 受付終了の案内を商品詳細に表示する(): void
+    {
+        $item = $this->reservedItem();
+
+        $this->actingAs(User::factory()->create())
+            ->withSession(['reservation_closed' => 'この商品の予約受付は終了しました'])
+            ->get(route('shop.items.show', $item))
+            ->assertSee('この商品の予約受付は終了しました');
     }
 
     /**

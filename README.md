@@ -25,3 +25,9 @@
    ```
 > [!Warning]
 > compose.yamlのMYSQL_DATABASE,MYSQL_USERNAME,MYSQL_PASSWORDと合わせること
+
+## 実装の範囲
+
+ポートフォリオ用のプロジェクトのため、設計書（`docs/`）のうち次の内容は意図して実装していません。
+
+- 商品の販売時期（`docs/02-initial-settings.md`「取扱商品」）による販売・予約の制限。全商品を通年で購入・予約できます。詰め合わせセットの「発送は9月中」は、画面の文言として表示するだけです。
