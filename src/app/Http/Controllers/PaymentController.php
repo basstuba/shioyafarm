@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PurchaseRequest;
-use App\Services\Payment\PaymentGatewayException;
+use App\Http\Responses\CheckoutResponder;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -33,20 +33,10 @@ class PaymentController extends Controller
         $user = $request->user();
         abort_if($user === null, 403);
 
-        try {
-            $destination = $purchaseService->beginCheckout($user, $request->validated());
-        } catch (PaymentGatewayException $e) {
-            Log::error('決済ページを開けませんでした', ['message' => $e->getMessage()]);
-
-            return back()
-                ->withInput()
-                ->withErrors(['payment' => '決済ページを開けませんでした。しばらく時間をおいてから、もう一度お試しください']);
-        }
+        $response = CheckoutResponder::forPurchase($purchaseService)->payment($user, $request->validated());
 
         Log::debug('PaymentController payment end');
 
-        $response = redirect()->away($destination->url);
-
-        return $destination->completed ? $response->with(PurchaseService::THANKS_FLASH_KEY, true) : $response;
+        return $response;
     }
 }

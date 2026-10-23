@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\BankTransferCancelResult;
-use App\Enums\CheckoutResult;
-use App\Models\User;
+use App\Http\Responses\CheckoutResponder;
 use App\Services\PurchaseService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,13 +35,13 @@ class PurchaseController extends Controller
         if ($request->query->has('restore')) {
             Log::debug('PurchaseController index end (redirect)');
 
-            return redirect()->route('shop.checkout.index', $item)->with(PurchaseService::RESTORE_FLASH_KEY, true);
+            return CheckoutResponder::forPurchase($purchaseService)->restoreIndex($item);
         }
 
         $user = $request->user();
         abort_if($user === null, 403);
 
-        $paidPendingResponse = $this->paidPendingResponse($purchaseService->settlePaidBankTransfer($user));
+        $paidPendingResponse = CheckoutResponder::forPurchase($purchaseService)->paidPending($purchaseService->settlePaidBankTransfer($user));
         if ($paidPendingResponse !== null) {
             Log::debug('PurchaseController index end (paid pending order)');
 
@@ -113,16 +111,7 @@ class PurchaseController extends Controller
 
         Log::debug('PurchaseController cancelBankTransfer end');
 
-        return match ($result) {
-            null => redirect()->route('top.index'),
-            BankTransferCancelResult::Cancelled => redirect()
-                ->route('shop.checkout.index', $purchaseService->getPendingOrder($user)?->itemId())
-                ->with(PurchaseService::RESTORE_FLASH_KEY, true),
-            BankTransferCancelResult::Paid => $this->bankTransferConfirmResponse($purchaseService->confirmBankTransfer($user), $user, $purchaseService),
-            BankTransferCancelResult::Failed => redirect()
-                ->route('shop.checkout.bank-transfer')
-                ->withErrors(['payment' => '振込みの取り消しができませんでした。しばらく時間をおいてから、もう一度お試しください']),
-        };
+        return CheckoutResponder::forPurchase($purchaseService)->cancelBankTransfer($result, $user);
     }
 
     /**
@@ -141,7 +130,7 @@ class PurchaseController extends Controller
 
         Log::debug('PurchaseController confirmBankTransfer end', ['result' => $result->name]);
 
-        return $this->bankTransferConfirmResponse($result, $user, $purchaseService);
+        return CheckoutResponder::forPurchase($purchaseService)->bankTransferConfirm($result, $user);
     }
 
     /**
@@ -185,62 +174,6 @@ class PurchaseController extends Controller
 
         Log::debug('PurchaseController purchaseSuccess end', ['result' => $result->name]);
 
-        return match ($result) {
-            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => view('shop.purchase_thanks'),
-            CheckoutResult::NoPendingOrder => redirect()->route('top.index'),
-            CheckoutResult::UseBankTransferConfirmation => redirect()->route('shop.checkout.bank-transfer'),
-            CheckoutResult::VerificationFailed => response()->view('shop.payment_pending', ['message' => 'お支払いの確認に失敗しました。時間をおいてこのページを再読み込みしてください。お支払い済みの場合は、再度のお手続きは不要です'], 503),
-            CheckoutResult::Busy => response()->view('shop.payment_pending', ['message' => 'ただいまご注文を処理しています。しばらく待ってから、このページを再読み込みしてください'], 503),
-            CheckoutResult::SessionMismatch, CheckoutResult::NotPaid => $this->notPaidResponse($user, $purchaseService),
-        };
-    }
-
-    /**
-     * 支払い済みで保存待ちに残っていた銀行振込の注文を保存した結果に応じた応答（購入ページを開いたとき）
-     *
-     * 保存できたらサンクスページへ。まだ保存できない、または確認できないときは、購入ページを出さずに再読み込みを案内する
-     * （フォームを出すと、押し直して新しい注文が重複して作られるため）。対象の注文がない、またはお支払いを確認できなかったときは null。
-     */
-    private function paidPendingResponse(?CheckoutResult $result): RedirectResponse|Response|null
-    {
-        return match ($result) {
-            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => redirect()
-                ->route('shop.checkout.thanks')
-                ->with(PurchaseService::THANKS_FLASH_KEY, true),
-            CheckoutResult::Busy => response()->view('shop.payment_pending', ['message' => 'お支払いは完了しています。ただいま確定処理中です。しばらく待ってから、このページを再読み込みしてください'], 503),
-            CheckoutResult::VerificationFailed => response()->view('shop.payment_pending', ['message' => 'お支払いの確認に失敗しました。時間をおいてこのページを再読み込みしてください。お支払い済みの場合は、再度のお手続きは不要です'], 503),
-            default => null,
-        };
-    }
-
-    /**
-     * 銀行振込の「振込み」の結果に応じた移動先
-     */
-    private function bankTransferConfirmResponse(CheckoutResult $result, User $user, PurchaseService $purchaseService): RedirectResponse
-    {
-        return match ($result) {
-            CheckoutResult::Completed, CheckoutResult::AlreadyCompleted => redirect()
-                ->route('shop.checkout.thanks')
-                ->with(PurchaseService::THANKS_FLASH_KEY, true),
-            CheckoutResult::NoPendingOrder => redirect()->route('top.index'),
-            CheckoutResult::VerificationFailed => redirect()
-                ->route('shop.checkout.bank-transfer')
-                ->withErrors(['payment' => 'お支払いの確認に失敗しました。時間をおいて、もう一度「振込み」を押してください']),
-            CheckoutResult::Busy => redirect()
-                ->route('shop.checkout.bank-transfer')
-                ->withErrors(['payment' => 'ただいまご注文を処理しています。しばらく待ってから、もう一度「振込み」を押してください']),
-            CheckoutResult::SessionMismatch, CheckoutResult::NotPaid, CheckoutResult::UseBankTransferConfirmation => $this->notPaidResponse($user, $purchaseService),
-        };
-    }
-
-    /**
-     * お支払いを確認できなかったとき：購入ページへ戻してエラーを表示する（入力は1回だけ復元する）
-     */
-    private function notPaidResponse(User $user, PurchaseService $purchaseService): RedirectResponse
-    {
-        return redirect()
-            ->route('shop.checkout.index', $purchaseService->getPendingOrder($user)?->itemId())
-            ->with(PurchaseService::RESTORE_FLASH_KEY, true)
-            ->withErrors(['payment' => 'お支払いを確認できませんでした。お手数ですが、もう一度「注文を確定する」からお進みください']);
+        return CheckoutResponder::forPurchase($purchaseService)->success($result, $user);
     }
 }

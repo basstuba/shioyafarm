@@ -114,10 +114,7 @@ class PurchaseService extends CheckoutService
 
         return $this->itemRepository->findByIds(array_keys($quantities))
             ->reject(fn (Item $item): bool => $item->is_reserved_only)
-            ->map(fn (Item $item): CartLine => new CartLine(
-                $item,
-                max(CartService::MIN_QUANTITY, min(CartService::MAX_QUANTITY, $quantities[$item->id])),
-            ))
+            ->map(fn (Item $item): CartLine => new CartLine($item, CartService::clampQuantity($quantities[$item->id])))
             ->values();
     }
 

@@ -485,4 +485,46 @@ class ReservationFormLivewireTest extends TestCase
             ->assertSet('deliveryName', '塩谷太郎')
             ->assertSet('paymentMethod', 'card');
     }
+
+    /**
+     * 予約ページを開いたときに渡された商品と数量の上限は、最初の表示でだけ使い、後続のリクエストには引き継がない
+     * （数量の変更では、そのときの予約数で上限を集計し直す）
+     */
+    #[Test]
+    public function 渡された上限は最初の表示だけで使い数量の変更では集計し直す(): void
+    {
+        $this->makeAreas();
+        $user = $this->makeUser();
+        $item = $this->makeReservable(limit: 5);
+
+        $component = Livewire::actingAs($user)
+            ->test(ReservationForm::class, ['itemId' => $item->id, 'item' => $item, 'maxQuantity' => 5])
+            ->assertViewHas('maxQuantity', 5);
+
+        // 表示した後に、ほかの会員の予約が入って残りが2個になった
+        $this->makeReservedBy($item, 3);
+
+        $component->call('updateQuantity', '4')
+            ->assertHasErrors(['quantity'])
+            ->assertSet('quantity', 1)
+            ->assertViewHas('maxQuantity', 2);
+    }
+
+    /**
+     * 渡された商品が別の商品・予約限定でない商品のときは、渡された値を使わず取得し直す
+     */
+    #[Test]
+    public function 渡された商品が一致しなければ取得し直す(): void
+    {
+        $this->makeAreas();
+        $user = $this->makeUser();
+        $item = $this->makeReservable(limit: 5);
+        $other = $this->makeReservable(5, 825, 300, '別のセット');
+
+        Livewire::actingAs($user)
+            ->test(ReservationForm::class, ['itemId' => $item->id, 'item' => $other, 'maxQuantity' => 1])
+            ->assertSet('itemId', $item->id)
+            ->assertViewHas('item', fn (Item $shown): bool => $shown->id === $item->id)
+            ->assertViewHas('maxQuantity', 5);
+    }
 }
