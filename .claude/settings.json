@@ -1,5 +1,23 @@
 {
   "language": "japanese",
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Edit(**/.env)",
+      "Bash(*.env)",
+      "Bash(*.env *)"
+    ],
+    "ask": [
+      "Read(**/.env.*)",
+      "Edit(**/.env.*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(*migrate:fresh*)",
+      "Bash(*migrate:reset*)",
+      "Bash(*db:wipe*)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
