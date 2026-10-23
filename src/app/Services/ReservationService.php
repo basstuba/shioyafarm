@@ -4,12 +4,16 @@ namespace App\Services;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
+use App\Mail\ReservationThanksMail;
+use App\Mail\ThanksMail;
 use App\Models\Item;
+use App\Models\Reservation;
 use App\Models\User;
 use App\Repositories\Interfaces\ItemRepositoryInterface;
 use App\Repositories\Interfaces\ReservationRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\Payment\PaymentGatewayInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -23,6 +27,8 @@ use Throwable;
  * 「予約を確定する」（決済ページへの遷移）・銀行振込・二重送信の対策は CheckoutService にある（購入と共通）。
  * 金額はフォームの値を信用せず、DBの価格と config/shipping.php から再計算する。
  * 予約可能数は「予約を確定する」の時点でだけ確認する（保存時には再確認しない）。
+ *
+ * @extends CheckoutService<Reservation>
  */
 class ReservationService extends CheckoutService
 {
@@ -192,7 +198,7 @@ class ReservationService extends CheckoutService
             $method,
             [[
                 'item_id' => $item->id,
-                'name' => $item->name.' '.$item->weight.'kg',
+                'name' => $item->display_name,
                 'quantity' => $quantity,
                 'price' => $item->price,
                 'subtotal' => $summary->subtotal,
@@ -210,11 +216,11 @@ class ReservationService extends CheckoutService
      * @throws Throwable 保存に失敗したとき
      */
     #[Override]
-    protected function save(PendingOrder $order): void
+    protected function save(PendingOrder $order): Reservation
     {
         $item = $order->items[0];
 
-        $this->reservationRepository->createWithBankTransfer(
+        return $this->reservationRepository->createWithBankTransfer(
             [
                 'user_id' => $order->userId,
                 'item_id' => $item['item_id'],
@@ -231,5 +237,16 @@ class ReservationService extends CheckoutService
             ],
             $this->bankTransferRow($order),
         );
+    }
+
+    /**
+     * 保存した予約のサンクスメールを作る
+     *
+     * @param  Reservation  $saved
+     */
+    #[Override]
+    protected function thanksMail(Model $saved): ThanksMail
+    {
+        return new ReservationThanksMail($saved);
     }
 }

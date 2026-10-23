@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment;
 
+use App\Enums\BankAccountType;
+
 /**
  * 銀行振込の振込先（Stripe の display_bank_transfer_instructions の zengin）と振込金額
  */
@@ -23,11 +25,7 @@ final readonly class BankTransferInstructions
      */
     public function accountTypeLabel(): string
     {
-        return match ($this->accountType) {
-            'futsu' => '普通',
-            'toza' => '当座',
-            default => $this->accountType,
-        };
+        return BankAccountType::labelFor($this->accountType);
     }
 
     /**

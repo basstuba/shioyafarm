@@ -5,15 +5,18 @@ namespace App\Services;
 use App\Enums\BankTransferCancelResult;
 use App\Enums\CheckoutResult;
 use App\Enums\OrderTokenStatus;
+use App\Mail\ThanksMail;
 use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentGatewayInterface;
 use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -24,6 +27,9 @@ use Throwable;
  * 注文の再計算と保存の中身だけを各サービスが持ち、二重送信の対策（注文トークン・会員ごとの排他ロック・保存済みの記録）、
  * Stripe Checkout・銀行振込（PaymentIntent）の進め方、前の注文の片づけはここにまとめる。
  * 保存待ちの注文・注文トークンは、サービスごとに別のストア（セッションのキー・キャッシュのキー）を使い、互いに干渉しない。
+ * サンクスメールは、どの支払方法・経路でも、保存した直後にここ（completeWithLock）から1通だけ送る。
+ *
+ * @template TSaved of Model 保存する購入履歴（Purchase_history）・予約（Reservation）
  */
 abstract class CheckoutService
 {
@@ -91,9 +97,18 @@ abstract class CheckoutService
     /**
      * 保存待ちの注文を保存する（銀行振込のときは振込先も）
      *
+     * @return TSaved 保存した購入履歴・予約（サンクスメールの元になる）
+     *
      * @throws Throwable 保存に失敗したとき
      */
-    abstract protected function save(PendingOrder $order): void;
+    abstract protected function save(PendingOrder $order): Model;
+
+    /**
+     * 保存した購入履歴・予約から、サンクスメールを作る
+     *
+     * @param  TSaved  $saved
+     */
+    abstract protected function thanksMail(Model $saved): ThanksMail;
 
     /**
      * 保存待ちの注文を取得する（その会員の注文だけ）
@@ -366,6 +381,7 @@ abstract class CheckoutService
      * ロックを取ったあとに、同じ注文がすでに保存されていないかを記録（キャッシュ）で確認する
      * （セッションは同時リクエストの間で共有されないため、保存待ちの注文だけでは二重保存を防げない）。
      * 銀行振込の振込先の unique 違反（同じ PaymentIntent の二重保存）も、保存済みとして扱う。
+     * この呼び出しで新しく保存したときだけ、サンクスメールの送信を登録する（送るのはレスポンスの後。保存済みだった場合は送らない）。
      *
      * @param  Closure(PendingOrder): ?CheckoutResult  $verify  検証。保存してはいけないときは結果を返し、よければ null を返す
      */
@@ -400,7 +416,7 @@ abstract class CheckoutService
             }
 
             try {
-                $this->save($order);
+                $saved = $this->save($order);
             } catch (UniqueConstraintViolationException $e) {
                 Log::warning('購入データはすでに保存されています', ['message' => $e->getMessage()]);
                 Cache::put($completedKey, true, now()->addDays((int) config('purchase.completed_marker_days')));
@@ -409,6 +425,10 @@ abstract class CheckoutService
                 return CheckoutResult::AlreadyCompleted;
             }
 
+            // 保存できた直後に、サンクスメールの送信を登録する（送信自体はレスポンスを返した後）。
+            // このあとの完了マーカーの記録や片づけ（finish）で例外が起きても、登録済みなのでメールは送られる
+            $this->sendThanksMail($saved, $user);
+
             Cache::put($completedKey, true, now()->addDays((int) config('purchase.completed_marker_days')));
             $this->finish($order);
 
@@ -416,6 +436,35 @@ abstract class CheckoutService
         } finally {
             $lock->release();
         }
+    }
+
+    /**
+     * 保存した購入履歴・予約のサンクスメールを、会員登録のメールアドレスへ送る（送信はレスポンスを返した後）
+     *
+     * ここでは送信を defer に登録するだけで、実際に送るのはリクエストの終了時。排他ロックの中から呼んでも、送信はロックの外になり、
+     * サンクスページの表示もメールサーバーの応答を待たない。登録後に処理が例外で終わっても（レスポンスが500でも）、always で送る。
+     * 宛先はメール（ThanksMail）が持つ。キューは使わず、同じプロセスの中で送る。送信に失敗しても例外は外に出さない
+     * （購入・予約は保存済み）。失敗はログに残す。
+     * 会員は呼び出し側が持っているものを渡し、メールの組み立てで会員を読み込み直さない。
+     *
+     * @param  TSaved  $saved
+     */
+    private function sendThanksMail(Model $saved, User $user): void
+    {
+        $saved->setRelation('user', $user);
+
+        defer(function () use ($saved): void {
+            try {
+                Mail::send($this->thanksMail($saved));
+            } catch (Throwable $e) {
+                Log::error('サンクスメールの送信に失敗しました', [
+                    'saved' => $saved::class,
+                    'id' => $saved->getKey(),
+                    'exception' => $e::class,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }, always: true);
     }
 
     /**

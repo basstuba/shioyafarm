@@ -4,12 +4,16 @@ namespace App\Services;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
+use App\Mail\PurchaseThanksMail;
+use App\Mail\ThanksMail;
 use App\Models\Item;
+use App\Models\Purchase_history;
 use App\Models\User;
 use App\Repositories\Interfaces\ItemRepositoryInterface;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\Payment\PaymentGatewayInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +27,8 @@ use Throwable;
  * 購入ページの金額計算、購入の注文の作成（カート・商品詳細）、購入完了時の保存を担当する。
  * 「注文を確定する」（決済ページへの遷移）・銀行振込・二重送信の対策は CheckoutService にある（予約と共通）。
  * 金額はフォームの値を信用せず、DBの価格と config/shipping.php から再計算する。
+ *
+ * @extends CheckoutService<Purchase_history>
  */
 class PurchaseService extends CheckoutService
 {
@@ -256,7 +262,7 @@ class PurchaseService extends CheckoutService
             $method,
             $lines->map(fn (CartLine $line): array => [
                 'item_id' => $line->item->id,
-                'name' => $line->item->name.' '.$line->item->weight.'kg',
+                'name' => $line->item->display_name,
                 'quantity' => $line->quantity,
                 'price' => $line->item->price,
                 'subtotal' => $line->amount,
@@ -274,9 +280,9 @@ class PurchaseService extends CheckoutService
      * @throws Throwable 保存に失敗したとき
      */
     #[Override]
-    protected function save(PendingOrder $order): void
+    protected function save(PendingOrder $order): Purchase_history
     {
-        $this->purchaseHistoryRepository->createWithItems(
+        return $this->purchaseHistoryRepository->createWithItems(
             [
                 'user_id' => $order->userId,
                 'delivery_name' => $order->deliveryName,
@@ -296,5 +302,16 @@ class PurchaseService extends CheckoutService
             ], $order->items),
             $this->bankTransferRow($order),
         );
+    }
+
+    /**
+     * 保存した購入履歴のサンクスメールを作る
+     *
+     * @param  Purchase_history  $saved
+     */
+    #[Override]
+    protected function thanksMail(Model $saved): ThanksMail
+    {
+        return new PurchaseThanksMail($saved);
     }
 }
