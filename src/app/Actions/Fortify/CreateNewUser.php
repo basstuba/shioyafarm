@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 /**
@@ -25,21 +26,9 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         Validator::make($input, [
-            'last_name' => ['bail', 'required', 'string', 'max:255'],
-            'first_name' => ['bail', 'required', 'string', 'max:255'],
-            'prefecture' => ['bail', 'required', 'string', Rule::exists('areas', 'prefecture')],
-            'city' => ['bail', 'required', 'string', 'max:255'],
-            'tell' => ['bail', 'required', 'string', 'regex:/\A[0-9]{10,11}\z/'],
-            'email' => [
-                'bail',
-                'required',
-                'string',
-                'email',
-                'max:30',
-                Rule::unique(User::class),
-            ],
+            ...self::profileRules(Rule::unique(User::class)),
             'password' => $this->passwordRules(),
-        ], $this->messages())->validate();
+        ], self::validationMessages())->validate();
 
         return User::create([
             'last_name' => $input['last_name'],
@@ -53,11 +42,32 @@ class CreateNewUser implements CreatesNewUsers
     }
 
     /**
-     * エラーメッセージ
+     * 会員の登録情報（氏名・住所・電話番号・メールアドレス）のルール
+     *
+     * 会員登録と、マイページの登録情報変更（UserRequest）で共通。違いはメールアドレスの重複の判定だけ
+     * （登録情報の変更では、自分を除く）なので、その規則を引数で受け取る。
+     * 配列などの文字列でない入力でも500にならないよう、各項目は先に string で検証する。
+     *
+     * @return array<string, list<mixed>>
+     */
+    public static function profileRules(Unique $emailUnique): array
+    {
+        return [
+            'last_name' => ['bail', 'required', 'string', 'max:255'],
+            'first_name' => ['bail', 'required', 'string', 'max:255'],
+            'prefecture' => ['bail', 'required', 'string', Rule::exists('areas', 'prefecture')],
+            'city' => ['bail', 'required', 'string', 'max:255'],
+            'tell' => ['bail', 'required', 'string', 'regex:/\A[0-9]{10,11}\z/'],
+            'email' => ['bail', 'required', 'string', 'email', 'max:30', $emailUnique],
+        ];
+    }
+
+    /**
+     * エラーメッセージ（登録情報の変更 UserRequest でも同じ文言を使う）
      *
      * @return array<string, string>
      */
-    private function messages(): array
+    public static function validationMessages(): array
     {
         return [
             'last_name.required' => '姓を入力してください',

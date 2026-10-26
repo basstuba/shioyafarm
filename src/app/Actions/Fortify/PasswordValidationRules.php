@@ -10,10 +10,11 @@ trait PasswordValidationRules
     /**
      * Get the validation rules used to validate passwords.
      *
+     * @param  bool  $required  false のときは任意（空のままなら検証しない。登録情報の変更で使う）
      * @return array<int, Rule|array<mixed>|string>
      */
-    protected function passwordRules(): array
+    protected function passwordRules(bool $required = true): array
     {
-        return ['required', 'string', Password::default(), 'confirmed'];
+        return [$required ? 'required' : 'nullable', 'string', Password::default(), 'confirmed'];
     }
 }

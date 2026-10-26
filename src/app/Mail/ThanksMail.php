@@ -2,13 +2,13 @@
 
 namespace App\Mail;
 
-use App\Enums\BankAccountType;
 use App\Enums\PaymentMethod;
 use App\Models\Purchase_bank_transfer;
 use App\Models\Purchase_history;
 use App\Models\Reservation;
 use App\Models\Reservation_bank_transfer;
 use App\Models\User;
+use App\Services\BankTransferInfo;
 use App\Support\MailText;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -72,14 +72,17 @@ abstract class ThanksMail extends Mailable
             return null;
         }
 
+        // 支払い済みかどうかの判定と項目の対応は、マイページの詳細と共通（BankTransferInfo）
+        $info = BankTransferInfo::fromRow($row);
+
         return [
-            'paid' => $row->bank_name === null,
-            'bankName' => MailText::safe($row->bank_name),
-            'branchName' => MailText::safe($row->branch_name),
-            'accountType' => MailText::safe(BankAccountType::labelFor((string) $row->account_type)),
-            'accountNumber' => MailText::safe($row->account_number),
-            'accountHolderName' => MailText::safe($row->account_holder_name),
-            'amount' => MailText::yen($row->amount),
+            'paid' => $info->paid,
+            'bankName' => MailText::safe($info->bankName),
+            'branchName' => MailText::safe($info->branchName),
+            'accountType' => MailText::safe($info->accountType),
+            'accountNumber' => MailText::safe($info->accountNumber),
+            'accountHolderName' => MailText::safe($info->accountHolderName),
+            'amount' => MailText::yen($info->amount),
         ];
     }
 

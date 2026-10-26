@@ -2,75 +2,79 @@
 
 namespace App\Http\Requests;
 
+use App\Actions\Fortify\CreateNewUser;
+use App\Actions\Fortify\PasswordValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
+/**
+ * 会員の登録情報変更（マイページ）
+ *
+ * ルールとエラーメッセージは会員登録（CreateNewUser）と同じ。違いは次の2点。
+ * - メールアドレスの重複は自分を除いて調べる。退会済み（論理削除）の会員のメールアドレスも重複として扱う
+ * - パスワードは入力されたときだけ検証する（空のときは変更しない）
+ *
+ * メールアドレスかパスワードを変えるときは、現在のパスワードの入力が必要（姓名・住所・電話番号だけの変更では不要）。
+ */
 class UserRequest extends FormRequest
 {
+    use PasswordValidationRules;
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * 配列などの文字列でない入力でも500にならないよう、各項目は先に string で検証する。
+     * users テーブル全体を調べるため、退会済みの会員のメールアドレスも重複になる。
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'last_name' => 'required|string|max:255',
-            'first_name' => 'required|string|max:255',
-            'prefecture' => 'required|exists:areas,prefecture',
-            'city' => 'required|string|max:255',
-            'tell' => 'required|digits_between:10,11|max:15',
-            'email' => [
-                'required',
-                'email',
-                'max:30',
-                Rule::unique('users', 'email')->ignore($this->user()->id),
-            ],
-            'password' => [
-                'nullable',
-                'string',
-                Password::defaults(),
-                'confirmed',
-            ],
+            ...CreateNewUser::profileRules(Rule::unique('users', 'email')->ignore($this->user()?->id)),
+            'password' => $this->passwordRules(required: false),
+            // メールアドレスかパスワードを変えるときだけ検証する（変えないときは検証せず、validated() にも含まれない）
+            ...($this->requiresCurrentPassword() ? ['current_password' => ['bail', 'required', 'string', 'current_password']] : []),
         ];
     }
 
     /**
-     * バリデーションエラーメッセージ
+     * 現在のパスワードの入力が必要か（メールアドレスかパスワードを変えるとき）
+     *
+     * メールアドレスが大文字小文字の違いだけなら、現在のパスワードは求めない（重複の判定が大文字小文字を区別しないのに合わせる）。
+     * 保存するかどうかは別に判定し、大文字小文字の違いも変更として保存する（MyPageService::updateProfile）。
+     */
+    private function requiresCurrentPassword(): bool
+    {
+        $email = $this->input('email');
+        $password = $this->input('password');
+
+        $emailChanged = is_string($email) && strcasecmp($email, (string) $this->user()?->email) !== 0;
+        $passwordChanged = $password !== null && $password !== '';
+
+        return $emailChanged || $passwordChanged;
+    }
+
+    /**
+     * バリデーションエラーメッセージ（会員登録と同じ文言。現在のパスワードのものを足す）
      *
      * @return array<string, string>
      */
     public function messages(): array
     {
-        return [
-            'last_name.required' => '姓を入力してください',
-            'last_name.string' => '姓は文字で入力してください',
-            'last_name.max' => '姓は255文字以内で入力してください',
-            'first_name.required' => '名を入力してください',
-            'first_name.string' => '名は文字で入力してください',
-            'first_name.max' => '名は255文字以内で入力してください',
-            'prefecture.required' => 'お住まいの地域を選択してください',
-            'city.required' => 'ご住所を入力してください',
-            'city.string' => 'ご住所は文字で入力してください',
-            'city.max' => 'ご住所は255文字以内で入力してください',
-            'tell.required' => '電話番号を入力してください',
-            'tell.digits_between' => '電話番号はハイフンなしの数字のみで10〜11桁で入力してください',
-            'tell.max' => '電話番号は15文字以内で入力してください',
-            'email.required' => 'メールアドレスを入力してください',
-            'email.email' => 'メールアドレスは有効なメールアドレス形式で入力してください',
-            'email.max' => 'メールアドレスは30文字以内で入力してください',
-            'email.unique' => 'このメールアドレスは既に使用されています',
-            'password.confirmed' => '確認用パスワードが一致しません',
+        return CreateNewUser::validationMessages() + [
+            'current_password.required' => 'メールアドレス・パスワードを変更する場合は、現在のパスワードを入力してください',
+            'current_password.string' => '現在のパスワードは文字で入力してください',
+            'current_password.current_password' => '現在のパスワードが正しくありません',
         ];
     }
 }
