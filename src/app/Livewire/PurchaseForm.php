@@ -11,6 +11,7 @@ use App\Services\AreaService;
 use App\Services\CartService;
 use App\Services\DeliveryAddressService;
 use App\Services\PurchaseService;
+use App\Support\LoginUser;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -72,7 +73,7 @@ class PurchaseForm extends Component
      */
     public function mount(PurchaseService $purchaseService, DeliveryAddressService $addressService, ?int $itemId = null): void
     {
-        $user = $this->user();
+        $user = LoginUser::require();
         $source = $itemId === null ? PurchaseSource::Cart : PurchaseSource::Item;
 
         $this->itemId = $itemId;
@@ -152,7 +153,7 @@ class PurchaseForm extends Component
 
     public function render(PurchaseService $purchaseService, DeliveryAddressService $addressService, AreaService $areaService): View
     {
-        $user = $this->user();
+        $user = LoginUser::require();
 
         // 改ざんされた値・他人の住所のときは、会員登録の住所に戻す
         $address = $this->resolveAddress($user, $addressService);

@@ -3,6 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Purchase_history;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Throwable;
 
 /**
@@ -20,4 +21,16 @@ interface PurchaseHistoryRepositoryInterface
      * @throws Throwable 保存に失敗したとき（どちらも保存されない）
      */
     public function createWithItems(array $history, array $items, ?array $bankTransfer = null): Purchase_history;
+
+    /**
+     * 会員の購入履歴を新しい順にページ分けして取得（購入商品を Eager Load する）
+     *
+     * @return LengthAwarePaginator<int, Purchase_history>
+     */
+    public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator;
+
+    /**
+     * 会員の購入履歴を1件、詳細の表示に必要な関連（商品・振込先）つきで取得（他の会員の購入履歴・存在しない購入履歴は null）
+     */
+    public function findDetailByUserId(int $userId, int $id): ?Purchase_history;
 }

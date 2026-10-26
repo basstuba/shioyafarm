@@ -5,6 +5,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\MyPageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReservationController;
@@ -59,6 +60,18 @@ Route::middleware('auth')->group(function () {
         ->name('shop.reservation.payment');
     // 予約ページ（予約限定の商品のみ。商品IDは先頭が0でない18桁までの数字）
     Route::get('/reservation/{item}', [ReservationController::class, 'index'])->where('item', '[1-9][0-9]{0,17}')->name('shop.reservation.index');
+});
+
+// マイページ（未ログインはログインページへ。ログイン後に開こうとしたページへ戻る）
+Route::middleware('auth')->group(function () {
+    // マイページ（登録情報・お届け先住所・購入履歴・予約履歴・退会手続き）
+    Route::get('/mypage', [MyPageController::class, 'index'])->name('shop.mypage.index');
+    // 登録情報変更ページ
+    Route::get('/mypage/edit', [MyPageController::class, 'edit'])->name('shop.mypage.edit');
+    // 登録情報の更新
+    Route::post('/mypage/update', [MyPageController::class, 'update'])->name('shop.mypage.update');
+    // 退会（論理削除）
+    Route::delete('/mypage/delete', [MyPageController::class, 'delete'])->name('shop.mypage.delete');
 });
 
 // お問い合わせフォーム

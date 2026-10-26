@@ -3,6 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Reservation;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Throwable;
 
 /**
@@ -24,4 +25,16 @@ interface ReservationRepositoryInterface
      * @throws Throwable 保存に失敗したとき（どちらも保存されない）
      */
     public function createWithBankTransfer(array $reservation, ?array $bankTransfer = null): Reservation;
+
+    /**
+     * 会員の予約を新しい順にページ分けして取得（予約した商品を Eager Load する）
+     *
+     * @return LengthAwarePaginator<int, Reservation>
+     */
+    public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator;
+
+    /**
+     * 会員の予約を1件、詳細の表示に必要な関連（商品・振込先）つきで取得（他の会員の予約・存在しない予約は null）
+     */
+    public function findDetailByUserId(int $userId, int $id): ?Reservation;
 }

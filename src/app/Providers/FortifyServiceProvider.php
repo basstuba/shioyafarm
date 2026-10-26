@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
-use App\Actions\Fortify\UpdateUserPassword;
-use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Http\Controllers\RegisteredUserController;
 use App\Http\Requests\LoginRequest;
 use App\Services\AreaService;
@@ -57,8 +55,6 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::createUsersUsing(CreateNewUser::class);
-        Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
-        Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 

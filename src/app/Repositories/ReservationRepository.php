@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Reservation;
 use App\Repositories\Interfaces\ReservationRepositoryInterface;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Override;
 
@@ -38,5 +39,32 @@ class ReservationRepository implements ReservationRepositoryInterface
 
             return $created;
         });
+    }
+
+    /**
+     * 会員の予約を新しい順にページ分けして取得（予約した商品を Eager Load する）
+     *
+     * @return LengthAwarePaginator<int, Reservation>
+     */
+    #[Override]
+    public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator
+    {
+        return Reservation::with('item')
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage, pageName: $pageName);
+    }
+
+    /**
+     * 会員の予約を1件、詳細の表示に必要な関連（商品・振込先）つきで取得（他の会員の予約・存在しない予約は null）
+     */
+    #[Override]
+    public function findDetailByUserId(int $userId, int $id): ?Reservation
+    {
+        return Reservation::with(['item', 'reservationBankTransfer'])
+            ->where('user_id', $userId)
+            ->where('id', $id)
+            ->first();
     }
 }

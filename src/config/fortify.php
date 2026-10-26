@@ -145,10 +145,13 @@ return [
 
     'features' => [
         Features::registration(),
-        Features::resetPasswords(),
+        // パスワード再設定は使わない（パスワードはマイページの登録情報変更で変える）
+        // Features::resetPasswords(),
         // Features::emailVerification(),
-        Features::updateProfileInformation(),
-        Features::updatePasswords(),
+        // 登録情報の変更は使わない（マイページの UserRequest で変える。標準の PUT /user/profile-information は存在しない name カラムに書き込んで500になるため）
+        // Features::updateProfileInformation(),
+        // パスワードの変更は使わない（マイページの登録情報変更で変える。標準の PUT /user/password は使わない）
+        // Features::updatePasswords(),
         Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,
