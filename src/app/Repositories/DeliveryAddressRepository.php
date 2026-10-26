@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Delivery_address;
 use App\Repositories\Interfaces\DeliveryAddressRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Override;
 
 /**
@@ -43,5 +44,19 @@ class DeliveryAddressRepository implements DeliveryAddressRepositoryInterface
             'delivery_prefecture' => $prefecture,
             'delivery_city' => $city,
         ]);
+    }
+
+    /**
+     * 会員の配送先住所を新しい順にページ分けして取得
+     *
+     * @return LengthAwarePaginator<int, Delivery_address>
+     */
+    #[Override]
+    public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator
+    {
+        return Delivery_address::where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage, pageName: $pageName);
     }
 }

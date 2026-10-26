@@ -140,6 +140,11 @@ class HeaderNavTest extends TestCase
         $cases['ショップ（ログイン中）'] = ['shop.items.index', true, ['カート', 'マイページ'], [...$about, 'ログアウト'], [...$about, 'カート', 'マイページ', 'ログアウト']];
         $cases['カート'] = ['shop.cart', true, ['マイページ'], [...$about, 'ログアウト'], [...$about, 'マイページ', 'ログアウト']];
 
+        // マイページ・登録情報変更ページは「マイページ」を出さず、SPのヘッダーに出すのはオンラインショップだけ
+        foreach (['マイページ' => 'shop.mypage.index', '登録情報変更ページ' => 'shop.mypage.edit'] as $name => $routeName) {
+            $cases[$name] = [$routeName, true, ['オンラインショップ'], [...$about, 'ログアウト'], [...$about, 'オンラインショップ', 'ログアウト']];
+        }
+
         return $cases;
     }
 
@@ -165,6 +170,71 @@ class HeaderNavTest extends TestCase
         $this->assertSame($bar, $nav['bar']);
         $this->assertSame($menu, $nav['menu']);
         $this->assertSame($pc, $nav['pc']);
+    }
+
+    /**
+     * マイページ・登録情報変更ページのヘッダーには「マイページ」を出さず、「ログアウト」とオンラインショップへのリンクを出す
+     */
+    #[Test]
+    #[DataProvider('mypageRoutes')]
+    public function マイページ上ではマイページが表示されずログアウトが表示される(string $routeName): void
+    {
+        $nav = $this->parseNav($this->actingAs(User::factory()->create())->get(route($routeName))->getContent());
+
+        $this->assertNotContains('マイページ', $nav['pc']);
+        $this->assertContains('ログアウト', $nav['pc']);
+        $this->assertSame(['POST '.route('logout')], $nav['menuForms']);
+        $this->get(route($routeName))->assertSee('href="'.route('shop.items.index').'"', false);
+    }
+
+    /**
+     * マイページのルート名
+     *
+     * @return array<string, array{string}>
+     */
+    public static function mypageRoutes(): array
+    {
+        return [
+            'マイページ' => ['shop.mypage.index'],
+            '登録情報変更ページ' => ['shop.mypage.edit'],
+        ];
+    }
+
+    /**
+     * ほかのページのヘッダーの「マイページ」は、マイページへのリンクになる
+     */
+    #[Test]
+    #[DataProvider('topNavRoutes')]
+    public function ほかのページのマイページはマイページへのリンクになる(string $routeName): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get(route($routeName));
+
+        $response->assertSee('href="'.route('shop.mypage.index').'"', false);
+    }
+
+    /**
+     * ショップ・カートのヘッダーの「マイページ」も、マイページへのリンクになる
+     */
+    #[Test]
+    #[DataProvider('shopNavRoutes')]
+    public function ショップのマイページはマイページへのリンクになる(string $routeName): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get(route($routeName));
+
+        $response->assertSee('href="'.route('shop.mypage.index').'"', false);
+    }
+
+    /**
+     * ショップ・カートのルート名
+     *
+     * @return array<string, array{string}>
+     */
+    public static function shopNavRoutes(): array
+    {
+        return [
+            '商品一覧' => ['shop.items.index'],
+            'カート' => ['shop.cart'],
+        ];
     }
 
     /**

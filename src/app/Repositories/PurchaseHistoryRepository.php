@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Purchase_history;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Override;
 
@@ -31,5 +32,32 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
 
             return $purchase;
         });
+    }
+
+    /**
+     * 会員の購入履歴を新しい順にページ分けして取得（購入商品を Eager Load する）
+     *
+     * @return LengthAwarePaginator<int, Purchase_history>
+     */
+    #[Override]
+    public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator
+    {
+        return Purchase_history::with('purchaseHistoryItems.item')
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage, pageName: $pageName);
+    }
+
+    /**
+     * 会員の購入履歴を1件、詳細の表示に必要な関連（商品・振込先）つきで取得（他の会員の購入履歴・存在しない購入履歴は null）
+     */
+    #[Override]
+    public function findDetailByUserId(int $userId, int $id): ?Purchase_history
+    {
+        return Purchase_history::with(['purchaseHistoryItems.item', 'purchaseBankTransfer'])
+            ->where('user_id', $userId)
+            ->where('id', $id)
+            ->first();
     }
 }

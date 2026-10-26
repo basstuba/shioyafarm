@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Delivery_address;
 use App\Models\User;
 use App\Repositories\Interfaces\DeliveryAddressRepositoryInterface;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * 配送先住所サービス
@@ -13,6 +14,9 @@ use App\Repositories\Interfaces\DeliveryAddressRepositoryInterface;
  */
 class DeliveryAddressService
 {
+    /** マイページの一覧の1ページの件数 */
+    public const int PER_PAGE = 5;
+
     /** 会員登録の住所の値の接頭辞 */
     private const string USER_PREFIX = 'user';
 
@@ -93,5 +97,15 @@ class DeliveryAddressService
     public function add(User $user, string $prefecture, string $city): Delivery_address
     {
         return $this->deliveryAddressRepository->create($user->id, $prefecture, $city);
+    }
+
+    /**
+     * マイページのお届け先住所一覧を、新しい順にページ分けして取得する（会員登録の住所は含めない）
+     *
+     * @return LengthAwarePaginator<int, Delivery_address>
+     */
+    public function paginate(User $user, string $pageName): LengthAwarePaginator
+    {
+        return $this->deliveryAddressRepository->paginateByUserId($user->id, self::PER_PAGE, $pageName);
     }
 }

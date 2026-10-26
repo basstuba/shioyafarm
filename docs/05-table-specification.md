@@ -4,6 +4,8 @@ ER図は [ER図](06-er-diagram.md) を参照。
 
 ## users（ユーザーデータ）
 
+退会は論理削除で、退会した会員は deleted_at に退会日時が入る。退会した会員は、ログイン・会員登録・登録情報変更のいずれでもメールアドレスを再利用できない。購入履歴・予約・配送先住所は消さない。物理削除は、取引の終了後に管理者が管理画面から行う（管理画面の実装時に作る）。
+
 | カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
 |---|---|:---:|:---:|:---:|---|
 | id | bigint unsigned | ○ | | | |
@@ -17,6 +19,7 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | stripe_customer_id | varchar(255) | | ○ | | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+| deleted_at | timestamp | | | | |
 
 ## admins（管理者データ）
 
