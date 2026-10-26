@@ -50,7 +50,8 @@ class UserRequest extends FormRequest
     /**
      * 現在のパスワードの入力が必要か（メールアドレスかパスワードを変えるとき）
      *
-     * メールアドレスは、大文字小文字の違いだけなら変更とみなさない（重複の判定が大文字小文字を区別しないのに合わせる）。
+     * メールアドレスが大文字小文字の違いだけなら、現在のパスワードは求めない（重複の判定が大文字小文字を区別しないのに合わせる）。
+     * 保存するかどうかは別に判定し、大文字小文字の違いも変更として保存する（MyPageService::updateProfile）。
      */
     private function requiresCurrentPassword(): bool
     {
