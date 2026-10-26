@@ -68,4 +68,42 @@ class NavTest extends TestCase
     {
         $this->assertSame([[], []], Nav::split([]));
     }
+
+    /**
+     * マイページ用ナビは「マイページ」を出さず、SPのヘッダーにはオンラインショップだけを出す
+     */
+    #[Test]
+    public function マイページ用ナビはマイページを出さずオンラインショップだけがヘッダーに残る(): void
+    {
+        [$bar, $menu] = Nav::split(Nav::mypage());
+
+        $this->assertSame(['オンラインショップ'], array_column($bar, 'label'));
+        $this->assertSame(['お知らせ', 'しおや農園について', 'ログアウト'], array_column($menu, 'label'));
+        $this->assertNotContains('マイページ', array_column(Nav::mypage(), 'label'));
+    }
+
+    /**
+     * マイページ用ナビのログアウトはメニュー側にあり、POSTで送る。オンラインショップは商品一覧へのリンク
+     */
+    #[Test]
+    public function マイページ用ナビのログアウトはポストで送りオンラインショップは商品一覧へ移動する(): void
+    {
+        $items = collect(Nav::mypage());
+
+        $this->assertSame('post', $items->firstWhere('label', 'ログアウト')['method'] ?? null);
+        $this->assertSame(route('shop.items.index'), $items->firstWhere('label', 'オンラインショップ')['url'] ?? null);
+    }
+
+    /**
+     * ログイン中のナビの「マイページ」は、マイページへのリンクで、SPのヘッダーにも出す
+     */
+    #[Test]
+    public function ログイン中のナビのマイページはマイページへのリンクになる(): void
+    {
+        $item = collect(Nav::topAuth())->firstWhere('label', 'マイページ');
+
+        $this->assertNotNull($item);
+        $this->assertSame(route('shop.mypage.index'), $item['url']);
+        $this->assertTrue(Nav::isSpBar($item));
+    }
 }

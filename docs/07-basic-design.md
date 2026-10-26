@@ -32,10 +32,10 @@
 | `/reservation/thanks` | GET | ReservationController | thanks | 必須 | 予約完了ページ表示（銀行振込） |
 | `/payment` | POST | PaymentController | payment | 必須 | 購入の決済機能（代金引換はここで購入履歴を作成） |
 | `/add-address` | POST | AddAddressController | store | 必須 | 配送先住所追加機能 |
-| `/mypage` | GET | MyPageController | index | 必須 | マイページ表示 |
-| `/mypage/edit` | GET | MyPageController | edit | 必須 | 登録情報変更ページ表示 |
-| `/mypage/update` | POST | MyPageController | update | 必須 | 登録情報更新機能 |
-| `/mypage/delete` | DELETE | MyPageController | delete | 必須 | 退会機能 |
+| `/mypage` | GET | MyPageController | index | 必須 | マイページ表示（ルート名 `shop.mypage.index`。お届け先住所一覧・購入履歴・予約履歴は Livewire で5件ずつページ送り、詳細はモーダル） |
+| `/mypage/edit` | GET | MyPageController | edit | 必須 | 登録情報変更ページ表示（ルート名 `shop.mypage.edit`） |
+| `/mypage/update` | POST | MyPageController | update | 必須 | 登録情報更新機能（ルート名 `shop.mypage.update`。成功したらマイページへ。変更がない場合は保存せず登録情報変更ページに戻り「変更された項目はありません」と表示） |
+| `/mypage/delete` | DELETE | MyPageController | delete | 必須 | 退会機能（ルート名 `shop.mypage.delete`。論理削除してログアウトし、トップページへ） |
 
 ### 管理者機能
 
@@ -209,8 +209,11 @@ user_idと合計金額はcontrollerで取得
 | 住所（都道府県） | 入力必須、テーブルに存在の有無 |
 | 住所（市区町村） | 入力必須、文字列、255文字以下 |
 | 電話番号 | 入力必須、数字のみ、10〜11桁、15文字以下 |
-| メールアドレス | 入力必須、重複不可、正しいメールアドレス形式、30文字以下 |
-| パスワード | 必須ではない、登録の際と同じFortifyのバリデーションを使用 |
+| メールアドレス | 入力必須、重複不可（自分を除く。退会済みの会員のメールアドレスも重複として扱う）、正しいメールアドレス形式、30文字以下 |
+| パスワード | 必須ではない（空のときは変更しない）、入力したときは登録の際と同じFortifyのバリデーションを使用 |
+| 現在のパスワード | メールアドレスまたはパスワードを変更するときだけ入力必須（メールアドレスが今と同じ、または大文字小文字の違いだけなら変更とみなさない）、現在のパスワードと一致 |
+
+エラーメッセージは会員登録（`CreateNewUser`）と同じ文言を使う（現在のパスワードのメッセージを除く）。
 
 ### NoticeRequest.php（お知らせ作成）
 

@@ -14,6 +14,11 @@
 
 @section('content')
     <div class="pt-header text-ink">
+        {{-- 退会したときのメッセージなど --}}
+        @if (session('flash_message'))
+            <p class="bg-white px-4 py-3 text-center text-base text-accent md:text-lg" role="status">{{ session('flash_message') }}</p>
+        @endif
+
         {{-- ファーストビュー --}}
         <section class="relative h-[480px] overflow-hidden md:h-[640px] lg:h-[810px]">
             @foreach ($slides as $slide)

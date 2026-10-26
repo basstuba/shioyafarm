@@ -29,6 +29,7 @@ erDiagram
         varchar stripe_customer_id
         timestamp created_at
         timestamp updated_at
+        timestamp deleted_at
     }
 
     delivery_addresses {

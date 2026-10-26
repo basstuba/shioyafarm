@@ -3,19 +3,20 @@
 namespace App\Livewire\Concerns;
 
 use App\Enums\PaymentMethod;
-use App\Http\Requests\DeliveryAddressRequest;
+use App\Models\Delivery_address;
 use App\Models\User;
 use App\Services\DeliveryAddressService;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * 購入ページ・予約ページの Livewire コンポーネントで共通の、お届け先・支払方法・住所追加モーダル
  *
- * 入力項目（氏名・電話番号・住所・支払方法）、住所追加モーダルの開閉と追加、
+ * 入力項目（氏名・電話番号・住所・支払方法）、住所追加モーダル（WithAddressModal）、
  * 検証エラーで戻ったときの入力の復元を持つ。ビューは livewire/partials の部品を使う。
  */
 trait WithDeliveryForm
 {
+    use WithAddressModal;
+
     /** お届け先氏名 */
     public string $deliveryName = '';
 
@@ -28,54 +29,12 @@ trait WithDeliveryForm
     /** 支払方法 */
     public string $paymentMethod = PaymentMethod::Card->value;
 
-    /** 住所追加モーダルを開いているか */
-    public bool $showAddressModal = false;
-
-    /** 住所追加モーダルの都道府県（DeliveryAddressRequest と同じ名前にして、同じルールで検証する） */
-    public string $delivery_prefecture = '';
-
-    /** 住所追加モーダルの住所（市区町村以降） */
-    public string $delivery_city = '';
-
     /**
-     * 住所追加モーダルを開く（前回の入力とエラーは消す）
+     * 追加した住所を、お届け先住所に選択する
      */
-    public function openAddressModal(): void
+    protected function onAddressAdded(Delivery_address $address, DeliveryAddressService $addressService): void
     {
-        $this->reset(['delivery_prefecture', 'delivery_city']);
-        $this->resetErrorBag(['delivery_prefecture', 'delivery_city']);
-        $this->showAddressModal = true;
-    }
-
-    /**
-     * 配送先住所を追加する
-     *
-     * DeliveryAddressRequest と同じルール・メッセージで検証する。エラーはモーダル内に表示する。
-     * 追加できたらモーダルを閉じ、追加した住所をお届け先住所に選択する。
-     */
-    public function addAddress(DeliveryAddressService $addressService): void
-    {
-        $validated = $this->validate(
-            DeliveryAddressRequest::addressRules(),
-            DeliveryAddressRequest::addressMessages(),
-        );
-
-        $address = $addressService->add($this->user(), $validated['delivery_prefecture'], $validated['delivery_city']);
-
         $this->addressId = $addressService->deliveryAddressId($address);
-        $this->showAddressModal = false;
-        $this->reset(['delivery_prefecture', 'delivery_city']);
-    }
-
-    /**
-     * ログイン中の会員
-     */
-    private function user(): User
-    {
-        $user = Auth::user();
-        abort_unless($user instanceof User, 401);
-
-        return $user;
     }
 
     /**

@@ -12,6 +12,7 @@ use App\Services\CartService;
 use App\Services\DeliveryAddressService;
 use App\Services\ReservationLimitService;
 use App\Services\ReservationService;
+use App\Support\LoginUser;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -72,7 +73,7 @@ class ReservationForm extends Component
      */
     public function mount(ReservationService $reservationService, DeliveryAddressService $addressService, int $itemId, ?Item $item = null, ?int $maxQuantity = null): void
     {
-        $user = $this->user();
+        $user = LoginUser::require();
         if ($item === null || $item->id !== $itemId || ! $item->is_reserved_only) {
             $item = $reservationService->findReservableItem($itemId);
             $maxQuantity = null;
@@ -149,7 +150,7 @@ class ReservationForm extends Component
 
     public function render(ReservationService $reservationService, DeliveryAddressService $addressService, AreaService $areaService): View
     {
-        $user = $this->user();
+        $user = LoginUser::require();
         $item = $this->item;
 
         // 改ざんされた値・他人の住所のときは、会員登録の住所に戻す

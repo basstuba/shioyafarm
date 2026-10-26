@@ -28,13 +28,13 @@ class Purchase_history extends Model
     ];
 
     /**
-     * 購入した会員
+     * 購入した会員（退会済みの会員を含む）
      *
      * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /**

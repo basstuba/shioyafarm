@@ -21,4 +21,24 @@ class UserRepository implements UserRepositoryInterface
     {
         $user->forceFill(['stripe_customer_id' => $customerId])->save();
     }
+
+    /**
+     * 会員の登録情報を更新（パスワードは渡されたときだけ変更する）
+     *
+     * @param  array{last_name: string, first_name: string, prefecture: string, city: string, tell: string, email: string, password?: string}  $attributes
+     */
+    #[Override]
+    public function update(User $user, array $attributes): void
+    {
+        $user->update($attributes);
+    }
+
+    /**
+     * 会員を退会させる（論理削除。購入履歴・予約・配送先住所は消さない）
+     */
+    #[Override]
+    public function withdraw(User $user): void
+    {
+        $user->delete();
+    }
 }

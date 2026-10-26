@@ -134,12 +134,7 @@ class Nav
                 'sp' => 'bar',
             ],
             self::mypageItem(),
-            [
-                'label' => 'ログアウト',
-                'url' => route('logout'),
-                'method' => 'post', // ← logout用
-                'icon' => 'image/icon/logout-icon.webp',
-            ],
+            self::logoutItem(),
         ];
     }
 
@@ -162,19 +157,42 @@ class Nav
                 'icon' => 'image/icon/team-header-icon.webp',
             ],
             self::mypageItem(),
-            [
-                'label' => 'ログアウト',
-                'url' => route('logout'),
-                'method' => 'post', // ← logout用
-                'icon' => 'image/icon/logout-icon.webp',
-            ],
+            self::logoutItem(),
         ];
     }
 
     /**
-     * ナビの「マイページ」項目（ログイン中のナビで共通）
+     * マイページ・登録情報変更ページ用ナビ
      *
-     * マイページのルートができたら route('mypage') に差し替え、マイページ上では非表示にする。
+     * マイページ上なので「マイページ」は出さない。SPのヘッダーに出すのはオンラインショップだけ。
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function mypage(): array
+    {
+        return [
+            ...self::top(),
+            self::logoutItem(),
+        ];
+    }
+
+    /**
+     * ナビの「ログアウト」項目（ログイン中のナビで共通。POSTで送る）
+     *
+     * @return array<string, string>
+     */
+    private static function logoutItem(): array
+    {
+        return [
+            'label' => 'ログアウト',
+            'url' => route('logout'),
+            'method' => 'post', // ← logout用
+            'icon' => 'image/icon/logout-icon.webp',
+        ];
+    }
+
+    /**
+     * ナビの「マイページ」項目（ログイン中のナビで共通。マイページ上では出さない）
      *
      * @return array<string, string>
      */
@@ -182,8 +200,7 @@ class Nav
     {
         return [
             'label' => 'マイページ',
-            // 'url'   => route('mypage'),
-            'url' => '#', // ルートを設定するまでの仮実装
+            'url' => route('shop.mypage.index'),
             'icon' => 'image/icon/id-card-header-icon.webp',
             'sp' => 'bar',
         ];
