@@ -6,7 +6,7 @@
 | ブランチ | feat/password-reset |
 | 根拠 | docs/03-page-list.md「ログインページ」、docs/02-initial-settings.md「会員登録時の入力項目」、ユーザーと決めた事項（2026-10-26） |
 | デザイン | 専用のデザインなし。会員登録ページ（PC：左に背景画像のパネル・右にフォーム）と同じレイアウト・部品を使う（ユーザー指示 2026-10-26）。細部はフロント実装時に仕上げる |
-| 実施日 | |
+| 実施日 | 2026-10-28（コードレビューの指摘を受けたバックエンド修正後に再々実施。前回分は上書き） |
 
 ## 受け入れ条件
 
@@ -52,21 +52,35 @@
 
 | ID | PC | SP | 備考 | スクリーンショット |
 |---|---|---|---|---|
+| S-1 | OK | OK | ログインフォーム内（パスワード欄の下）に「パスワードをお忘れの方」リンクがあり、押すと /forgot-password へ遷移。SPでも同様で、リンクの高さは44px | screenshots/password-reset/S-1-pc.png, screenshots/password-reset/S-1-sp.png |
+| S-2 | OK | OK | PC：左パネル（ロゴ・見出し・ログインの案内と「ログイン」ボタン・©Shioya farm）、右フォーム（案内文・メールアドレス欄・「再設定メールを送信」ボタン）。SP：ロゴ・見出し → フォーム → ログインの案内 → © の順。共通ヘッダーのナビ・フッターなし。タイトル「パスワード再設定 \| Shioya Farm」。SPで横スクロールなし（scrollWidth=414）、入力欄・ボタン・「ログイン」ボタンの高さ44px、文字16px | screenshots/password-reset/S-2-pc.png, screenshots/password-reset/S-2-sp.png |
+| S-3 | OK | - | 「ご登録のメールアドレス宛てに、パスワード再設定用のメールをお送りしました。」が表示。uat-reset@example.com 宛てに1通。差出人「しおや農園 <shioyafarm@example.com>」、件名「【しおや農園】パスワード再設定のご案内」。本文に手順・「パスワードを再設定する」ボタン・有効期限60分・心当たりがなければ破棄する旨あり、英語の定型文なし。会員名は「UAT 再設定 様」（姓名の間に半角スペース。シナリオ記載の「UAT再設定 様」とはスペースの有無が異なるだけで、姓名を分けて登録したためと思われる） | screenshots/password-reset/S-3-pc.png, screenshots/password-reset/S-3-mail-pc.png |
+| S-4 | OK | - | S-3 の直後に同じアドレスで再送信。同じ案内が表示され、Mailpit に2通目は届かず（uat-reset 宛ては1通のまま） | screenshots/password-reset/S-4-pc.png |
+| S-5 | OK | - | 同じ案内が表示。Mailpit にメールなし | screenshots/password-reset/S-5-pc.png |
+| S-6 | OK | - | 退会済み（論理削除）の会員で確認。同じ案内が表示。Mailpit にメールなし。※シナリオ記載の uat-withdrawn-reset@example.com は31文字で email 列（varchar(30)）に入らないため、uat-wd-reset@example.com で代替した | screenshots/password-reset/S-6-pc.png |
+| S-7 | OK | - | ①空：「メールアドレスを入力してください」②「abc」：「メールアドレスは有効なメールアドレス形式で入力してください」。いずれも入力欄の下に赤字で表示。メールは送られていない（Mailpit の総数が変わらず）。回数制限（ルートごと・IPごとに1分5回）に収まるよう、①と②の間に1分以上空けて実施 | screenshots/password-reset/S-7-1-pc.png, screenshots/password-reset/S-7-2-pc.png |
+| S-8 | OK | OK | 見出し「新しいパスワードの設定」、新しいパスワード・確認用パスワード欄（type=password で伏せ字）、「パスワードを再設定する」ボタン。タイトル「新しいパスワードの設定 \| Shioya Farm」。SPで横スクロールなし（414px）、入力欄・ボタンの高さ44px。（PCの入力欄は高さ40px・ボタン34px だが、44px以上はSPのみの条件） | screenshots/password-reset/S-8-pc.png, screenshots/password-reset/S-8-sp.png |
+| S-9 | OK | - | （POST /reset-password を S-9〜S-11 の5回で使い、S-12 は1分以上空けて実施したため、回数制限には掛かっていない）①「パスワードを入力してください」②「パスワードは8文字以上で入力してください」③「パスワードと確認用パスワードが一致しません」。いずれも戻ったときパスワード欄は空。その後 oldpass123 でログインでき（/items へ遷移）、ログアウトした | screenshots/password-reset/S-9-1-pc.png, screenshots/password-reset/S-9-2-pc.png, screenshots/password-reset/S-9-3-pc.png |
+| S-10 | OK | - | newpass123 で送信すると /login へ遷移し「パスワードを再設定しました。新しいパスワードでログインしてください。」が表示。oldpass123 は「メールアドレスまたはパスワードが正しくありません。」でログイン不可、newpass123 でログインでき /items へ遷移 | screenshots/password-reset/S-10-pc.png, screenshots/password-reset/S-10-old-pc.png |
+| S-11 | OK | - | 使用済みリンクで another123 を送信すると「このリンクは無効か、有効期限が切れています。もう一度再設定メールを送信してください。」が表示され、「再設定メールを送信する」リンク（/forgot-password）あり。newpass123 でログインできた（パスワードは変わっていない） | screenshots/password-reset/S-11-pc.png |
+| S-12 | OK | - | S-11 と同じメッセージ・リンクが表示。newpass123 のままログインできた | screenshots/password-reset/S-12-pc.png |
+| S-13 | OK | - | test@test.com でログイン中、/forgot-password も /reset-password/invalidtoken も http://localhost/（トップページ）へ移動 | screenshots/password-reset/S-13-1-pc.png, screenshots/password-reset/S-13-2-pc.png |
 
-- コンソールエラー：
-- メール（Mailpit）：
-- 追加したデータ：
+- コンソールエラー：なし（再々実施でもなし）
+- メール（Mailpit）：再々実施の S-3 で uat-reset@example.com 宛てに1通（差出人「しおや農園」、件名「【しおや農園】パスワード再設定のご案内」、本文は前回と同じ）。S-4〜S-7・回数制限の確認では新たなメールは届かず（Mailpit の総数は 36 → 37 で、増えたのは S-3 の1通のみ）。
+- 回数制限の確認（シナリオ表外・参考）：/forgot-password で未登録の not-registered@example.com を1分以内に6回送信。1〜5回目は通常の案内が出て、6回目はメールアドレス欄の下に赤字で「操作の回数が上限に達しました。57秒後に再度お試しください。」が表示された（メールは送られていない）。これはNGではなく仕様どおりの動作。シナリオの実施では、上限に達しないよう各POSTの回数と間隔を調整した（S-3〜S-7①の5回、1分以上待って回数制限の確認、さらに1分以上待って S-7②）。スクリーンショット：screenshots/password-reset/S-rate-limit-pc.png
+- 追加したデータ：users に2件（uat-reset@example.com「UAT 再設定」。uat-wd-reset@example.com「UAT 退会再設定」、論理削除済み。どちらも初期パスワード oldpass123）。再々実施の前に uat-reset@example.com のパスワードを tinker で oldpass123 へ戻し、UAT 中に再び newpass123 へ変わった（最終状態は newpass123）。Mailpit に再設定メールが合計3通（前回までの2通＋今回1通）。password_reset_tokens は最終的に0件。test@test.com のパスワードは変更していない。
 
 ## ユーザー確認チェックリスト
 
-- [ ] ログインページの「パスワードをお忘れの方」が見つけやすい
-- [ ] 送信ページの案内文と、送信後の案内が分かりやすい（登録していないアドレスでも同じ案内が出ることに違和感がない）
-- [ ] 再設定メールの文面が分かりやすく、迷惑メールのように見えない
-- [ ] メールのボタンから新しいパスワードを設定し、ログインできる
-- [ ] 無効なリンクを開いたときのメッセージで、次に何をすればよいか分かる
-- [ ] スマホでも送信ページ・再設定ページが操作しやすい（見た目の細部はフロント実装時に仕上げる）
+- [x] ログインページの「パスワードをお忘れの方」が見つけやすい
+- [x] 送信ページの案内文と、送信後の案内が分かりやすい（登録していないアドレスでも同じ案内が出ることに違和感がない）
+- [x] 再設定メールの文面が分かりやすく、迷惑メールのように見えない
+- [x] メールのボタンから新しいパスワードを設定し、ログインできる
+- [x] 無効なリンクを開いたときのメッセージで、次に何をすればよいか分かる
+- [x] スマホでも送信ページ・再設定ページが操作しやすい（見た目の細部はフロント実装時に仕上げる）
 
 ## 判定
 
-- 受け入れ：未 / 済（ユーザーが記入する）
-- コメント：
+- 受け入れ：済
+- コメント：チェック項目をすべてクリアしているので受け入れ済としますが、フロントエンド実装後再度チェックします
