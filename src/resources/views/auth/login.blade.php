@@ -9,8 +9,12 @@
 @section('form')
     <form class="mx-auto flex w-full max-w-[600px] flex-col gap-6 rounded-[20px] bg-white px-6 py-8 shadow-card lg:min-h-[450px] lg:gap-15 lg:px-8 lg:pt-12 xl:px-25" action="{{ route('login.store') }}" method="POST" novalidate>
         @csrf
+        @if (session('status'))
+            <p class="rounded-[10px] bg-cream-200 px-4 py-3 text-base text-ink" role="status">{{ session('status') }}</p>
+        @endif
         <x-auth-input name="email" label="メールアドレス" type="email" placeholder="例：sample@example.com" autocomplete="email" />
         <x-auth-input name="password" label="パスワード" type="password" placeholder="例：demo12345" autocomplete="current-password" />
+        <a class="-mt-2 inline-flex min-h-11 items-center self-end text-base text-primary-dark underline lg:-mt-10 lg:min-h-0" href="{{ route('password.request') }}">パスワードをお忘れの方</a>
         <button class="h-11 w-full cursor-pointer rounded-full bg-primary text-base text-white transition-[background-color,box-shadow] duration-200 hover:bg-primary-hover hover:shadow-button focus-visible:bg-primary-hover focus-visible:shadow-button focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark lg:mt-6 lg:h-[34px]" type="submit">ログイン</button>
     </form>
 @endsection
