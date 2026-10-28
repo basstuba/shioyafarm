@@ -145,8 +145,8 @@ return [
 
     'features' => [
         Features::registration(),
-        // パスワード再設定は使わない（パスワードはマイページの登録情報変更で変える）
-        // Features::resetPasswords(),
+        // パスワード再設定（会員向け。ログインページの「パスワードをお忘れの方」から。再設定メールは User::sendPasswordResetNotification で日本語のメールを送る）
+        Features::resetPasswords(),
         // Features::emailVerification(),
         // 登録情報の変更は使わない（マイページの UserRequest で変える。標準の PUT /user/profile-information は存在しない name カラムに書き込んで500になるため）
         // Features::updateProfileInformation(),
