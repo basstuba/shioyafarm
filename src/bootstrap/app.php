@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ThrottlePasswordReset;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // パスワードを変えたとき、ほかの端末のセッションをログアウト状態にする（Auth::logoutOtherDevices の前提）
-        $middleware->web(append: [AuthenticateSession::class]);
+        $middleware->web(append: [AuthenticateSession::class, ThrottlePasswordReset::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // 「注文を確定する」の同じセッションの先のリクエストが終わらず、待ちきれなかったとき（セッションの排他。500にしない）。
