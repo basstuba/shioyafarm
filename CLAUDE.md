@@ -32,9 +32,11 @@ docker compose exec php php artisan test --coverage     # カバレッジ計測�
 docker compose exec php ./vendor/bin/pint               # コードスタイル
 docker compose exec php ./vendor/bin/phpstan analyse --memory-limit=1G   # 静的解析（Larastan、レベル5。設定は src/phpstan.neon）
 docker compose exec node npm run build                  # 本番用にCSS/JSをビルド（開発中は node コンテナの Vite が自動で反映する）
+./e2e/run.sh                                            # E2Eテスト（Playwright Test。専用DB sf_db_e2e を作り直し、:8081 のE2E用アプリで流す。前提と項目は docs/e2e/scenarios.md）
+./e2e/run.sh stripe                                     # E2Eのうちクレジットカード（Stripe Checkout）の項目だけ
 ```
 
-サービス：アプリは http://localhost、phpMyAdmin は :8080、MailHog は :8025。
+サービス：アプリは http://localhost、phpMyAdmin は :8080、Mailpit は :8025。
 
 ## アーキテクチャ
 
