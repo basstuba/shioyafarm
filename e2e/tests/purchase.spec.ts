@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
-import { addToCart, amount, changeQuantity, openItem } from '../support/shop';
+import { addToCart, changeQuantity, openItem, valueOf } from '../support/shop';
 
 // 購入の流れ（docs/e2e/scenarios.md E-4・E-5）
 // 送料は config/shipping.php の値。2kgの商品2つ（4kg）は80サイズで、北海道 1,230円・関東 1,740円
@@ -17,8 +17,8 @@ test('E-4 カートから代金引換で購入し、住所を追加して届け�
     await expect(page.getByLabel('お届け先氏名')).toHaveValue(`${member.lastName}${member.firstName}`);
     await expect(page.getByLabel('お届け先電話番号')).toHaveValue(member.tell);
     await expect(page.getByTestId('confirm-address')).toHaveText(`${member.prefecture}${member.city}`);
-    await expect(amount(page, '小計')).toHaveText('685円');
-    await expect(amount(page, '送料')).toHaveText('1,230円');
+    await expect(valueOf(page, '小計')).toHaveText('685円');
+    await expect(valueOf(page, '送料')).toHaveText('1,230円');
 
     // 住所追加モーダルで東京都の住所を追加すると、その住所が選ばれて送料が変わる
     await page.getByRole('button', { name: '＋新しい住所を追加' }).click();
@@ -28,13 +28,13 @@ test('E-4 カートから代金引換で購入し、住所を追加して届け�
     await modal.getByRole('button', { name: '住所を追加' }).click();
     await expect(modal).toBeHidden();
     await expect(page.getByTestId('confirm-address')).toHaveText('東京都千代田区E2E2-2');
-    await expect(amount(page, '送料')).toHaveText('1,740円');
+    await expect(valueOf(page, '送料')).toHaveText('1,740円');
 
     // 代金引換を選ぶと代引手数料が加わる
-    await expect(amount(page, '代引手数料')).toHaveCount(0);
+    await expect(valueOf(page, '代引手数料')).toHaveCount(0);
     await page.getByRole('radio', { name: /代金引換/ }).check();
-    await expect(amount(page, '代引手数料')).toHaveText('330円');
-    await expect(amount(page, '合計')).toHaveText('2,755円');
+    await expect(valueOf(page, '代引手数料')).toHaveText('330円');
+    await expect(valueOf(page, '合計')).toHaveText('2,755円');
 
     await page.getByRole('button', { name: '注文を確定する' }).click();
     await expect(page.getByRole('heading', { name: /ご注文ありがとうございました/ })).toBeVisible();
@@ -57,9 +57,9 @@ test('E-4 カートから代金引換で購入し、住所を追加して届け�
     await page.getByRole('button', { name: /^注文日.*の詳細を見る$/ }).click();
     const detail = page.getByRole('dialog', { name: '購入の詳細' });
     await expect(detail).toBeVisible();
-    await expect(amount(detail, '代引手数料')).toHaveText('330円');
-    await expect(amount(detail, '合計金額')).toHaveText('2,755円');
-    await expect(amount(detail, 'お支払い方法')).toHaveText('代金引換');
+    await expect(valueOf(detail, '代引手数料')).toHaveText('330円');
+    await expect(valueOf(detail, '合計金額')).toHaveText('2,755円');
+    await expect(valueOf(detail, 'お支払い方法')).toHaveText('代金引換');
     await expect(detail.getByText('東京都千代田区E2E2-2')).toBeVisible();
 });
 
@@ -70,19 +70,19 @@ test('E-5 商品詳細から銀行振込で購入し、振込先のご案内か�
     await openItem(page, 'じゃがいも 2kg');
     await page.getByRole('link', { name: '購入する' }).click();
     await changeQuantity(page, 'じゃがいも 2kg', 2);
-    await expect(amount(page, '小計')).toHaveText('660円');
-    await expect(amount(page, '送料')).toHaveText('1,230円');
+    await expect(valueOf(page, '小計')).toHaveText('660円');
+    await expect(valueOf(page, '送料')).toHaveText('1,230円');
     await page.getByRole('radio', { name: /銀行振込/ }).check();
-    await expect(amount(page, '合計')).toHaveText('1,890円');
+    await expect(valueOf(page, '合計')).toHaveText('1,890円');
     await page.getByRole('button', { name: '注文を確定する' }).click();
 
     // 振込先のご案内
     await expect(page.getByRole('heading', { name: '振込先のご案内' })).toBeVisible();
     const instructions = page.getByTestId('bank-transfer-instructions');
     for (const label of ['銀行名', '支店名', '口座種別', '口座番号', '口座名義']) {
-        await expect(instructions.locator(`dt:text-is("${label}") + dd`)).not.toBeEmpty();
+        await expect(valueOf(instructions, label)).not.toBeEmpty();
     }
-    await expect(instructions.locator('dt:text-is("振込金額") + dd')).toHaveText('1,890円');
+    await expect(valueOf(instructions, '振込金額')).toHaveText('1,890円');
     await expect(page.getByText('じゃがいも 2kg × 2個')).toBeVisible();
 
     // 「戻る」で購入ページへ。入力内容は残る
@@ -93,7 +93,7 @@ test('E-5 商品詳細から銀行振込で購入し、振込先のご案内か�
 
     await page.getByRole('button', { name: '注文を確定する' }).click();
     await expect(page.getByRole('heading', { name: '振込先のご案内' })).toBeVisible();
-    const bankName = await instructions.locator('dt:text-is("銀行名") + dd').innerText();
+    const bankName = await valueOf(instructions, '銀行名').innerText();
     await page.getByRole('button', { name: '振込み' }).click();
     await expect(page.getByRole('heading', { name: /ご注文ありがとうございました/ })).toBeVisible();
 

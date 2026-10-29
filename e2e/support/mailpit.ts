@@ -35,6 +35,8 @@ export async function waitForMail(to: string, subject: string): Promise<Mail> {
             .poll(
                 async () => {
                     const res = await api.get('/api/v1/search', { params: { query: `to:"${to}"` } });
+                    // Mailpit のエラーを「メールが届かない」と取り違えないよう、ステータスを先に確かめる
+                    expect(res.ok(), `Mailpit の検索に失敗（${res.status()}）`).toBe(true);
                     const body = (await res.json()) as SearchResponse;
                     id = body.messages.find((m) => m.Subject.includes(subject))?.ID;
                     return id;
@@ -44,6 +46,7 @@ export async function waitForMail(to: string, subject: string): Promise<Mail> {
             .toBeTruthy();
 
         const res = await api.get(`/api/v1/message/${id}`);
+        expect(res.ok(), `Mailpit からメールを取得できない（${res.status()}）`).toBe(true);
         const message = (await res.json()) as MessageResponse;
         return {
             subject: message.Subject,

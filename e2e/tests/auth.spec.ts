@@ -79,7 +79,7 @@ test('E-9 パスワードを再設定し、新しいパスワードでログイ�
     await expect(page.getByRole('status')).toHaveText('ご登録のメールアドレス宛てに、パスワード再設定用のメールをお送りしました。');
 
     const mail = await waitForMail(member.email, 'パスワード再設定のご案内');
-    const resetUrl = mail.text.match(/https?:\/\/\S+\/reset-password\/\S+/)?.[0];
+    const resetUrl = mail.text.match(/https?:\/\/[^\s)<>"']+\/reset-password\/[^\s)<>"']+/)?.[0];
     expect(resetUrl, '再設定メールにリンクがない').toBeTruthy();
 
     await page.goto(resetUrl!);
