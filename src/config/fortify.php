@@ -152,11 +152,12 @@ return [
         // Features::updateProfileInformation(),
         // パスワードの変更は使わない（マイページの登録情報変更で変える。標準の PUT /user/password は使わない）
         // Features::updatePasswords(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ]),
+        // 二段階認証は画面ができるまで無効にする（有効のままだと、ビューのない /two-factor-challenge・/user/two-factor-* が公開される）
+        // Features::twoFactorAuthentication([
+        //     'confirm' => true,
+        //     'confirmPassword' => true,
+        //     // 'window' => 0,
+        // ]),
     ],
 
 ];
