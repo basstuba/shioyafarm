@@ -12,6 +12,7 @@ use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,6 +52,11 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
         $this->configureRoutePatterns();
+
+        // E2Eテストではビルド済みのCSS/JSを使う（Viteの開発サーバー localhost:5173 は Playwright のコンテナから届かない）
+        if ($this->app->environment('e2e')) {
+            Vite::useHotFile(storage_path('framework/vite.e2e.hot'));
+        }
     }
 
     /**
