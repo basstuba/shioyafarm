@@ -262,7 +262,7 @@ class CartLivewireTest extends TestCase
     }
 
     /**
-     * 不正な数量はエラーを出し、セッションの数量・金額・小計を変えない
+     * 不正な数量（入力値とエラーメッセージ）
      *
      * @return array<string, array{mixed, string}>
      */
@@ -282,6 +282,9 @@ class CartLivewireTest extends TestCase
         ];
     }
 
+    /**
+     * 不正な数量はエラーを出し、セッションの数量・金額・小計を変えない
+     */
     #[Test]
     #[DataProvider('invalidQuantities')]
     public function 不正な数量はエラーを出し数量を変えない(mixed $input, string $message): void

@@ -56,13 +56,13 @@ class ReservationService extends CheckoutService
         private readonly ReservationRepositoryInterface $reservationRepository,
         private readonly ReservationLimitService $limitService,
         private readonly ShippingService $shippingService,
-        private readonly DeliveryAddressService $deliveryAddressService,
         PaymentGatewayInterface $paymentGateway,
         PendingOrderStore $pendingOrderStore,
         UserRepositoryInterface $userRepository,
         OrderTokenStore $orderTokenStore,
+        DeliveryAddressService $deliveryAddressService,
     ) {
-        parent::__construct($paymentGateway, $pendingOrderStore, $userRepository, $orderTokenStore);
+        parent::__construct($paymentGateway, $pendingOrderStore, $userRepository, $orderTokenStore, $deliveryAddressService);
     }
 
     /**
@@ -176,16 +176,11 @@ class ReservationService extends CheckoutService
             ]);
         }
 
-        $address = $this->deliveryAddressService->resolve($user, $data['address_id']);
-        if ($address === null) {
-            throw ValidationException::withMessages(['address_id' => 'お届け先住所が正しくありません']);
-        }
-
-        try {
-            $summary = $this->summarize($item, $quantity, $address['prefecture']);
-        } catch (InvalidArgumentException) {
-            throw ValidationException::withMessages(['address_id' => 'お届け先住所の都道府県が正しくありません']);
-        }
+        [$address, $summary] = $this->summarizeForAddress(
+            $user,
+            $data['address_id'],
+            fn (string $prefecture): OrderSummary => $this->summarize($item, $quantity, $prefecture),
+        );
 
         return new PendingOrder(
             $user->id,
@@ -240,13 +235,13 @@ class ReservationService extends CheckoutService
     }
 
     /**
-     * 保存した予約のサンクスメールを作る
+     * 保存した予約のサンクスメールを作る（表示に使う会員・商品・振込先を先に読み込む）
      *
      * @param  Reservation  $saved
      */
     #[Override]
     protected function thanksMail(Model $saved): ThanksMail
     {
-        return new ReservationThanksMail($saved);
+        return new ReservationThanksMail($this->reservationRepository->loadForThanksMail($saved));
     }
 }

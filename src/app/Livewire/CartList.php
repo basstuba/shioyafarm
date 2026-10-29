@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Http\Requests\CartRequest;
+use App\Livewire\Concerns\WithQuantityInput;
 use App\Services\CartService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
@@ -14,6 +15,8 @@ use Livewire\Component;
  */
 class CartList extends Component
 {
+    use WithQuantityInput;
+
     /**
      * 商品ごとの、数量エラーになった回数
      *
@@ -36,19 +39,13 @@ class CartList extends Component
         $this->resetErrorBag("quantity.{$itemId}");
 
         $validator = Validator::make(
-            ['quantity' => is_string($quantity) ? trim($quantity) : (is_int($quantity) ? $quantity : null)],
+            ['quantity' => $this->quantityInput($quantity)],
             ['quantity' => CartRequest::quantityRules()],
             CartRequest::quantityMessages(),
         );
 
         if ($validator->fails()) {
-            $message = $validator->errors()->first('quantity');
-            $current = $cartService->getQuantity($itemId);
-            if ($current !== null) {
-                $message .= "（数量は{$current}個のままです）";
-            }
-
-            $this->addError("quantity.{$itemId}", $message);
+            $this->addError("quantity.{$itemId}", $this->keptQuantityMessage($validator->errors()->first('quantity'), $cartService->getQuantity($itemId)));
             // 入力欄を作り直し、打った値を保存済みの数量に戻す
             $this->errorCounts[$itemId] = ($this->errorCounts[$itemId] ?? 0) + 1;
 

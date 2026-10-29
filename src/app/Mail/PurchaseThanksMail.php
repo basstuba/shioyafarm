@@ -7,27 +7,23 @@ use App\Models\Purchase_history;
 use App\Models\Purchase_history_item;
 use App\Support\MailText;
 use Illuminate\Mail\Mailables\Content;
+use Override;
 
 /**
  * 購入のサンクスメール
  *
  * 購入履歴を保存した直後に、会員登録のメールアドレスへ送る。金額は保存済みの値を使う。
- * 表示に使う会員・商品・振込先は、ここで Eager Load する（商品の数だけ問い合わせない）。
+ * 表示に使う会員・商品・振込先は、作る側（PurchaseService）が Eager Load しておく（商品の数だけ問い合わせない）。
  */
 class PurchaseThanksMail extends ThanksMail
 {
     public function __construct(public readonly Purchase_history $purchase)
     {
-        // 会員は保存した側が持っているもの（User）をそのまま使えるよう、無ければここで読み込む
         $this->paymentMethod = PaymentMethod::from($purchase->payment_method);
-        // 振込先は銀行振込のときだけ読む
-        $purchase->loadMissing(['user', 'purchaseHistoryItems.item']);
-        if ($this->paymentMethod->usesBankTransfer()) {
-            $purchase->loadMissing('purchaseBankTransfer');
-        }
         $this->to($purchase->user->email);
     }
 
+    #[Override]
     protected function subjectLine(): string
     {
         return "【しおや農園】ご注文ありがとうございます（注文番号：{$this->purchase->id}）";

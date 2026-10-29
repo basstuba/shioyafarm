@@ -12,6 +12,8 @@ use App\Models\Purchase_history_item;
 use App\Models\Reservation;
 use App\Models\Reservation_bank_transfer;
 use App\Models\User;
+use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
+use App\Repositories\Interfaces\ReservationRepositoryInterface;
 use App\Support\MailText;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -135,9 +137,9 @@ class ThanksMailContentTest extends TestCase
 
         foreach ([new PurchaseThanksMail($this->makePurchase()), new ReservationThanksMail($this->makeReservation())] as $mail) {
             $this->assertTrue($mail->hasFrom('info@example.test', 'テスト農園'));
-            $mail->assertSeeInText("テスト農園\ninfo@example.test", false);
+            $mail->assertSeeInText("テスト農園\ninfo@example.test");
             $mail->assertSeeInHtml("テスト農園<br>\ninfo@example.test", false);
-            $mail->assertDontSeeInText('shioyafarm@example.com', false);
+            $mail->assertDontSeeInText('shioyafarm@example.com');
         }
     }
 
@@ -214,9 +216,9 @@ class ThanksMailContentTest extends TestCase
             $mail->{$see}('代引手数料　'.MailText::yen($codFee), false);
             $mail->{$see}('合計　　　　'.MailText::yen(1873 + 1850 + $codFee), false);
         }
-        $mail->assertSeeInText('合計　　　　¥4,053', false);
+        $mail->assertSeeInText('合計　　　　¥4,053');
         $mail->assertDontSeeInHtml('■ お振込先', false);
-        $mail->assertDontSeeInText('■ お振込先', false);
+        $mail->assertDontSeeInText('■ お振込先');
     }
 
     /**
@@ -253,7 +255,7 @@ class ThanksMailContentTest extends TestCase
             }
         }
         $mail->assertDontSeeInHtml('お客様の残高からお支払いが完了しています', false);
-        $mail->assertDontSeeInText('代引手数料', false);
+        $mail->assertDontSeeInText('代引手数料');
     }
 
     /**
@@ -300,7 +302,7 @@ class ThanksMailContentTest extends TestCase
                 $mail->{$dontSee}($unexpected, false);
             }
         }
-        $mail->assertSeeInText('お支払方法：銀行振込', false);
+        $mail->assertSeeInText('お支払方法：銀行振込');
         Log::shouldHaveReceived('warning')
             ->withArgs(fn (string $message, array $context): bool => str_contains($message, '振込先のデータがない') && $context['id'] === $purchase->id)
             ->atLeast()->once();
@@ -378,7 +380,7 @@ class ThanksMailContentTest extends TestCase
             $mail->{$see}('お客様の残高からお支払いが完了しています', false);
         }
         $mail->assertDontSeeInHtml('銀行名', false);
-        $mail->assertDontSeeInText('口座番号', false);
+        $mail->assertDontSeeInText('口座番号');
     }
 
     /**
@@ -393,8 +395,8 @@ class ThanksMailContentTest extends TestCase
         $mail = new PurchaseThanksMail($purchase->fresh());
 
         $mail->assertSeeInHtml('じゃがいも 2kg × 2　　¥660', false);
-        $mail->assertSeeInText('商品小計　　¥1,873', false);
-        $mail->assertDontSeeInText('99,999', false);
+        $mail->assertSeeInText('商品小計　　¥1,873');
+        $mail->assertDontSeeInText('99,999');
     }
 
     /**
@@ -415,8 +417,8 @@ class ThanksMailContentTest extends TestCase
         $mail->assertDontSeeInHtml('<script>', false);
         $mail->assertDontSeeInHtml('<i>札幌市', false);
         // テキスト版では、タグの文字のまま読める
-        $mail->assertSeeInText('<b>UAT太字</b><script>alert(1)</script> 様', false);
-        $mail->assertSeeInText('北海道<i>札幌市</i>', false);
+        $mail->assertSeeInText('<b>UAT太字</b><script>alert(1)</script> 様');
+        $mail->assertSeeInText('北海道<i>札幌市</i>');
     }
 
     /**
@@ -433,8 +435,8 @@ class ThanksMailContentTest extends TestCase
         foreach (['<em>', '<h1', 'href="http://evil.example', 'href="www.evil.example', 'href="mailto:'] as $unexpected) {
             $mail->assertDontSeeInHtml($unexpected, false);
         }
-        $mail->assertSeeInText("{$name} 様", false);
-        $mail->assertSeeInText('電話番号：# 見出し', false);
+        $mail->assertSeeInText("{$name} 様");
+        $mail->assertSeeInText('電話番号：# 見出し');
     }
 
     /**
@@ -511,7 +513,7 @@ class ThanksMailContentTest extends TestCase
             $fresh = $purchase->fresh();
             DB::flushQueryLog();
             DB::enableQueryLog();
-            (new PurchaseThanksMail($fresh))->render();
+            (new PurchaseThanksMail(app(PurchaseHistoryRepositoryInterface::class)->loadForThanksMail($fresh)))->render();
             $queries = count(DB::getQueryLog());
             DB::disableQueryLog();
 
@@ -548,7 +550,7 @@ class ThanksMailContentTest extends TestCase
         DB::listen(function ($query) use (&$queries): void {
             $queries[] = $query->sql;
         });
-        (new PurchaseThanksMail($purchase))->render();
+        (new PurchaseThanksMail(app(PurchaseHistoryRepositoryInterface::class)->loadForThanksMail($purchase)))->render();
 
         $this->assertSame([], array_values(array_filter($queries, fn (string $sql): bool => str_contains($sql, 'from "users"'))));
     }
@@ -573,11 +575,14 @@ class ThanksMailContentTest extends TestCase
             return count(array_filter($queries, fn (string $sql): bool => str_contains($sql, 'bank_transfers')));
         };
 
-        (new PurchaseThanksMail($card))->render();
-        (new ReservationThanksMail($reservationCard))->render();
+        $purchases = app(PurchaseHistoryRepositoryInterface::class);
+        $reservations = app(ReservationRepositoryInterface::class);
+
+        (new PurchaseThanksMail($purchases->loadForThanksMail($card)))->render();
+        (new ReservationThanksMail($reservations->loadForThanksMail($reservationCard)))->render();
         $this->assertSame(0, $bankQueries());
 
-        (new PurchaseThanksMail($transfer))->render();
+        (new PurchaseThanksMail($purchases->loadForThanksMail($transfer)))->render();
         $this->assertSame(1, $bankQueries());
     }
 

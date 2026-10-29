@@ -16,8 +16,16 @@ paths:
 - **Repository**（`app/Repositories`）：`app/Repositories/Interfaces/XxxRepositoryInterface.php` を実装する。実装メソッドには `#[Override]` を付ける。
 - **新しいリポジトリは必ず `app/Providers/RepositoryServiceProvider.php` でバインドする。** 忘れると解決時にエラーになる。
 - **バリデーション**：FormRequest（`app/Http/Requests`）に書き、`messages()` で日本語のエラーメッセージを定義する。ほとんどのFormRequestは作成済みなので、新しく作る前に既存のものを確認する。
+- **Livewire**（`app/Livewire`）：Controller と同じ層として扱う。Service だけに依存し、リポジトリやEloquentの問い合わせを直接書かない（モデルは型やServiceから受け取った値として使うだけ）。Serviceは `mount()` / `render()` / アクションのメソッドインジェクションで受け取る。複数のコンポーネントで共通の処理は `app/Livewire/Concerns` のトレイト（`WithXxx`）にする。
+- **Services の値オブジェクトと Store**：`app/Services` には Service のほかに、Service が受け渡す値（`OrderSummary`、`CartLine`、`PendingOrder` など。`final readonly class`）と、セッション・キャッシュへの出し入れだけを持つクラス（`PendingOrderStore`、`OrderTokenStore` のような `*Store`）を置く。DBを使うものはリポジトリにする。外部サービス（Stripe）は `app/Services/Payment` のインターフェース（`PaymentGatewayInterface`）越しに使う。
+- **Http/Responses**（`app/Http/Responses`）：Service の結果を、リダイレクト・エラー表示などのHTTPの応答に変える処理を、複数のコントローラーで共有するときに置く（`CheckoutResponder` と、その違いの設定 `CheckoutFlow`）。Fortify の応答を差し替えるクラスもここに置く。
+- **結果の返し方**：Service の処理の結果が成功・失敗の2つで収まらないとき（処理中・確認できない・すでに完了など）は、例外や真偽値ではなく `app/Enums` の `*Result` の enum（`CheckoutResult`、`CartAddResult`、`BankTransferCancelResult`）を返し、呼び出し側（Controller / Livewire / CheckoutResponder）が `match` で応答を選ぶ。入力の誤りは `ValidationException` で返す。
 - `app/Http/Controllers` の多くは中身が空のスタブ（`throw new \Exception('Not implemented')` のものもある）。新しく作らず、既存のスタブを実装する。
-- クラスやメソッドには日本語のdocblockを付ける（例：`/** 商品リポジトリ */`、`/** おすすめ商品を取得 */`）。
+- クラスやメソッドには日本語のdocblockを付ける（例：`/** 商品リポジトリ */`、`/** おすすめ商品を取得 */`）。次のメソッドだけは省略してよい。
+  - プロパティ昇格だけのコンストラクタ
+  - `#[Override]` を付けた実装（親クラス・インターフェース・トレイトの abstract に説明を書く。補足があるときだけ書く）
+  - Livewire の `render()`
+  - 親・インターフェース・トレイトのメソッドを実装するときは、docblock の有無にかかわらず `#[Override]` を付ける。
 
 ## 型とPHPDoc（PHP 8.4）
 

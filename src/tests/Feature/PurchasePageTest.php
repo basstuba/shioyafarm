@@ -146,7 +146,7 @@ class PurchasePageTest extends TestCase
     }
 
     /**
-     * 商品IDが数字以外・形式が不正な URL は、TypeError（500）ではなく404になる
+     * 形式が不正な商品ID（URL に入れる文字列）
      *
      * @return array<string, array{string}>
      */
@@ -164,6 +164,9 @@ class PurchasePageTest extends TestCase
         ];
     }
 
+    /**
+     * 商品IDが数字以外・形式が不正な URL は、TypeError（500）ではなく404になる
+     */
     #[Test]
     #[DataProvider('不正な商品ID')]
     public function 不正な商品_i_dは404になる(string $id): void
