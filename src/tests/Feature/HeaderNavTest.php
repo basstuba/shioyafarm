@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\User;
 use App\Support\Nav;
 use DOMDocument;
+use DOMElement;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -101,6 +102,7 @@ class HeaderNavTest extends TestCase
         $bar = [];
         $pc = [];
         foreach ($xpath->query('//header//nav/a | //header//nav/form') as $node) {
+            $this->assertInstanceOf(DOMElement::class, $node);
             $label = $clean($node->textContent);
             $pc[] = $label;
             if (! in_array('hidden', explode(' ', $node->getAttribute('class')), true)) {
@@ -115,6 +117,7 @@ class HeaderNavTest extends TestCase
 
         $menuForms = [];
         foreach ($xpath->query('//nav[@id="sp-menu"]//form') as $node) {
+            $this->assertInstanceOf(DOMElement::class, $node);
             $menuForms[] = strtoupper($node->getAttribute('method')).' '.$node->getAttribute('action');
         }
 

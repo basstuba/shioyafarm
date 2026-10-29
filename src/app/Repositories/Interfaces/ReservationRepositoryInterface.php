@@ -37,4 +37,9 @@ interface ReservationRepositoryInterface
      * 会員の予約を1件、詳細の表示に必要な関連（商品・振込先）つきで取得（他の会員の予約・存在しない予約は null）
      */
     public function findDetailByUserId(int $userId, int $id): ?Reservation;
+
+    /**
+     * サンクスメールの表示に必要な関連（会員・商品。銀行振込のときは振込先も）を、まだ読み込んでいなければ読み込む
+     */
+    public function loadForThanksMail(Reservation $reservation): Reservation;
 }

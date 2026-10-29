@@ -63,6 +63,9 @@ class OrderTokenStore
         $this->put($userId, $token, OrderTokenStatus::Completed);
     }
 
+    /**
+     * 注文トークンの状態をキャッシュに保存する（有効期限は config('purchase.order_token_ttl_minutes')）
+     */
     private function put(int $userId, string $token, OrderTokenStatus $status): void
     {
         Cache::put($this->key($userId, $token), $status->value, now()->addMinutes((int) config('purchase.order_token_ttl_minutes')));

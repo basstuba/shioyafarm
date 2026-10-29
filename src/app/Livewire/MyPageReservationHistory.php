@@ -11,6 +11,7 @@ use App\Services\OrderHistoryService;
 use App\Support\LoginUser;
 use Illuminate\View\View;
 use Livewire\Component;
+use Override;
 
 /**
  * マイページの予約履歴（5件ずつのページ送り）と、詳細モーダル
@@ -25,6 +26,7 @@ class MyPageReservationHistory extends Component
     /** ページ番号の名前（お届け先住所・購入履歴とは別のページ番号にする） */
     public const string PAGE_NAME = 'reservationPage';
 
+    #[Override]
     protected function findDetail(OrderHistoryService $historyService, User $user, int $id): ?OrderDetail
     {
         return $historyService->findReservationDetail($user, $id);

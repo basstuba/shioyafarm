@@ -166,7 +166,8 @@ class PendingOrderTest extends TestCase
         $this->assertNull(PendingOrder::fromArray([...$valid, 'items' => 'x']));
         $this->assertNull(PendingOrder::fromArray([...$valid, 'total_price' => '1358']));
         $this->assertNull(PendingOrder::fromArray([...$valid, 'delivery_name' => null]));
-        $this->assertNotNull(PendingOrder::fromArray([...$valid, 'checkout_session_id' => 123]));
-        $this->assertNull(PendingOrder::fromArray([...$valid, 'checkout_session_id' => 123])?->checkoutSessionId);
+        $order = PendingOrder::fromArray([...$valid, 'checkout_session_id' => 123]);
+        $this->assertNotNull($order);
+        $this->assertNull($order->checkoutSessionId);
     }
 }
