@@ -31,7 +31,7 @@ effort: high
 - シナリオごとに、`browser_resize` でPC（1280×800）とSP（414×896）を切り替えて確認する。
 - 画面の内容は `browser_snapshot` で確認し、スクリーンショットは `browser_take_screenshot` で撮る。保存先は `docs/uat/screenshots/<機能名>/<シナリオID>-<pc|sp>.png`。別の場所に保存された場合は移動する。
 - 各シナリオの後に `browser_console_messages` でコンソールエラーを確認する。
-- メール送信があるシナリオは、MailHog（http://localhost:8025）で宛先・件名・本文を確認する。
+- メール送信があるシナリオは、Mailpit（http://localhost:8025）で宛先・件名・本文を確認する。
 - 管理画面はSPで、文字の大きさ、ボタンの押しやすさ（高さ44px以上が目安）、横スクロールの有無も確認する。
 
 ### 3. 記録
