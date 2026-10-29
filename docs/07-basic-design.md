@@ -37,6 +37,22 @@
 | `/mypage/update` | POST | MyPageController | update | 必須 | 登録情報更新機能（ルート名 `shop.mypage.update`。成功したらマイページへ。変更がない場合は保存せず登録情報変更ページに戻り「変更された項目はありません」と表示） |
 | `/mypage/delete` | DELETE | MyPageController | delete | 必須 | 退会機能（ルート名 `shop.mypage.delete`。論理削除してログアウトし、トップページへ） |
 
+#### 認証（Fortify）
+
+Fortify が登録するルート。ビューは `FortifyServiceProvider` で指定し、入力の検証・応答の一部はアプリ側のクラスに差し替えている（`FortifyServiceProvider` でバインド）。ログイン中に開いた場合（ログアウトを除く）はトップページへ移動する。二段階認証は画面ができるまで無効にしている（`config/fortify.php`）。
+
+| パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
+|---|---|---|---|:---:|---|
+| `/register` | GET | Fortify の RegisteredUserController | create | | 会員登録ページ表示（ルート名 `register`） |
+| `/register` | POST | RegisteredUserController（Fortify を継承） | store | | 新規会員登録機能（ルート名 `register.store`） |
+| `/login` | GET | Fortify の AuthenticatedSessionController | create | | ログインページ表示（ルート名 `login`） |
+| `/login` | POST | Fortify の AuthenticatedSessionController | store | | ログイン機能（ルート名 `login.store`。入力の検証は LoginRequest に差し替え。回数制限あり） |
+| `/logout` | POST | Fortify の AuthenticatedSessionController | destroy | 必須 | ログアウト機能（ルート名 `logout`） |
+| `/forgot-password` | GET | Fortify の PasswordResetLinkController | create | | パスワード再設定メールの送信ページ表示（ルート名 `password.request`） |
+| `/forgot-password` | POST | Fortify の PasswordResetLinkController | store | | パスワード再設定メール送信機能（ルート名 `password.email`。入力の検証は PasswordResetLinkRequest に差し替え。未登録・退会済みのメールアドレス、1分以内の再送信でも、送れたときと同じ案内を表示する。IPごとに1分5回まで） |
+| `/reset-password/{token}` | GET | NewPasswordController（Fortify を継承） | create | | 新しいパスワードの設定ページ表示（ルート名 `password.reset`。再設定メールのリンクから開く） |
+| `/reset-password` | POST | NewPasswordController（Fortify を継承） | store | | パスワード再設定機能（ルート名 `password.update`。成功したらログインページへ。使用済み・期限切れ（60分）・改ざんされたリンクはエラーにして、送信ページへのリンクを表示する。IPごとに1分5回まで） |
+
 ### 管理者機能
 
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
@@ -109,6 +125,8 @@
 - 送料案内ページ
 - 会員登録ページ
 - ログインページ
+- パスワード再設定メールの送信ページ
+- 新しいパスワードの設定ページ
 - マイページ
 - 登録情報変更ページ
 
@@ -144,6 +162,14 @@
 本文の構成：宛名（会員の氏名）、あいさつ、■ご注文内容／■ご予約内容（番号・日時・お支払方法・商品明細・商品小計・送料・代引手数料（代金引換のみ）・合計。予約は9月からの発送の案内を付ける）、■お届け先（お届け先氏名・住所・電話番号）、■お振込先（銀行振込のみ。銀行名・支店名・口座種別・口座番号・口座名義・お振込金額。顧客残高で支払い済みのときは「お客様の残高からお支払いが完了しています」）、マイページで確認できる案内、送信専用の注意とお問い合わせページのURL、署名。
 
 農園（管理者）への新規注文の通知、入金確認メール、発送通知メールは作らない（農園への通知は管理画面の実装時に検討する）。
+
+### パスワード再設定メール
+
+| Mailable | 送るタイミング | 件名 |
+|---|---|---|
+| PasswordResetMail | パスワード再設定メールの送信ページで、登録済みのメールアドレスを送信したとき（`/forgot-password`。`User::sendPasswordResetNotification` から送る） | 【しおや農園】パスワード再設定のご案内 |
+
+本文の構成（Markdownメール。HTML版とテキスト版）：宛名（会員の氏名）、再設定の手順、「パスワードを再設定する」ボタン、リンクの有効期限（60分）、心当たりがなければ破棄してよい旨、署名。Laravel 標準の英語の通知は使わない。送信に失敗したときは、発行したトークンを削除してからエラーにする（使えないトークンを残さない）。未登録・退会済みのメールアドレスと、1分以内の再送信では送らない。
 
 ## バリデーション
 
