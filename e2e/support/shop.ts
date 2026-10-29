@@ -19,8 +19,8 @@ export async function addToCart(page: Page, name: string): Promise<void> {
     await expect(dialog).toBeHidden();
 }
 
-/** 金額欄（小計・送料・代引手数料・合計など）の値（dt の文言と一致する項目の、直後の dd） */
-export function amount(scope: Page | Locator, label: string): Locator {
+/** dl の項目の値（金額欄の小計・送料、振込先の銀行名、登録情報のお名前など。dt の文言と一致する項目の、直後の dd） */
+export function valueOf(scope: Page | Locator, label: string): Locator {
     return scope.locator(`dt:text-is("${label}") + dd`);
 }
 

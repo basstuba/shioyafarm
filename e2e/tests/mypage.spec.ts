@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { fillLoginForm } from '../support/member';
-import { openItem } from '../support/shop';
+import { openItem, valueOf } from '../support/shop';
 
 // マイページの流れ（docs/e2e/scenarios.md E-8・E-10）
 
@@ -19,8 +19,9 @@ test('E-8 登録情報を変更すると、マイページと購入ページの�
     await page.getByRole('button', { name: '変更する' }).click();
 
     await expect(page).toHaveURL(/\/mypage$/);
-    await expect(page.getByText(`変更 ${member.firstName}`).or(page.getByText(`変更${member.firstName}`)).first()).toBeVisible();
-    await expect(page.getByText(/港区E2E3-3/).first()).toBeVisible();
+    const profile = page.locator('#profile');
+    await expect(valueOf(profile, 'お名前')).toHaveText(`変更 ${member.firstName}`);
+    await expect(valueOf(profile, 'ご住所')).toHaveText('東京都港区E2E3-3');
 
     await openItem(page, 'じゃがいも 2kg');
     await page.getByRole('link', { name: '購入する' }).click();
