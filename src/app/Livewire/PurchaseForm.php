@@ -6,15 +6,16 @@ use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
 use App\Http\Requests\CartRequest;
 use App\Livewire\Concerns\WithDeliveryForm;
+use App\Livewire\Concerns\WithQuantityInput;
 use App\Models\User;
 use App\Services\AreaService;
 use App\Services\CartService;
 use App\Services\DeliveryAddressService;
+use App\Services\OrderSummary;
 use App\Services\PurchaseService;
 use App\Support\LoginUser;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -29,6 +30,7 @@ use Livewire\Component;
 class PurchaseForm extends Component
 {
     use WithDeliveryForm;
+    use WithQuantityInput;
 
     /** 購入の入り口（cart: カートの中身、item: 商品詳細から1商品） */
     #[Locked]
@@ -128,18 +130,15 @@ class PurchaseForm extends Component
         }
 
         $validator = Validator::make(
-            ['quantity' => is_string($quantity) ? trim($quantity) : (is_int($quantity) ? $quantity : null)],
+            ['quantity' => $this->quantityInput($quantity)],
             ['quantity' => CartRequest::quantityRules()],
             CartRequest::quantityMessages(),
         );
 
         if ($validator->fails()) {
             $current = $this->quantities[$itemId];
-            $message = $validator->errors()->first('quantity');
-            if (is_int($current) && $current >= CartService::MIN_QUANTITY && $current <= CartService::MAX_QUANTITY) {
-                $message .= "（数量は{$current}個のままです）";
-            }
-            $this->addError("quantities.{$itemId}", $message);
+            $valid = is_int($current) && $current >= CartService::MIN_QUANTITY && $current <= CartService::MAX_QUANTITY;
+            $this->addError("quantities.{$itemId}", $this->keptQuantityMessage($validator->errors()->first('quantity'), $valid ? $current : null));
 
             return;
         }
@@ -161,14 +160,11 @@ class PurchaseForm extends Component
         $lines = $purchaseService->buildLines($this->numericQuantities());
         $method = PaymentMethod::tryFrom($this->paymentMethod);
 
-        // 送料の地域が見つからない都道府県（設定にない住所）のときは、描画でエラーにせず、住所欄にエラーを出して注文を確定できなくする
-        $shippingError = null;
-        try {
-            $summary = $purchaseService->summarize($lines, $address['prefecture'], $method);
-        } catch (InvalidArgumentException) {
-            $summary = $purchaseService->summarize($lines, null, $method);
-            $shippingError = 'このお届け先住所は送料を計算できません。別の住所を選択してください';
-        }
+        // 送料を計算できない住所のときは、住所欄にエラーを出して注文を確定できなくする
+        [$summary, $shippingError] = $this->summarizeWithShippingError(
+            $address['prefecture'],
+            fn (?string $prefecture): OrderSummary => $purchaseService->summarize($lines, $prefecture, $method),
+        );
 
         return view('livewire.purchase-form', [
             'lines' => $lines,

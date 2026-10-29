@@ -170,7 +170,7 @@ class ThanksMailSendTest extends TestCase
                 $mail->{$see}('北海道札幌市中央区1-1-1', false);
                 $mail->{$see}('電話番号：09012345678', false);
             }
-            $mail->assertDontSeeInText('■ お振込先', false);
+            $mail->assertDontSeeInText('■ お振込先');
 
             return true;
         });
@@ -191,7 +191,7 @@ class ThanksMailSendTest extends TestCase
         Mail::assertSent(PurchaseThanksMail::class, function (PurchaseThanksMail $mail): bool {
             $mail->assertSeeInHtml('&lt;b&gt;UAT太字&lt;/b&gt;', false);
             $mail->assertDontSeeInHtml('<b>UAT太字', false);
-            $mail->assertSeeInText('<b>UAT太字</b> 様', false);
+            $mail->assertSeeInText('<b>UAT太字</b> 様');
 
             return true;
         });
@@ -216,10 +216,10 @@ class ThanksMailSendTest extends TestCase
             $this->assertTrue($mail->hasTo($user->email));
             $this->assertTrue($mail->hasSubject("【しおや農園】ご注文ありがとうございます（注文番号：{$history->id}）"));
             $mail->assertSeeInHtml('お支払方法：クレジットカード', false);
-            $mail->assertSeeInText('合計　　　　¥3,723', false);
-            $mail->assertDontSeeInText('代引手数料', false);
-            $mail->assertDontSeeInText('■ お振込先', false);
-            $mail->assertSeeInText('山田花子 様', false);
+            $mail->assertSeeInText('合計　　　　¥3,723');
+            $mail->assertDontSeeInText('代引手数料');
+            $mail->assertDontSeeInText('■ お振込先');
+            $mail->assertSeeInText('山田花子 様');
 
             return true;
         });
@@ -260,7 +260,7 @@ class ThanksMailSendTest extends TestCase
                 $mail->{$see}('お振込金額：¥3,723', false);
                 $mail->{$see}('ご入金を確認してから発送いたします。', false);
             }
-            $mail->assertDontSeeInText('お客様の残高からお支払いが完了しています', false);
+            $mail->assertDontSeeInText('お客様の残高からお支払いが完了しています');
 
             return true;
         });
@@ -336,8 +336,8 @@ class ThanksMailSendTest extends TestCase
                 $mail->{$see}('商品は9月より、準備が整い次第順次発送いたします。', false);
                 $mail->{$see}('山田花子 様', false);
             }
-            $mail->assertDontSeeInText('■ お振込先', false);
-            $mail->assertDontSeeInText('代引手数料', false);
+            $mail->assertDontSeeInText('■ お振込先');
+            $mail->assertDontSeeInText('代引手数料');
 
             return true;
         });
@@ -406,7 +406,7 @@ class ThanksMailSendTest extends TestCase
                 $mail->{$see}('お客様の残高からお支払いが完了しています', false);
                 $mail->{$see}('合計　　　　¥2,980', false);
             }
-            $mail->assertDontSeeInText('銀行名', false);
+            $mail->assertDontSeeInText('銀行名');
 
             return true;
         });

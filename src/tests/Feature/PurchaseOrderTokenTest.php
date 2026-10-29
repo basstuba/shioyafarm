@@ -9,6 +9,7 @@ use App\Models\Item;
 use App\Models\Purchase_bank_transfer;
 use App\Models\Purchase_history;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
+use App\Services\CheckoutService;
 use App\Services\OrderTokenStore;
 use App\Services\Payment\BankTransferInstructions;
 use App\Services\Payment\BankTransferIntentData;
@@ -150,14 +151,14 @@ class PurchaseOrderTokenTest extends TestCase
         // 同じ画面（ブラウザの「戻る」で戻ったなど）からの再送信
         $this->post(route('shop.checkout.payment'), [...$data, 'payment_method' => 'cod'])
             ->assertRedirect(route('shop.checkout.index'))
-            ->assertSessionHasErrors(['order_token' => PurchaseService::STALE_MESSAGE]);
+            ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
 
         $this->assertSame(0, Purchase_history::count());
         $this->assertSame('cs_test_1', session('pending_order')['checkout_session_id']);
         $this->assertSame('card', session('pending_order')['payment_method']);
 
         // 購入ページを開き直すと新しいトークンになり、メッセージと入力内容が表示される
-        $page = $this->get(route('shop.checkout.index'))->assertOk()->assertSee(PurchaseService::STALE_MESSAGE);
+        $page = $this->get(route('shop.checkout.index'))->assertOk()->assertSee(CheckoutService::STALE_MESSAGE);
         $newToken = $this->tokenFrom($page->getContent());
         $this->assertNotSame($data['order_token'], $newToken);
         $this->assertSame(OrderTokenStatus::Issued, app(OrderTokenStore::class)->status($user->id, $newToken));
@@ -181,7 +182,7 @@ class PurchaseOrderTokenTest extends TestCase
         // 発行していないトークン：購入ページへ
         $this->post(route('shop.checkout.payment'), [...$data, 'order_token' => 'not-issued'])
             ->assertRedirect(route('shop.checkout.index', $items['carrot']->id))
-            ->assertSessionHasErrors(['order_token' => PurchaseService::STALE_MESSAGE]);
+            ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
 
         $this->assertSame(1, Purchase_history::count());
     }
@@ -198,7 +199,7 @@ class PurchaseOrderTokenTest extends TestCase
 
         $this->actingAs($user)->post(route('shop.checkout.payment'), $data)
             ->assertRedirect(route('shop.checkout.index'))
-            ->assertSessionHasErrors(['order_token' => PurchaseService::STALE_MESSAGE]);
+            ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
 
         $this->assertSame(0, Purchase_history::count());
         $this->assertSame(OrderTokenStatus::Issued, app(OrderTokenStore::class)->status($other->id, $data['order_token']));
@@ -216,9 +217,9 @@ class PurchaseOrderTokenTest extends TestCase
 
         $this->actingAs($user)->from(route('shop.checkout.index'))->post(route('shop.checkout.payment'), $base)
             ->assertRedirect(route('shop.checkout.index'))
-            ->assertSessionHasErrors(['order_token' => PurchaseService::STALE_MESSAGE]);
+            ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
         $this->post(route('shop.checkout.payment'), [...$base, 'order_token' => str_repeat('a', 101)])
-            ->assertSessionHasErrors(['order_token' => PurchaseService::STALE_MESSAGE]);
+            ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
         $this->post(route('shop.checkout.payment'), [...$base, 'order_token' => ['x']])
             ->assertSessionHasErrors('order_token');
 
@@ -429,7 +430,7 @@ class PurchaseOrderTokenTest extends TestCase
         foreach (['customer_balance', 'cod', 'card'] as $method) {
             $this->post(route('shop.checkout.payment'), [...$data, 'payment_method' => $method])
                 ->assertRedirect(route('shop.checkout.index'))
-                ->assertSessionHasErrors(['order_token' => PurchaseService::STALE_MESSAGE]);
+                ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
         }
         $this->assertSame(0, Purchase_history::count());
 

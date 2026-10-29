@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Password;
 use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Http\Responses\FailedPasswordResetLinkRequestResponse as FortifyFailedPasswordResetLinkRequestResponse;
 use Override;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * パスワード再設定メールを送れなかったときの応答
@@ -22,7 +23,7 @@ class FailedPasswordResetLinkRequestResponse extends FortifyFailedPasswordResetL
      * @param  Request  $request
      */
     #[Override]
-    public function toResponse($request)
+    public function toResponse($request): Response
     {
         if (in_array($this->status, [Password::INVALID_USER, Password::RESET_THROTTLED], true)) {
             return app(SuccessfulPasswordResetLinkRequestResponse::class, ['status' => Password::RESET_LINK_SENT])->toResponse($request);

@@ -54,13 +54,13 @@ class PurchaseService extends CheckoutService
         private readonly PurchaseHistoryRepositoryInterface $purchaseHistoryRepository,
         private readonly CartService $cartService,
         private readonly ShippingService $shippingService,
-        private readonly DeliveryAddressService $deliveryAddressService,
         PaymentGatewayInterface $paymentGateway,
         PendingOrderStore $pendingOrderStore,
         UserRepositoryInterface $userRepository,
         OrderTokenStore $orderTokenStore,
+        DeliveryAddressService $deliveryAddressService,
     ) {
-        parent::__construct($paymentGateway, $pendingOrderStore, $userRepository, $orderTokenStore);
+        parent::__construct($paymentGateway, $pendingOrderStore, $userRepository, $orderTokenStore, $deliveryAddressService);
     }
 
     /**
@@ -240,16 +240,11 @@ class PurchaseService extends CheckoutService
             throw ValidationException::withMessages(['items' => '購入できない商品が含まれています']);
         }
 
-        $address = $this->deliveryAddressService->resolve($user, $data['address_id']);
-        if ($address === null) {
-            throw ValidationException::withMessages(['address_id' => 'お届け先住所が正しくありません']);
-        }
-
-        try {
-            $summary = $this->summarize($lines, $address['prefecture'], $method);
-        } catch (InvalidArgumentException) {
-            throw ValidationException::withMessages(['address_id' => 'お届け先住所の都道府県が正しくありません']);
-        }
+        [$address, $summary] = $this->summarizeForAddress(
+            $user,
+            $data['address_id'],
+            fn (string $prefecture): OrderSummary => $this->summarize($lines, $prefecture, $method),
+        );
 
         return new PendingOrder(
             $user->id,
@@ -305,13 +300,13 @@ class PurchaseService extends CheckoutService
     }
 
     /**
-     * 保存した購入履歴のサンクスメールを作る
+     * 保存した購入履歴のサンクスメールを作る（表示に使う会員・商品・振込先を先に読み込む）
      *
      * @param  Purchase_history  $saved
      */
     #[Override]
     protected function thanksMail(Model $saved): ThanksMail
     {
-        return new PurchaseThanksMail($saved);
+        return new PurchaseThanksMail($this->purchaseHistoryRepository->loadForThanksMail($saved));
     }
 }

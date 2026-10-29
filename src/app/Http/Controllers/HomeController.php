@@ -11,6 +11,9 @@ use Illuminate\View\View;
  */
 class HomeController extends Controller
 {
+    /**
+     * トップページを表示する（お知らせ・おすすめ商品）
+     */
     public function __invoke(HomeService $homeService): View
     {
         Log::debug('HomeController start');

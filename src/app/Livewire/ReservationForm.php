@@ -6,16 +6,17 @@ use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
 use App\Http\Requests\CartRequest;
 use App\Livewire\Concerns\WithDeliveryForm;
+use App\Livewire\Concerns\WithQuantityInput;
 use App\Models\Item;
 use App\Services\AreaService;
 use App\Services\CartService;
 use App\Services\DeliveryAddressService;
+use App\Services\OrderSummary;
 use App\Services\ReservationLimitService;
 use App\Services\ReservationService;
 use App\Support\LoginUser;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -35,6 +36,7 @@ use Livewire\Component;
 class ReservationForm extends Component
 {
     use WithDeliveryForm;
+    use WithQuantityInput;
 
     /** 予約する商品ID（クライアントからは変更できない） */
     #[Locked]
@@ -130,17 +132,14 @@ class ReservationForm extends Component
             : $messages['quantity.max'];
 
         $validator = Validator::make(
-            ['quantity' => is_string($quantity) ? trim($quantity) : (is_int($quantity) ? $quantity : null)],
+            ['quantity' => $this->quantityInput($quantity)],
             ['quantity' => 'required|integer|min:'.CartService::MIN_QUANTITY.'|max:'.$max],
             $messages,
         );
 
         if ($validator->fails()) {
-            $message = $validator->errors()->first('quantity');
-            if (is_int($this->quantity) && $this->quantity >= CartService::MIN_QUANTITY && $this->quantity <= $max) {
-                $message .= "（数量は{$this->quantity}個のままです）";
-            }
-            $this->addError('quantity', $message);
+            $valid = is_int($this->quantity) && $this->quantity >= CartService::MIN_QUANTITY && $this->quantity <= $max;
+            $this->addError('quantity', $this->keptQuantityMessage($validator->errors()->first('quantity'), $valid ? $this->quantity : null));
 
             return;
         }
@@ -158,14 +157,11 @@ class ReservationForm extends Component
 
         $quantity = CartService::clampQuantity(is_numeric($this->quantity) ? (int) $this->quantity : 0);
 
-        // 送料の地域が見つからない都道府県（設定にない住所）のときは、描画でエラーにせず、住所欄にエラーを出して予約を確定できなくする
-        $shippingError = null;
-        try {
-            $summary = $reservationService->summarize($item, $quantity, $address['prefecture']);
-        } catch (InvalidArgumentException) {
-            $summary = $reservationService->summarize($item, $quantity, null);
-            $shippingError = 'このお届け先住所は送料を計算できません。別の住所を選択してください';
-        }
+        // 送料を計算できない住所のときは、住所欄にエラーを出して予約を確定できなくする
+        [$summary, $shippingError] = $this->summarizeWithShippingError(
+            $address['prefecture'],
+            fn (?string $prefecture): OrderSummary => $reservationService->summarize($item, $quantity, $prefecture),
+        );
 
         return view('livewire.reservation-form', [
             'item' => $item,
