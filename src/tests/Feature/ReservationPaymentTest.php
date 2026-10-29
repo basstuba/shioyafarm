@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Reservation;
 use App\Models\Reservation_bank_transfer;
 use App\Models\User;
+use App\Services\CheckoutService;
 use App\Services\Payment\BankTransferInstructions;
 use App\Services\Payment\BankTransferIntentData;
 use App\Services\Payment\CheckoutSessionData;
@@ -552,7 +553,7 @@ class ReservationPaymentTest extends TestCase
 
         $this->post(route('shop.reservation.payment'), $data)
             ->assertRedirect(route('shop.reservation.index', $item))
-            ->assertSessionHasErrors(['order_token' => ReservationService::STALE_MESSAGE]);
+            ->assertSessionHasErrors(['order_token' => CheckoutService::STALE_MESSAGE]);
     }
 
     /**

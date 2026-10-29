@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -41,6 +42,7 @@ abstract class CheckoutService
         protected readonly PendingOrderStore $pendingOrderStore,
         protected readonly UserRepositoryInterface $userRepository,
         protected readonly OrderTokenStore $orderTokenStore,
+        protected readonly DeliveryAddressService $deliveryAddressService,
     ) {}
 
     /**
@@ -93,6 +95,30 @@ abstract class CheckoutService
      * @throws ValidationException
      */
     abstract protected function createPendingOrder(User $user, array $data): PendingOrder;
+
+    /**
+     * お届け先住所を求め、その都道府県で金額の内訳を計算する（createPendingOrder の中で使う）
+     *
+     * @param  Closure(string): OrderSummary  $summarize  都道府県から金額の内訳を計算する
+     * @return array{array{prefecture: string, city: string}, OrderSummary}
+     *
+     * @throws ValidationException 住所が正しくないとき・都道府県が送料の地域に対応していないとき
+     */
+    protected function summarizeForAddress(User $user, string $addressId, Closure $summarize): array
+    {
+        $address = $this->deliveryAddressService->resolve($user, $addressId);
+        if ($address === null) {
+            throw ValidationException::withMessages(['address_id' => 'お届け先住所が正しくありません']);
+        }
+
+        try {
+            $summary = $summarize($address['prefecture']);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['address_id' => 'お届け先住所の都道府県が正しくありません']);
+        }
+
+        return [$address, $summary];
+    }
 
     /**
      * 保存待ちの注文を保存する（銀行振込のときは振込先も）

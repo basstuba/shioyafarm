@@ -17,13 +17,13 @@
 | `/commercial-transaction` | VIEW | Routeからviewを呼び出し | | | 特定商取引法に基づく表記ページ表示 |
 | `/shipping-fee` | VIEW | Routeからviewを呼び出し | | | 送料案内ページ表示 |
 | `/cart` | GET | CartController | index | 必須 | カートページ表示 |
-| `/purchase/?{item_id}` | GET | PurchaseController | index | 必須 | 購入ページ表示 |
+| `/purchase/{item?}` | GET | PurchaseController | index | 必須 | 購入ページ表示 |
 | `/purchase/success` | GET | PurchaseController | purchaseSuccess | 必須 | 購入履歴作成機能（クレジットカード：Stripeの決済後に戻る先） |
 | `/purchase/bank-transfer` | GET | PurchaseController | bankTransfer | 必須 | 銀行振込の振込先のご案内ページ表示 |
 | `/purchase/bank-transfer/cancel` | POST | PurchaseController | cancelBankTransfer | 必須 | 銀行振込の取り消し機能（購入ページへ戻る） |
 | `/purchase/bank-transfer/confirm` | POST | PurchaseController | confirmBankTransfer | 必須 | 銀行振込の購入履歴作成機能 |
 | `/purchase/thanks` | GET | PurchaseController | thanks | 必須 | 購入完了ページ表示（銀行振込・代金引換） |
-| `/reservation/{item_id}` | GET | ReservationController | index | 必須 | 予約ページ表示（予約限定の商品のみ。予約可能数に達していたら商品詳細へ戻す） |
+| `/reservation/{item}` | GET | ReservationController | index | 必須 | 予約ページ表示（予約限定の商品のみ。予約可能数に達していたら商品詳細へ戻す） |
 | `/reservation/payment` | POST | ReservationController | payment | 必須 | 予約の決済機能（クレジットカード：決済ページへ、銀行振込：振込先のご案内へ） |
 | `/reservation/success` | GET | ReservationController | reservationSuccess | 必須 | 予約履歴作成機能（クレジットカード：Stripeの決済後に戻る先） |
 | `/reservation/bank-transfer` | GET | ReservationController | bankTransfer | 必須 | 予約の銀行振込の振込先のご案内ページ表示 |
@@ -114,6 +114,8 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 - カートページ
 - 購入ページ
 - 決済ページ
+- 振込先のご案内ページ（shop/bank_transfer。購入・予約で共通）
+- 支払い確定処理中の案内ページ（shop/payment_pending。購入・予約で共通）
 - 購入サンクスページ
 - 予約ページ
 - 予約サンクスページ

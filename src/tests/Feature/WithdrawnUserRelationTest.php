@@ -33,8 +33,8 @@ class WithdrawnUserRelationTest extends TestCase
 
         $this->assertSame($user->id, $purchase->fresh()->user?->id);
         $this->assertSame($user->id, $reservation->fresh()->user?->id);
-        $this->assertSame($user->id, $address->fresh()->user?->id);
-        $this->assertTrue($purchase->fresh()->user?->trashed());
+        $this->assertSame($user->id, $address->fresh()->user->id);
+        $this->assertTrue($purchase->fresh()->user->trashed());
     }
 
     /**

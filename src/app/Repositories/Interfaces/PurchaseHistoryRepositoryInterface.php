@@ -33,4 +33,9 @@ interface PurchaseHistoryRepositoryInterface
      * 会員の購入履歴を1件、詳細の表示に必要な関連（商品・振込先）つきで取得（他の会員の購入履歴・存在しない購入履歴は null）
      */
     public function findDetailByUserId(int $userId, int $id): ?Purchase_history;
+
+    /**
+     * サンクスメールの表示に必要な関連（会員・購入商品。銀行振込のときは振込先も）を、まだ読み込んでいなければ読み込む
+     */
+    public function loadForThanksMail(Purchase_history $purchase): Purchase_history;
 }

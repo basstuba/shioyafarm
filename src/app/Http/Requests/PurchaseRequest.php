@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\PaymentMethod;
 use App\Enums\PurchaseSource;
-use App\Services\PurchaseService;
+use App\Services\CheckoutService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,13 +38,7 @@ class PurchaseRequest extends FormRequest
             'items' => 'required|array|min:1',
             'items.*.item_id' => ['required', 'integer', 'distinct', Rule::exists('items', 'id')->where('is_reserved_only', 0)],
             'items.*.quantity' => CartRequest::quantityRules(),
-            'delivery_name' => 'required|string|max:255',
-            // 正規表現に | を含むため、パイプ区切りの文字列ではなく配列で書く
-            'address_id' => ['required', 'string', 'regex:/^(user|delivery)_[0-9]+$/'],
-            'delivery_tell' => 'required|digits_between:10,11|max:15',
-            'payment_method' => ['required', 'string', 'max:25', Rule::in(PaymentMethod::values())],
-            // 購入ページが発行した1回限りの注文トークン（使用済みかどうかは、排他ロックの中で確認する）
-            'order_token' => 'required|string|max:100',
+            ...self::checkoutRules(PaymentMethod::values()),
         ];
     }
 
@@ -71,6 +65,38 @@ class PurchaseRequest extends FormRequest
             'items.*.item_id.integer' => '購入する商品が正しくありません',
             'items.*.item_id.distinct' => '同じ商品が重複しています',
             'items.*.item_id.exists' => '購入できない商品が含まれています',
+            ...self::checkoutMessages(),
+        ];
+    }
+
+    /**
+     * お届け先・支払方法・注文トークンのルール（予約ページの ReservationRequest でも使う）
+     *
+     * 注文トークンは、購入ページ・予約ページが発行した1回限りのトークン（使用済みかどうかは、排他ロックの中で確認する）。
+     *
+     * @param  list<string>  $paymentMethods  選べる支払方法の値
+     * @return array<string, array<mixed>|string>
+     */
+    public static function checkoutRules(array $paymentMethods): array
+    {
+        return [
+            'delivery_name' => 'required|string|max:255',
+            // 正規表現に | を含むため、パイプ区切りの文字列ではなく配列で書く
+            'address_id' => ['required', 'string', 'regex:/^(user|delivery)_[0-9]+$/'],
+            'delivery_tell' => 'required|digits_between:10,11|max:15',
+            'payment_method' => ['required', 'string', 'max:25', Rule::in($paymentMethods)],
+            'order_token' => 'required|string|max:100',
+        ];
+    }
+
+    /**
+     * お届け先・支払方法・注文トークンのエラーメッセージ（予約ページの ReservationRequest でも使う）
+     *
+     * @return array<string, string>
+     */
+    public static function checkoutMessages(): array
+    {
+        return [
             'delivery_name.required' => 'お届け先氏名を入力してください',
             'delivery_name.string' => 'お届け先氏名は文字で入力してください',
             'delivery_name.max' => 'お届け先氏名は255文字以内で入力してください',
@@ -81,9 +107,9 @@ class PurchaseRequest extends FormRequest
             'delivery_tell.max' => 'お届け先電話番号は15文字以内で入力してください',
             'payment_method.required' => 'お支払い方法を選択してください',
             'payment_method.in' => 'お支払い方法を選択してください',
-            'order_token.required' => PurchaseService::STALE_MESSAGE,
-            'order_token.string' => PurchaseService::STALE_MESSAGE,
-            'order_token.max' => PurchaseService::STALE_MESSAGE,
+            'order_token.required' => CheckoutService::STALE_MESSAGE,
+            'order_token.string' => CheckoutService::STALE_MESSAGE,
+            'order_token.max' => CheckoutService::STALE_MESSAGE,
         ];
     }
 }

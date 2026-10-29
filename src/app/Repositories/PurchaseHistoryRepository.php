@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\PaymentMethod;
 use App\Models\Purchase_history;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -59,5 +60,22 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
             ->where('user_id', $userId)
             ->where('id', $id)
             ->first();
+    }
+
+    /**
+     * サンクスメールの表示に必要な関連（会員・購入商品。銀行振込のときは振込先も）を、まだ読み込んでいなければ読み込む
+     *
+     * 会員は保存した側が持っているもの（User）をそのまま使えるよう、無いときだけ読み込む。
+     */
+    #[Override]
+    public function loadForThanksMail(Purchase_history $purchase): Purchase_history
+    {
+        $purchase->loadMissing(['user', 'purchaseHistoryItems.item']);
+        // 振込先は銀行振込のときだけ読む
+        if (PaymentMethod::from($purchase->payment_method)->usesBankTransfer()) {
+            $purchase->loadMissing('purchaseBankTransfer');
+        }
+
+        return $purchase;
     }
 }

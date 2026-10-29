@@ -6,6 +6,9 @@ use App\Enums\PaymentMethod;
 use App\Models\Delivery_address;
 use App\Models\User;
 use App\Services\DeliveryAddressService;
+use App\Services\OrderSummary;
+use Closure;
+use InvalidArgumentException;
 
 /**
  * 購入ページ・予約ページの Livewire コンポーネントで共通の、お届け先・支払方法・住所追加モーダル
@@ -71,6 +74,23 @@ trait WithDeliveryForm
         }
 
         return $address;
+    }
+
+    /**
+     * 選択中の住所の都道府県で金額の内訳を計算する
+     *
+     * 送料の地域が見つからない都道府県（設定にない住所）のときは、描画でエラーにせず、送料を0円にした内訳と、住所欄に出すエラーを返す。
+     *
+     * @param  Closure(?string): OrderSummary  $summarize  都道府県（送料を0円にするときは null）から金額の内訳を計算する
+     * @return array{OrderSummary, ?string} 金額の内訳と、住所欄のエラー（無いときは null）
+     */
+    private function summarizeWithShippingError(string $prefecture, Closure $summarize): array
+    {
+        try {
+            return [$summarize($prefecture), null];
+        } catch (InvalidArgumentException) {
+            return [$summarize(null), 'このお届け先住所は送料を計算できません。別の住所を選択してください'];
+        }
     }
 
     /**

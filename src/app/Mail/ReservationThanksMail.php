@@ -6,26 +6,23 @@ use App\Enums\PaymentMethod;
 use App\Models\Reservation;
 use App\Support\MailText;
 use Illuminate\Mail\Mailables\Content;
+use Override;
 
 /**
  * 予約のサンクスメール
  *
  * 予約を保存した直後に、会員登録のメールアドレスへ送る。金額は保存済みの値を使う。
- * 表示に使う会員・商品・振込先は、ここで Eager Load する。
+ * 表示に使う会員・商品・振込先は、作る側（ReservationService）が Eager Load しておく。
  */
 class ReservationThanksMail extends ThanksMail
 {
     public function __construct(public readonly Reservation $reservation)
     {
         $this->paymentMethod = PaymentMethod::from($reservation->payment_method);
-        // 振込先は銀行振込のときだけ読む
-        $reservation->loadMissing(['user', 'item']);
-        if ($this->paymentMethod->usesBankTransfer()) {
-            $reservation->loadMissing('reservationBankTransfer');
-        }
         $this->to($reservation->user->email);
     }
 
+    #[Override]
     protected function subjectLine(): string
     {
         return "【しおや農園】ご予約ありがとうございます（予約番号：{$this->reservation->id}）";
