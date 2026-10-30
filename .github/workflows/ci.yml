@@ -1,0 +1,71 @@
+# main への push のたびに、コードスタイル・静的解析・テスト・ビルド・依存の脆弱性を確認する。
+# E2E は Docker の構成と Stripe のキーが要るため含めない（手元で ./e2e/run.sh を実行する）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: src
+
+jobs:
+  php:
+    name: PHP（Pint・Larastan・テスト・composer audit）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, gd, zip, pdo_sqlite
+          coverage: pcov
+          # テスト856件分のカバレッジの集計は、既定の128MBでは足りない
+          ini-values: memory_limit=512M
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('src/composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      # テストは phpunit.xml の設定で SQLite のメモリ上のDBを使うため、MySQL は用意しない
+      - name: .env の用意
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: コードスタイル（Pint）
+        run: ./vendor/bin/pint --test
+
+      - name: 静的解析（Larastan）
+        run: ./vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: テストとカバレッジ（80%未満で失敗）
+        run: php artisan test --coverage --min=80
+
+      - name: 依存の脆弱性（composer audit）
+        run: composer audit
+
+  frontend:
+    name: フロント（ビルド・npm audit）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          cache: npm
+          cache-dependency-path: src/package-lock.json
+
+      - run: npm ci
+
+      - name: ビルド
+        run: npm run build
+
+      - name: 依存の脆弱性（npm audit）
+        run: npm audit
