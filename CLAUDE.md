@@ -54,6 +54,8 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 
 作業ブランチを `main` にマージする前には、`laravel-verification` スキルで検証する（毎回の実装の流れには含めず、手動で実行する）。テストとカバレッジは `docker compose exec php php artisan test --coverage` で実行する。静的解析は Larastan（上記の phpstan コマンド）で行い、エラー0件を保つ。
 
+`main` への push のたびに GitHub Actions（`.github/workflows/ci.yml`）が、Pint（`--test`）・Larastan・テスト（カバレッジ80%未満で失敗）・`composer audit`・`npm run build`・`npm audit` を実行する。E2Eは含めない。
+
 ## 規約
 
 - ユーザーとのやり取り（返答・作業報告・途中経過）はすべて日本語で行う。
