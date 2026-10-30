@@ -15,7 +15,7 @@ jobs:
     name: PHP（Pint・Larastan・テスト・composer audit）
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -54,9 +54,9 @@ jobs:
     name: フロント（ビルド・npm audit）
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24.22.1'
           cache: npm
