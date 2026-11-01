@@ -14,7 +14,7 @@
                 <div class="min-w-0 overflow-hidden rounded-t-[20px] md:w-115 md:shrink md:self-start md:rounded-none">
                     <x-item-image :item="$item" img-class="aspect-[460/300]" />
                 </div>
-                {{-- テキスト列は240〜360px（商品名が長いときだけ広がる）。説明文はFigmaと同じ1行10文字になるよう、10.5文字分の幅にする（日本語は代わりのフォントで表示され、1文字が24pxより少し広いため）。価格は列の下端（＝画像の下端）にそろえる --}}
+                {{-- テキスト列は240〜360px（商品名が長いときだけ広がる）。説明文はFigmaと同じ1行10文字になるよう、10.5文字分の幅にする（日本語はOSのゴシック体で、全角1文字＝1emだが、フォントによるわずかな差を吸収するため半文字分の余裕を持たせる）。価格は列の下端（＝画像の下端）にそろえる --}}
                 <div class="flex min-w-0 flex-col gap-4 px-4 pt-4 md:min-w-60 md:max-w-90 md:justify-between md:gap-6 md:p-0">
                     <div class="flex flex-col gap-4 md:gap-[42px]">
                         <h2 class="font-maru text-2xl break-words md:text-[32px]">{{ $item->name }} {{ $item->weight }}kg</h2>
