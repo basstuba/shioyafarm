@@ -2,9 +2,12 @@
 
 /* デザイントークン（Figmaの色・フォントと対応させる） */
 @theme {
-    --font-inika: "Inika", serif;
+    /*
+     * 本文：英数字は Inter（Webフォント）、日本語はOSのゴシック体（Figmaの本文は Inter で、日本語はゴシック体で表示される）。
+     * 日本語のWebフォントは読み込みが重いため使わない。Windowsは細くかすれやすい Yu Gothic より先にメイリオを使う
+     */
+    --font-sans: "Inter", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
     --font-maru: "Kiwi Maru", sans-serif;
-    --default-font-family: var(--font-inika);
 
     --color-ink: #2e2e2e;
     --color-primary: #f0a13a;
