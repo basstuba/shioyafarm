@@ -27,7 +27,7 @@ class AddToCartButton extends Component
     /** モーダルのメッセージが、カートに追加できたときのものか */
     public bool $added = false;
 
-    /** カートに入れられない商品だったか（「カートを見る」を出さない） */
+    /** カートに入れられない商品だったか（「カートの中を確認する」を出さない） */
     public bool $rejected = false;
 
     /**
@@ -44,7 +44,7 @@ class AddToCartButton extends Component
         $this->added = $result === CartAddResult::Added;
         $this->rejected = $result === CartAddResult::Rejected;
         $this->message = match ($result) {
-            CartAddResult::Added => 'カートに追加しました',
+            CartAddResult::Added => 'カートに追加しました！',
             CartAddResult::LimitReached => "この商品はカートに{$limit}個入っています。1つの商品は{$limit}個までです。",
             CartAddResult::Rejected => 'この商品はカートに入れられません。',
         };

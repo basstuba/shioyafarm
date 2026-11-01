@@ -48,10 +48,10 @@ class CartLivewireTest extends TestCase
             ->assertSet('open', true)
             ->assertSet('added', true)
             ->assertSee('カートに追加しました')
-            ->assertSee('カートを見る')
-            ->assertSee('買い物を続ける')
-            ->assertSee('href="'.route('shop.cart').'"', false)
-            ->assertSee('href="'.route('shop.items.index').'"', false);
+            ->assertSee('カートの中を確認する')
+            ->assertSee('閉じる')
+            ->assertDontSee('買い物を続ける')
+            ->assertSee('href="'.route('shop.cart').'"', false);
 
         $this->assertSame([$item->id => 1], session('cart'));
     }
@@ -93,8 +93,8 @@ class CartLivewireTest extends TestCase
             ->assertSet('added', false)
             ->assertSee('この商品はカートに10個入っています。1つの商品は10個までです。')
             ->assertSet('rejected', false)
-            ->assertSee('カートを見る')
-            ->assertSee('買い物を続ける')
+            ->assertSee('カートの中を確認する')
+            ->assertSee('閉じる')
             ->assertDontSee('カートに追加しました');
 
         $this->assertSame([$item->id => 10], session('cart'));
@@ -131,8 +131,8 @@ class CartLivewireTest extends TestCase
             ->assertSet('added', false)
             ->assertSee('この商品はカートに入れられません。')
             ->assertSet('rejected', true)
-            ->assertDontSee('カートを見る')
-            ->assertSee('買い物を続ける');
+            ->assertDontSee('カートの中を確認する')
+            ->assertSee('閉じる');
 
         $this->assertNull(session('cart'));
     }
@@ -214,7 +214,9 @@ class CartLivewireTest extends TestCase
             ->test(AddToCartButton::class, ['itemId' => $item->id])
             ->assertSee('x-show="$wire.open"', false)
             ->assertSee('x-cloak', false)
-            ->assertSee('aria-label="閉じる"', false)
+            ->assertSee('role="dialog"', false)
+            ->assertSee('aria-modal="true"', false)
+            ->assertSeeHtml('>閉じる</button>')
             ->assertSeeHtml('x-on:click="$wire.open = false"')
             ->assertSeeHtml('x-on:keydown.escape.window="$wire.open = false"');
     }
