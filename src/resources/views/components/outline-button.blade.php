@@ -1,18 +1,21 @@
 {{--
     白地に橙の枠線のボタン。ホバー・フォーカス時は黄色の背景に濃い茶色の文字になる（枠線は透明にして大きさを変えない）。
     - href を渡すとリンク（<a>）、渡さないとボタン（<button>。type は既定で submit）として出す
-    - size は sm（既定。会員登録・詳しく見るなど）／lg（フォームの送信ボタンなど）
+    - size は sm（既定。会員登録・詳しく見るなど）／lg（フォームの送信ボタンなど）／md（200×40で文字16px。カート追加のモーダル）／xl（200×60。商品詳細）
+    - disabled のボタンは薄くして押せなくし、ホバーでも変わらない
 --}}
 @props(['href' => null, 'type' => 'submit', 'size' => 'sm'])
 @php
     $classes = [
-        'inline-flex items-center justify-center rounded-[30px] border-2 border-action bg-white font-maru text-action no-underline',
+        'inline-flex items-center justify-center border-2 border-action bg-white font-maru text-action no-underline',
         'transition-[background-color,color,border-color,box-shadow] duration-200',
         'hover:border-transparent hover:bg-action-hover hover:text-action-hover-text hover:shadow-button',
         'focus-visible:border-transparent focus-visible:bg-action-hover focus-visible:text-action-hover-text focus-visible:shadow-button focus-visible:outline-none',
         match ($size) {
-            'lg' => 'h-11 w-50 text-xl md:h-10',
-            default => 'h-11 w-40 text-base md:h-[34px] md:w-[130px]',
+            'xl' => 'h-15 w-50 rounded-[40px] text-base font-medium',
+            'lg' => 'h-11 w-50 rounded-[30px] text-xl md:h-10',
+            'md' => 'h-11 w-50 rounded-[30px] text-base md:h-10',
+            default => 'h-11 w-40 rounded-[30px] text-base md:h-[34px] md:w-[130px]',
         },
     ];
 @endphp

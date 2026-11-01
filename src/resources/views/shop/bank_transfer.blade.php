@@ -68,12 +68,12 @@
                 {{-- 「戻る」は状態を変える（PaymentIntent をキャンセルする）ため POST --}}
                 <form method="POST" action="{{ route($cancelRoute) }}">
                     @csrf
-                    <x-outline-button size="lg" x-bind:disabled="submitting" class="disabled:cursor-not-allowed disabled:opacity-60">戻る</x-outline-button>
+                    <x-outline-button size="lg" x-bind:disabled="submitting">戻る</x-outline-button>
                 </form>
                 {{-- 「振込み」も状態を変える（購入データを保存する）ため POST。リンクにするとプリフェッチや外部ページから確定してしまう --}}
                 <form method="POST" action="{{ route($confirmRoute) }}">
                     @csrf
-                    <x-filled-button x-bind:disabled="submitting" class="disabled:cursor-not-allowed disabled:opacity-60">振込み</x-filled-button>
+                    <x-filled-button x-bind:disabled="submitting">振込み</x-filled-button>
                 </form>
             </div>
         </div>
