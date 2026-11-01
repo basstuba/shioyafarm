@@ -34,7 +34,7 @@ docker compose exec php ./vendor/bin/phpstan analyse --memory-limit=1G   # 静�
 docker compose exec node npm run build                  # 本番用にCSS/JSをビルド（開発中は node コンテナの Vite が自動で反映する）
 ./e2e/run.sh                                            # E2Eテスト（Playwright Test。専用DB sf_db_e2e を作り直し、:8081 のE2E用アプリで流す。前提と項目は docs/e2e/scenarios.md）
 ./e2e/run.sh stripe                                     # E2Eのうちクレジットカード（Stripe Checkout）の項目だけ
-./scripts/verify.sh                                     # マージ前の検証（CIと同じ6項目。通ったコミットを .git/verified-commits に記録）
+./scripts/verify.sh                                     # マージ前の検証（CIの項目＋composer validate・route:cache・view:cache。通ったコミットを .git/verified-commits に記録）
 ```
 
 サービス：アプリは http://localhost、phpMyAdmin は :8080、Mailpit は :8025。
@@ -53,7 +53,7 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 
 設計書のルートを実装するときは `/add-feature` スキルを使う。作業ブランチを切る → 受け入れ条件とUATシナリオ（`docs/uat/`）を作ってユーザーのOKをもらう → `implementer` エージェント（sonnet / effort: high）が実装・テスト → テストが通ってから `uat-tester` エージェントがPlaywrightでUAT → `/code-review` でレビュー → ユーザーがチェックリストで受け入れ確認、の順に進める。`main` ブランチ上で `src/` を編集するとhookでブロックされる。マイグレーションは、`main` にコミット済みのものと、DBに適用済みのものの書き換えがhookでブロックされる（修正用のマイグレーションを追加して直す）。
 
-作業ブランチを `main` にマージする前には、作業ブランチ上ですべてコミットしてから `./scripts/verify.sh` を実行し、CIと同じ項目（Pint `--test`・Larastan・テストとカバレッジ80%・`composer audit`・`npm run build`・`npm audit`）が通ることを確かめる。`main` 上の `git merge` は、マージするブランチの先頭コミットが検証済みでないとhookでブロックされる（検証のあとにコミットを足したら再実行する）。静的解析はエラー0件を保つ。より広い確認（環境・セキュリティ・デプロイ準備）が必要なときは、`laravel-verification` スキルを手動で実行する。
+作業ブランチを `main` にマージする前には、作業ブランチ上ですべてコミットしてから `./scripts/verify.sh` を実行し、CIと同じ項目（Pint `--test`・Larastan・テストとカバレッジ80%・`composer audit`・`npm run build`・`npm audit`）に、`composer validate`・`route:cache`・`view:cache`（全Bladeのコンパイル。終わったらキャッシュは消す）を加えて通ることを確かめる。`main` 上の `git merge` は、マージするブランチの先頭コミットが検証済みでないとhookでブロックされる（検証のあとにコミットを足したら再実行する）。静的解析はエラー0件を保つ。`laravel-verification` スキルは毎回は使わず、2回目のE2Eの前とREADMEを書く前の節目に手動で実行する。
 
 `main` への push のたびに GitHub Actions（`.github/workflows/ci.yml`）が、Pint（`--test`）・Larastan・テスト（カバレッジ80%未満で失敗）・`composer audit`・`npm run build`・`npm audit` を実行する。E2Eは含めない。
 
