@@ -25,6 +25,13 @@
     --color-action-hover: #ffdd5c;
     --color-action-hover-text: #7a4f00;
     --color-peach: #ffe4b7;
+    --color-reserve: #ff8c42;
+    --color-reserve-hover: #ff6400;
+    /* カートの小計の金額（予約ボタンのホバーと同じ値だが、片方だけ変えられるよう分ける） */
+    --color-subtotal: #ff6400;
+    /* 削除ボタン（エラー文字用の danger とは別） */
+    --color-delete: #dd4a48;
+    --color-delete-hover: #ff3d3b;
 
     --spacing-header: 70px;
 
