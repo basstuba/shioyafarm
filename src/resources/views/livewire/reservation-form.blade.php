@@ -73,7 +73,7 @@
                 <p class="text-base text-danger" role="alert">{{ $message }}</p>
             @enderror
             {{-- 送料を計算できない住所のときは押せない（サーバー側でも、送料を計算できない住所の予約はエラーにする） --}}
-            <x-filled-button :disabled="$shippingError !== null" x-bind:disabled="submitting || {{ $shippingError !== null ? 'true' : 'false' }}" class="disabled:cursor-not-allowed disabled:opacity-60">予約を確定する</x-filled-button>
+            <x-filled-button :disabled="$shippingError !== null" x-bind:disabled="submitting || {{ $shippingError !== null ? 'true' : 'false' }}">予約を確定する</x-filled-button>
             <a href="{{ route('shop.items.index') }}" class="inline-flex min-h-11 items-center font-maru text-base underline md:text-lg">商品一覧に戻る</a>
         </div>
     </x-checkout-form>

@@ -18,7 +18,7 @@ test('E-3 トップから商品を探してカートに入れ、数量の変更�
         await page.getByRole('button', { name: 'カートに入れる' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
     }
-    await page.getByRole('dialog').getByRole('link', { name: 'カートを見る' }).click();
+    await page.getByRole('dialog').getByRole('link', { name: 'カートの中を確認する' }).click();
 
     const potato = page.getByRole('listitem').filter({ hasText: 'じゃがいも 2kg' });
     const onion = page.getByRole('listitem').filter({ hasText: '玉ねぎ 2kg' });

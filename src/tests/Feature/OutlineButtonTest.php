@@ -44,4 +44,20 @@ class OutlineButtonTest extends TestCase
         $this->assertStringContainsString('disabled:hover:bg-white', $html);
         $this->assertStringContainsString('disabled:hover:shadow-none', $html);
     }
+
+    /**
+     * xl は高さ60px、md は200×40で文字16px
+     */
+    #[Test]
+    public function xlとmdの大きさを指定できる(): void
+    {
+        $xl = Blade::render('<x-outline-button size="xl" type="button">カートに入れる</x-outline-button>');
+        $md = Blade::render('<x-outline-button size="md" href="/cart">カートの中を確認する</x-outline-button>');
+
+        $this->assertStringContainsString('h-15 w-50', $xl);
+        $this->assertStringContainsString('rounded-[40px]', $xl);
+        $this->assertStringContainsString('h-11 w-50', $md);
+        $this->assertStringContainsString('text-base', $md);
+        $this->assertStringContainsString('md:h-10', $md);
+    }
 }
