@@ -526,8 +526,10 @@ class PurchaseFormLivewireTest extends TestCase
             ->test(PurchaseForm::class)
             ->assertSee('都道府県を選択')
             ->assertSee('選択してください')
-            ->assertSee('<option value="東京都">東京都</option>', false)
-            ->assertSee('<option value="沖縄県">沖縄県</option>', false)
+            ->assertSeeHtml('value="東京都"')
+            ->assertSeeHtml('>東京都</option>')
+            ->assertSeeHtml('value="沖縄県"')
+            ->assertSeeHtml('>沖縄県</option>')
             ->assertSee('住所を追加')
             ->assertSee('＋新しい住所を追加')
             ->assertSee('例：適当市適当町３４－５６');

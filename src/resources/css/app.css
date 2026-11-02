@@ -35,6 +35,14 @@
     /* 削除ボタン（エラー文字用の danger とは別） */
     --color-delete: #dd4a48;
     --color-delete-hover: #ff3d3b;
+    /* 購入ページの小計・送料の文字と区切り線（Figmaは #8f8f8f だが、読みやすさのために濃くしている） */
+    --color-muted: #6b6b6b;
+    /* 購入ページの支払方法カードの名前・説明と「ご注文内容をご確認のうえ…」の文字（Figmaは #c0822f だが、読みやすさのために濃くしている） */
+    --color-primary-text: #8f5e1c;
+    /* 選択中の支払方法カードの背景 */
+    --color-selected: #fff278;
+    /* 購入完了ページの見出し */
+    --color-leaf: #2d7e1a;
 
     --spacing-header: 70px;
 
@@ -42,6 +50,11 @@
     --shadow-panel: 0 4px 4px rgb(0 0 0 / 0.25);
     --shadow-button: 0 4px 10px rgb(0 0 0 / 0.25);
     --shadow-menu: 0 4px 8px rgb(0 0 0 / 0.15);
+    /* 選択中の支払方法カード */
+    --shadow-selected: 0 8px 10px rgb(0 0 0 / 0.4);
+
+    /* 購入完了ページの見出し（写真の上に直接置く文字） */
+    --text-shadow-thanks: 0 4px 4px rgb(0 0 0 / 0.25);
 
     /* トップページのファーストビュー（4枚を6秒ずつフェードで切り替える。各スライドに animation-delay を付けて使う） */
     --animate-fv-fade: fv-fade 24s infinite;
