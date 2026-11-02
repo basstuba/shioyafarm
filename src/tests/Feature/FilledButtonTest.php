@@ -74,4 +74,20 @@ class FilledButtonTest extends TestCase
         $this->assertStringContainsString('md:h-[34px]', $html);
         $this->assertStringContainsString('md:w-50', $html);
     }
+
+    /**
+     * 2xl は240×60で文字24px、影つき（購入ページの「注文を確定する」）。無効のときはホバーを打ち消す
+     */
+    #[Test]
+    public function _2xlは240幅60高さで文字24pxになる(): void
+    {
+        $html = Blade::render('<x-filled-button size="2xl">注文を確定する</x-filled-button>');
+
+        $this->assertStringContainsString('h-15 w-60', $html);
+        $this->assertStringContainsString('rounded-[40px]', $html);
+        $this->assertStringContainsString('text-2xl', $html);
+        $this->assertStringContainsString('hover:shadow-button', $html);
+        $this->assertStringContainsString('disabled:hover:shadow-none', $html);
+        $this->assertStringContainsString('bg-action', $html);
+    }
 }
