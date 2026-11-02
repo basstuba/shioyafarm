@@ -133,6 +133,19 @@ class PasswordToggleTest extends TestCase
     }
 
     /**
+     * 伏せ字へ戻すのは、送信時と bfcache からの復元時だけ（初回の読み込み時の pageshow では戻さない）
+     */
+    #[Test]
+    public function 伏せ字に戻すのは送信時と復元時だけ(): void
+    {
+        $this->withViewErrors([]);
+        $html = Blade::render('<x-auth-input name="password" label="パスワード" type="password" />');
+
+        $this->assertStringContainsString('x-on:pageshow.window="if ($event.persisted) shown = false"', $html);
+        $this->assertStringContainsString('x-on:submit.window="shown = false;', $html);
+    }
+
+    /**
      * 認証レイアウトで Livewire のスタイルとスクリプト（Alpine.js 同梱）を読み込む
      */
     #[Test]
