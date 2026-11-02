@@ -95,6 +95,14 @@
     text-underline-offset: 0.3em;
 }
 
+/* Edge が出すパスワード欄の目のアイコンを隠す（入力欄の右端の「表示」ボタン（components/auth-input）と重なるため） */
+@layer base {
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none;
+    }
+}
+
 @layer components {
     /*
      * 利用規約・プライバシーポリシーなどの長文の文書。
