@@ -40,6 +40,24 @@ class ReservationFormLivewireTest extends TestCase
     }
 
     /**
+     * 数量の input は商品の行の部品経由でも、id・name・wire:change が付いて描画される
+     */
+    #[Test]
+    public function 数量の入力欄に_idとnameとwire_changeが付く(): void
+    {
+        [$user, $item] = $this->scenario();
+
+        Livewire::actingAs($user)
+            ->test(ReservationForm::class, ['itemId' => $item->id])
+            ->assertSeeHtml('id="reservation-quantity"')
+            ->assertSeeHtml('name="quantity"')
+            ->assertSeeHtml('wire:change="updateQuantity($event.target.value)"')
+            ->call('updateQuantity', '0')
+            ->assertSeeHtml('aria-invalid="true"')
+            ->assertSeeHtml('border-danger');
+    }
+
+    /**
      * 初期表示：会員登録の内容が入り、数量1で小計1,450円・送料1,530円・合計2,980円（S-2）
      */
     #[Test]

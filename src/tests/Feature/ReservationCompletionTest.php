@@ -150,10 +150,11 @@ class ReservationCompletionTest extends TestCase
 
         $response->assertOk()
             ->assertSee('storage/image/tool/thanks-page-photo.webp', false)
-            ->assertSee('ご予約ありがとうございます。')
-            ->assertSee('お届けまで、どうぞ楽しみにお待ちください。')
-            ->assertSee('商品は9月より、')
-            ->assertSee('準備が整い次第順次発送いたします。')
+            // SP・タブレットでは見出しの途中に改行が入るため、区切りごとに順番どおり並ぶことを確認する
+            ->assertSeeInOrder(['ご予約ありがとうございます。', 'お届けまで、', 'どうぞ楽しみにお待ちください。', '商品は9月より'])
+            ->assertSee('商品は9月より、準備が整い次第順次発送いたします。')
+            // 見出しは予約サンクス用の濃い橙（ユーザーと決めた色）
+            ->assertSee('text-reserve-text', false)
             ->assertSee('ホームに戻る')
             ->assertSee('href="'.route('top.index').'"', false)
             ->assertSee('<title>ご予約完了 | Shioya Farm</title>', false);

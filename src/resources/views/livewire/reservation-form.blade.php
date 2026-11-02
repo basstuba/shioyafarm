@@ -1,80 +1,63 @@
-{{-- 予約ページの予約内容・お届け先・支払方法・金額、住所追加モーダル。見た目は仮置き（Figmaの上限リセット後に仕上げる） --}}
+{{-- 予約ページの予約内容・お届け先・支払方法・金額、住所追加モーダル --}}
 <div>
     {{-- 数量・住所・支払方法の操作は Livewire、「予約を確定する」は通常のフォーム送信（エラーはサーバー側で検証して表示する） --}}
-    <x-checkout-form :action="route('shop.reservation.payment')" class="flex flex-col gap-6 md:gap-8">
+    <x-checkout-form :action="route('shop.reservation.payment')">
         <input type="hidden" name="item_id" value="{{ $item->id }}">
         {{-- 二重送信を防ぐ1回限りの注文トークン（予約ページを開いたときに発行し、再描画では変わらない） --}}
         <input type="hidden" name="order_token" value="{{ $orderToken }}">
 
-        <div class="flex flex-col gap-6 rounded-[20px] bg-white px-4 py-6 shadow-card md:gap-8 md:px-10 md:py-10">
-            <h1 class="font-maru text-2xl text-accent md:text-3xl">ご予約内容</h1>
+        <div class="rounded-[20px] bg-white px-4 py-8 shadow-panel md:rounded-[30px] md:px-6 md:pt-[49px] md:pb-[86px]">
+            <h1 class="text-center font-maru text-2xl text-accent md:text-[32px]">ご予約内容</h1>
 
-            @error('item_id')
-                <p class="text-base text-danger" role="alert">{{ $message }}</p>
-            @enderror
-
-            <div class="rounded-[20px] border border-line p-4 md:px-6 md:py-4">
-                <div class="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-                    <div class="min-w-0 overflow-hidden rounded-[10px] md:w-40 md:shrink-0">
-                        <x-item-image :item="$item" img-class="h-[160px] md:h-[100px]" />
-                    </div>
-
-                    <div class="flex min-w-0 flex-1 flex-col gap-1 md:gap-2">
-                        <p class="font-maru text-xl break-words md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</p>
-                        <p class="text-base md:text-lg">{{ number_format($item->price) }}円(税込)</p>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <label class="sr-only" for="reservation-quantity">{{ $item->name }} {{ $item->weight }}kg の数量</label>
-                        <input
-                            id="reservation-quantity"
-                            name="quantity"
-                            type="number"
-                            min="{{ $minQuantity }}"
-                            max="{{ $maxQuantity }}"
-                            step="1"
-                            inputmode="numeric"
-                            value="{{ $quantity }}"
-                            wire:change="updateQuantity($event.target.value)"
-                            @error('quantity') aria-invalid="true" @enderror
-                            class="h-11 w-20 rounded-[10px] border-2 bg-white px-2 text-center text-lg @error('quantity') border-danger @else border-line-strong @enderror"
-                        >
-                        <span class="text-base md:text-lg">個</span>
-                    </div>
-
-                    <p class="text-xl md:w-28 md:text-right md:text-2xl">{{ number_format($summary->subtotal) }}円</p>
-                </div>
-
-                @error('quantity')
-                    <p class="mt-3 text-base text-danger" role="alert">{{ $message }}</p>
+            {{-- 商品の列は幅860px。金額のカードとお届け先もこの列にそろえる --}}
+            <div class="mx-auto mt-6 w-full max-w-[860px] md:mt-[31px]">
+                @error('item_id')
+                    <p class="mb-4 text-base text-danger" role="alert">{{ $message }}</p>
                 @enderror
-            </div>
 
-            {{-- 金額 --}}
-            <dl class="flex flex-col gap-2 rounded-[10px] bg-cream-50 px-4 py-4 text-base md:ml-auto md:w-[320px] md:text-lg">
-                <div class="flex justify-between"><dt>小計</dt><dd>{{ number_format($summary->subtotal) }}円</dd></div>
-                <div class="flex justify-between"><dt>送料</dt><dd>{{ number_format($summary->shippingFee) }}円</dd></div>
-                <div class="flex justify-between border-t border-line-strong pt-2 font-maru text-xl md:text-2xl">
-                    <dt>合計</dt><dd class="text-primary">{{ number_format($summary->total) }}円</dd>
+                <x-checkout-line
+                    :item="$item"
+                    :amount="$summary->subtotal"
+                    input-id="reservation-quantity"
+                    name="quantity"
+                    :value="$quantity"
+                    :min="$minQuantity"
+                    :max="$maxQuantity"
+                    change="updateQuantity($event.target.value)"
+                    :error="$errors->has('quantity')"
+                >
+                    <x-slot:messages>
+                        @error('quantity')
+                            <p class="mt-3 text-base text-danger" role="alert">{{ $message }}</p>
+                        @enderror
+                    </x-slot:messages>
+                </x-checkout-line>
+
+                {{-- 金額。PCは商品の行の19px下。予約は代引手数料の行が出ない（codFee が 0） --}}
+                @include('livewire.partials.order-summary', ['topClass' => 'md:mt-[19px]'])
+
+                {{-- お届け先は左端を商品の列の左から280pxにそろえる（md〜lgは入りきらないので左余白を詰める） --}}
+                <div class="mt-8 md:mt-[14px] md:pl-12 lg:pl-[280px]">
+                    @include('livewire.partials.delivery-fields')
                 </div>
-            </dl>
 
-            @include('livewire.partials.delivery-fields')
-
-            @include('livewire.partials.payment-options')
+                <div class="mt-12 md:mt-[67px]">
+                    @include('livewire.partials.payment-options')
+                </div>
+            </div>
         </div>
 
-        <div class="flex flex-col items-center gap-5 text-center">
-            <p class="font-maru text-base text-primary-hover md:text-lg">ご予約内容をご確認のうえ、よろしければ「予約を確定する」ボタンを押してください</p>
+        <div class="mt-8 flex flex-col items-center text-center md:mt-[61px]">
+            <p class="font-maru text-base text-primary-text md:text-xl">ご予約内容をご確認のうえ、よろしければ「予約を確定する」ボタンを押してください</p>
             @error('order_token')
-                <p class="text-base text-danger" role="alert">{{ $message }}</p>
+                <p class="mt-4 text-base text-danger" role="alert">{{ $message }}</p>
             @enderror
             @error('payment')
-                <p class="text-base text-danger" role="alert">{{ $message }}</p>
+                <p class="mt-4 text-base text-danger" role="alert">{{ $message }}</p>
             @enderror
             {{-- 送料を計算できない住所のときは押せない（サーバー側でも、送料を計算できない住所の予約はエラーにする） --}}
-            <x-filled-button :disabled="$shippingError !== null" x-bind:disabled="submitting || {{ $shippingError !== null ? 'true' : 'false' }}">予約を確定する</x-filled-button>
-            <a href="{{ route('shop.items.index') }}" class="inline-flex min-h-11 items-center font-maru text-base underline md:text-lg">商品一覧に戻る</a>
+            <x-filled-button size="2xl" variant="reserve" class="mt-8 md:mt-[54px]" :disabled="$shippingError !== null" x-bind:disabled="submitting || {{ $shippingError !== null ? 'true' : 'false' }}">予約を確定する</x-filled-button>
+            <a href="{{ route('shop.items.index') }}" class="mt-8 inline-flex min-h-11 items-center font-maru text-base underline md:mt-[66px]">商品一覧に戻る</a>
         </div>
     </x-checkout-form>
 

@@ -47,6 +47,24 @@ class PurchaseFormLivewireTest extends TestCase
     }
 
     /**
+     * 数量の input は商品の行の部品経由でも、商品ごとの id・name・wire:change と hidden の item_id が付いて描画される
+     */
+    #[Test]
+    public function 数量の入力欄に_idとnameとwire_changeが付く(): void
+    {
+        [$user, $items] = $this->cartScenario();
+        $id = $items['potato']->id;
+
+        Livewire::actingAs($user)
+            ->test(PurchaseForm::class)
+            ->assertSeeHtml('id="purchase-quantity-'.$id.'"')
+            ->assertSeeHtml('name="items[0][quantity]"')
+            ->assertSeeHtml('wire:change="updateQuantity('.$id.', $event.target.value)"')
+            ->assertSeeHtml('<input type="hidden" name="items[0][item_id]" value="'.$id.'">')
+            ->assertSeeHtml('wire:key="purchase-line-'.$id.'"');
+    }
+
+    /**
      * 初期表示：会員登録の内容が入り、金額は小計1,873円・送料1,850円・合計3,723円（S-2）
      */
     #[Test]

@@ -51,6 +51,8 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
   - 入力欄は `<x-auth-input>`（ラベル・input・エラーメッセージをまとめたもの）を使う。
 - 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う（`layouts/auth` の見出し、お問い合わせフォームのカード内の見出し、商品詳細の商品名（カードの中で画像の横に置く）、カートの見出し（緑・32px・左寄せ）、購入ページの見出し（緑・32px・中央寄せ）はデザインが違うため除く）。
 - 選択欄（`<select>`）は、Figmaの茶色の三角の矢印が付いた `<x-select>` を使う（`auth-select`・お届け先住所・住所追加モーダルの都道府県で共通）。エラー文には id を付け、`aria-describedby` でつなぐ。
+- 購入ページと予約ページで共通の部品：商品の行は `<x-checkout-line>`（数量の input の属性・`wire:change` の式・エラー文のスロットを渡す。列の幅は予約ページ＝860pxにそろえてある）、金額のカードは `livewire/partials/order-summary`（`$summary` と上の余白 `$topClass` を渡して `@include`）。
+- 購入完了・予約完了のサンクスページの中身は `<x-thanks-page>`（見出しの色 `color-class`、見出しを1行にし始める画面幅 `nowrap`、見出しはスロット `heading`、本文は既定のスロット）。
 - ヘッダーは `layouts.header` が自動で読み込まれ、ナビはルート名で決まる（`.claude/rules/backend.md` を参照）。
 
 ```blade
