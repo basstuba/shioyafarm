@@ -60,4 +60,21 @@ class OutlineButtonTest extends TestCase
         $this->assertStringContainsString('text-base', $md);
         $this->assertStringContainsString('md:h-10', $md);
     }
+
+    /**
+     * address は160×40で文字14px・角丸20px、SPは高さ44で幅は親いっぱい
+     */
+    #[Test]
+    public function addressは160幅40高さで文字14pxになる(): void
+    {
+        $html = Blade::render('<x-outline-button size="address" type="button">住所を追加</x-outline-button>');
+
+        $this->assertStringContainsString('<button type="button"', $html);
+        $this->assertStringContainsString('h-11 w-full', $html);
+        $this->assertStringContainsString('md:h-10', $html);
+        $this->assertStringContainsString('md:w-40', $html);
+        $this->assertStringContainsString('rounded-[20px]', $html);
+        $this->assertStringContainsString('text-sm', $html);
+        $this->assertStringContainsString('hover:bg-action-hover', $html);
+    }
 }
