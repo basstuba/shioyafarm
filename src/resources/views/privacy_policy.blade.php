@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
+@section('page-title', 'プライバシーポリシー | Shioya Farm')
+
 @section('body-class', 'legal-page')
 
 @section('content')
     <div class="pt-header">
         <div class="legal-document mx-auto max-w-[1520px] px-4">
-            <x-page-title>プライバシーポリシー</x-page-title>
+            <x-page-title class="mt-10 md:mt-5">プライバシーポリシー</x-page-title>
             <section>
                 <p>
                     しおや農園（以下，「当社」といいます。）は，本ウェブサイト上で提供するサービス（以下,「本サービス」といいます。）における，ユーザーの個人情報の取扱いについて，以下のとおりプライバシーポリシー（以下，「本ポリシー」といいます。）を定めます。

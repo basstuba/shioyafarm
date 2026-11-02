@@ -9,6 +9,7 @@ use App\Http\Controllers\MyPageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReservationController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 // トップページ
@@ -98,3 +99,13 @@ Route::get('/privacy-policy', function () {
 Route::get('/commercial-transaction', function () {
     return view('law');
 })->name('info.commercial-transaction');
+
+// 存在しないURL（404）。定義のないURLは web ミドルウェアを通らずセッションが使えず、ログイン中でも未ログインのヘッダーになるため、
+// fallback で web ミドルウェアを通してから 404 を返す（errors/404.blade.php が描画される）。ナビは top.* と同じ。
+// - Route::fallback() は GET だけに一致し、存在しないURLへの POST などが 405 になるため、OPTIONS 以外のメソッドで受ける
+//   （OPTIONS は Laravel が既存のルートに Allow ヘッダーで答えるのに任せる）
+// - 404 を返すだけなので CSRF の確認は外す（外さないと、トークンなしの POST が 404 ではなく 419 になる）
+// - POST専用のURLを GET で開いたときも、405 ではなくこの 404 になる
+Route::match(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'], '{fallbackPlaceholder}', function () {
+    abort(404);
+})->where('fallbackPlaceholder', '.*')->fallback()->withoutMiddleware(ValidateCsrfToken::class)->name('top.not-found');

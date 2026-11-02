@@ -449,8 +449,8 @@ class ReservationCompletionTest extends TestCase
         $this->putPendingReservation($user, $item, PaymentMethod::CustomerBalance, null, 'pi_test_bank');
         $this->gatewayNeverCalled();
 
-        $this->actingAs($user)->get('/reservation/bank-transfer/confirm')->assertStatus(405);
-        $this->get('/reservation/bank-transfer/cancel')->assertStatus(405);
+        $this->actingAs($user)->get('/reservation/bank-transfer/confirm')->assertNotFound();
+        $this->get('/reservation/bank-transfer/cancel')->assertNotFound();
 
         $this->assertSame(0, Reservation::count());
     }

@@ -15,11 +15,10 @@
         <x-auth-input name="email" label="メールアドレス" type="email" placeholder="例：sample@example.com" autocomplete="email" />
         <x-auth-input name="password" label="パスワード" type="password" placeholder="例：demo12345" autocomplete="current-password" />
         <a class="-mt-2 inline-flex min-h-11 items-center self-end text-base text-primary-dark underline lg:-mt-10 lg:min-h-0" href="{{ route('password.request') }}">パスワードをお忘れの方</a>
-        <button class="h-11 w-full cursor-pointer rounded-full bg-primary text-base text-white transition-[background-color,box-shadow] duration-200 hover:bg-primary-hover hover:shadow-button focus-visible:bg-primary-hover focus-visible:shadow-button focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark lg:mt-6 lg:h-[34px]" type="submit">ログイン</button>
+        <x-auth-submit class="lg:mt-6">ログイン</x-auth-submit>
     </form>
 @endsection
 
 @section('guide')
-    <p class="leading-[1.6]">まだ会員登録がお済みでない方は、<br class="lg:hidden">こちらからご登録いただけます。</p>
-    <a class="inline-flex h-11 items-center justify-center rounded-full border border-primary-dark bg-cream-100 px-10 text-base text-primary-dark no-underline transition-[background-color,color,box-shadow] duration-200 hover:bg-primary-dark hover:text-white hover:shadow-button focus-visible:bg-primary-dark focus-visible:text-white focus-visible:shadow-button focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark lg:h-[34px] lg:w-[130px] lg:px-0" href="{{ route('register') }}">会員登録</a>
+    <x-auth-guide :href="route('register')" label="会員登録">まだ会員登録がお済みでない方は、<br class="lg:hidden">こちらからご登録いただけます。</x-auth-guide>
 @endsection
