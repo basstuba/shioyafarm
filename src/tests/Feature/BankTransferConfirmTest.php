@@ -76,7 +76,7 @@ class BankTransferConfirmTest extends TestCase
         $this->putPending($user, $items, PaymentMethod::CustomerBalance, null, 'pi_test_bank');
         $this->gatewayNeverCalled();
 
-        $this->actingAs($user)->get(route('shop.checkout.bank-transfer.confirm'))->assertStatus(405);
+        $this->actingAs($user)->get(route('shop.checkout.bank-transfer.confirm'))->assertNotFound();
         // カードの success_url（GET）で銀行振込の注文は保存されず、案内ページへ戻る
         $this->get(route('shop.checkout.success'))->assertRedirect(route('shop.checkout.bank-transfer'));
 

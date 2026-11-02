@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('page-title', '送料案内 | Shioya Farm')
+
 @section('body-class', 'bg-cream-100')
 
 @section('content')
@@ -11,8 +13,14 @@
                     <dt>単位</dt>
                     <dd>円(税込)</dd>
                 </dl>
-                <div class="mb-15 overflow-x-auto">
-                    @include('shipping.fee-list')
+                {{-- PC（md以上）は12地域を1つの表に並べ、SPは3地域ずつの表4つを縦に並べる（同じ fee-list を地域を絞って使う） --}}
+                <div class="mb-15 hidden overflow-x-auto md:block">
+                    @include('shipping.fee-list', ['areas' => config('shipping.areas'), 'compact' => false])
+                </div>
+                <div class="mb-15 flex flex-col gap-8 md:hidden">
+                    @foreach (array_chunk(config('shipping.areas'), 3, true) as $areaGroup)
+                        @include('shipping.fee-list', ['areas' => $areaGroup, 'compact' => true])
+                    @endforeach
                 </div>
             </section>
             <x-page-title>サイズ区分一覧表</x-page-title>

@@ -55,6 +55,11 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
 - マイページ専用の部品：セクション見出しは `<x-section-title>`（h2）。退会手続きの小さなボタン（130×30、SPは高さ44）は `<x-small-button>`（`variant` は danger＝「退会する」／cancel＝「キャンセル」）。履歴の表（`livewire/partials/history-table`）・ページ送り（`livewire/partials/pager`。`$topClass` で上の余白を渡す）・詳細モーダル（`livewire/partials/order-detail-modal`）は購入履歴と予約履歴で共通。
 - `<x-auth-input>` は、`label-class` でラベルのクラスを変えられ、スロット `labelExtra` でラベルの右に「任意」を、スロット `hint` でラベルの下の行に補足の文言を出せる（「任意」・補足の要素の id は `describedby` に渡して input の `aria-describedby` につなぐ。登録情報変更ページで使う）。`<x-filled-button>` には 130×34 の `size="xs"` がある。
 - 購入完了・予約完了のサンクスページの中身は `<x-thanks-page>`（見出しの色 `color-class`、見出しを1行にし始める画面幅 `nowrap`、見出しはスロット `heading`、本文は既定のスロット）。
+- 認証画面（ログイン・会員登録・パスワード再設定の2画面）で共通の部品：パネルの案内文と枠線のリンクボタンは `<x-auth-guide :href="route(...)" label="...">案内文</x-auth-guide>`（`@section('guide')` の中身。SPで改行したい位置に `<br class="lg:hidden">`）、フォームの塗りの送信ボタンは `<x-auth-submit>`（画面ごとの余白・幅は `class` で足す）。
+- `errors/404.blade.php` は404ページ（`layouts/app` を継承。見出しは購入ページと同じ緑・中央寄せ）。存在しないURLも `routes/web.php` の末尾の fallback（`top.not-found`）で web ミドルウェアを通すため、ログイン中はヘッダーがログイン中の表示になる。500・419などのページは作らない。
+- 振込先のご案内（`shop/bank_transfer`）・お支払いの確認（`shop/payment_pending`）は、購入ページと同じ白い大きなカード（`shadow-panel`）の中に緑・中央寄せの見出しを置き、金額は `livewire/partials/order-summary` を使う。`bank_transfer` は `PendingOrder` から金額のオブジェクト（`subtotal`・`shippingFee`・`codFee`・`total`）を作って渡す。
+- 送料案内の配送料金一覧表（`shipping/fee-list`）は `$areas`（省略すると全地域）と `$compact`（SP用の小さい固定幅の表）を受け取る。PCは全地域の1つの表（`hidden md:block`）、SPは `array_chunk(config('shipping.areas'), 3, true)` の3地域ずつの表4つ（`md:hidden`）を同じビューで出す。金額は `config('shipping.fees')` の「サイズ => [地域名 => 金額]」から地域名で引く。
+- 法務系ページ（利用規約・プライバシーポリシー・特商法）は、`.legal-document` の `section` の余白がSP 40px・md以上 80px。見出し（`<x-page-title class="mt-10 md:mt-5">`）の上にSPだけ余白を足す。
 - ヘッダーは `layouts.header` が自動で読み込まれ、ナビはルート名で決まる（`.claude/rules/backend.md` を参照）。
 
 ```blade

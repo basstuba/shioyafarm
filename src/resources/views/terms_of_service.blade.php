@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
+@section('page-title', '利用規約 | Shioya Farm')
+
 @section('body-class', 'legal-page')
 
 @section('content')
     <div class="pt-header">
         <div class="legal-document mx-auto max-w-[1520px] px-4">
-            <x-page-title>利用規約</x-page-title>
+            <x-page-title class="mt-10 md:mt-5">利用規約</x-page-title>
             <section>
                 <p>
                     この利用規約（以下、「本規約」といいます。）は、しおや農園（以下，「当社」といいます。）がこのウェブサイト上で提供するオンラインショップ（以下、「本サービス」といいます。）の利用条件を定めるものです。登録ユーザーの皆さま（以下、「ユーザー」といいます。）には、本規約に従って、本サービスをご利用いただきます。
