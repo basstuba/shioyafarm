@@ -12,9 +12,9 @@
     エラーは $errors から name で拾う。パスワードは再表示しない（type が password のときは value を出さない）。
     old() の値は、配列など文字列にできないもの（改変した送信）のときは表示しない。
 --}}
+@use('App\Support\OldInput')
 @php
-    $oldValue = old($name, $value);
-    $oldValue = is_scalar($oldValue) ? $oldValue : '';
+    $oldValue = OldInput::scalar($name, $value);
     $isPassword = $type === 'password';
     $describedIds = trim(($describedby ?? '').' '.($errors->has($name) ? $name.'-error' : ''));
 @endphp
