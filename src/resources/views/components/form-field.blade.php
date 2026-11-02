@@ -7,9 +7,9 @@
     - class などの属性は外側の div に付き、inputClass は入力欄そのものに足される
     - old() の値は、配列など文字列にできないもの（改変した送信）のときは表示しない
 --}}
+@use('App\Support\OldInput')
 @php
-    $oldValue = old($name);
-    $oldValue = is_scalar($oldValue) ? (string) $oldValue : '';
+    $oldValue = OldInput::scalar($name);
     $base = 'w-full rounded-[10px] border bg-white px-4 font-maru text-base text-ink placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
     $fieldClass = [
         $base,
