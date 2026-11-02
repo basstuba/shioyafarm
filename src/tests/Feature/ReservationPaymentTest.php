@@ -91,7 +91,7 @@ class ReservationPaymentTest extends TestCase
     {
         [$user] = $this->scenario();
 
-        $this->actingAs($user)->get('/reservation/payment')->assertStatus(405);
+        $this->actingAs($user)->get('/reservation/payment')->assertNotFound();
     }
 
     /**

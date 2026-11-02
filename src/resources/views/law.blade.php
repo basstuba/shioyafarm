@@ -1,12 +1,14 @@
 @extends('layouts.app')
 
+@section('page-title', '特定商取引法に基づく表記 | Shioya Farm')
+
 @section('body-class', 'legal-page')
 
 @section('content')
     <div class="pt-header">
         <div class="mx-auto mb-20 max-w-[1520px] px-4">
-            <x-page-title>特定商取引法に基づく表記</x-page-title>
-            <hr class="my-20 border-line-strong">
+            <x-page-title class="mt-10 md:mt-5">特定商取引法に基づく表記</x-page-title>
+            <hr class="my-10 border-line-strong md:my-20">
             <section class="my-8 text-base">
                 <dt class="mb-4 font-extrabold">事業者名</dt>
                 <dd>しおや農園</dd>
