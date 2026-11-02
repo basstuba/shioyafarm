@@ -7,9 +7,9 @@
     未選択のときは文字色を placeholder と同じ色にする。class などの属性は外側の div に付く。
     old() の値は、配列など文字列にできないもの（改変した送信）のときは未選択として扱う。
 --}}
+@use('App\Support\OldInput')
 @php
-    $selected = old($name, $value);
-    $selected = is_scalar($selected) ? (string) $selected : '';
+    $selected = OldInput::scalar($name, $value);
 @endphp
 <div {{ $attributes->merge(['class' => 'flex flex-col gap-2 lg:gap-1.5']) }}>
     <label class="{{ $labelClass }}" for="{{ $name }}">{{ $label }}</label>
