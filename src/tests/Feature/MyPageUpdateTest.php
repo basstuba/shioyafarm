@@ -103,7 +103,11 @@ class MyPageUpdateTest extends TestCase
         $response->assertSeeInOrder(['name="password"', 'type="password"'], false);
         $response->assertSeeInOrder(['name="password_confirmation"', 'type="password"'], false);
         $response->assertDontSee(self::OLD_PASSWORD);
-        $response->assertSeeInOrder(['現在のパスワード', 'name="current_password"', 'type="password"', 'メールアドレス・パスワードを変更する場合は入力してください。', 'name="password"'], false);
+        // パスワード・確認用パスワードの下に現在のパスワード。ラベルの右に注記を並べ、input の aria-describedby でつなぐ
+        $response->assertSeeInOrder(['name="password"', 'name="password_confirmation"', '現在のパスワード', 'メールアドレス・パスワードを変更する場合は入力してください。', 'name="current_password"', 'type="password"'], false);
+        $response->assertSee('変更を希望する場合は入力してください。');
+        $response->assertSee('aria-describedby="current-password-hint"', false);
+        $response->assertDontSee('（変更する場合のみ）');
         $response->assertSee('変更する');
         $response->assertSee('マイページに戻る');
         $response->assertSee('href="'.route('shop.mypage.index').'"', false);

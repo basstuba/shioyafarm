@@ -20,8 +20,8 @@ test('E-8 登録情報を変更すると、マイページと購入ページの�
 
     await expect(page).toHaveURL(/\/mypage$/);
     const profile = page.locator('#profile');
-    await expect(valueOf(profile, 'お名前')).toHaveText(`変更 ${member.firstName}`);
-    await expect(valueOf(profile, 'ご住所')).toHaveText('東京都港区E2E3-3');
+    await expect(valueOf(profile, '氏名')).toHaveText(`変更 ${member.firstName}`);
+    await expect(valueOf(profile, '住所')).toHaveText('東京都港区E2E3-3');
 
     await openItem(page, 'じゃがいも 2kg');
     await page.getByRole('link', { name: '購入する' }).click();

@@ -1,35 +1,42 @@
 {{--
-    購入履歴・予約履歴の表（マイページ用。見た目は仮置き）
+    購入履歴・予約履歴の表（マイページ用。幅600px。親の列の幅に合わせる）
     - $rows：['id', 'date', 'names'（商品名の配列）, 'total'] の配列のコレクション
     - $dateLabel：日付の列の見出し（注文日／予約日）
     - $emptyMessage：0件のときの文言
-    横に広がる表は、ページ全体が横スクロールしないよう overflow-x-auto で囲む。
+    列の幅は PC では 日付134・商品名192・合計金額157・詳細（残り117）px、SP では 22%・30%・26%・残り。SPでも4列のまま、セルの左右の余白を詰めて収める。
+    表が親より広くなる場合に備え、ページ全体が横スクロールしないよう overflow-x-auto で囲む。
 --}}
 @if ($rows->isEmpty())
-    <p class="py-4 text-center text-base md:text-lg">{{ $emptyMessage }}</p>
+    <p class="mt-[45px] text-center text-base">{{ $emptyMessage }}</p>
 @else
-    <div class="overflow-x-auto rounded-[10px] bg-white shadow-panel">
-        <table class="w-full text-left text-sm md:text-base">
-            <thead class="border-b border-line bg-cream-200">
-                <tr>
-                    <th scope="col" class="px-2 py-3 font-medium whitespace-nowrap md:px-4">{{ $dateLabel }}</th>
-                    <th scope="col" class="px-2 py-3 font-medium md:px-4">商品名</th>
-                    <th scope="col" class="px-2 py-3 text-right font-medium whitespace-nowrap md:px-4">合計金額</th>
-                    <th scope="col" class="px-2 py-3 text-center font-medium whitespace-nowrap md:px-4"><span class="sr-only">詳細</span></th>
+    <div class="mt-[45px] overflow-x-auto">
+        <table class="w-full table-fixed text-left text-xs">
+            <colgroup>
+                <col class="w-[22%] md:w-[134px]">
+                <col class="w-[30%] md:w-[192px]">
+                <col class="w-[26%] md:w-[157px]">
+                <col>
+            </colgroup>
+            <thead>
+                <tr class="h-[35px] bg-action-hover">
+                    <th scope="col" class="border-b-2 border-primary-dark px-1 font-maru text-base font-medium whitespace-nowrap md:pr-0 md:pl-5">{{ $dateLabel }}</th>
+                    <th scope="col" class="border-b-2 border-primary-dark px-1 font-maru text-base font-medium md:pr-0 md:pl-5">商品名</th>
+                    <th scope="col" class="border-b-2 border-primary-dark px-1 font-maru text-base font-medium whitespace-nowrap md:pr-0 md:pl-5">合計金額</th>
+                    <th scope="col" class="border-b-2 border-primary-dark px-0.5 md:pr-0 md:pl-5"><span class="sr-only">詳細</span></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-line">
+            <tbody>
                 @foreach ($rows as $row)
-                    <tr wire:key="{{ $keyPrefix }}-{{ $row['id'] }}">
-                        <td class="px-2 py-3 align-top whitespace-nowrap md:px-4">{{ $row['date'] }}</td>
-                        <td class="px-2 py-3 align-top break-words md:px-4">
+                    <tr wire:key="{{ $keyPrefix }}-{{ $row['id'] }}" class="even:bg-cream-100">
+                        <td class="border-b border-primary-dark px-1 py-3.5 align-middle whitespace-nowrap md:pr-0 md:pl-5">{{ $row['date'] }}</td>
+                        <td class="border-b border-primary-dark px-1 py-3.5 align-middle break-words md:pr-0 md:pl-5">
                             @foreach ($row['names'] as $name)
                                 <p>{{ $name }}</p>
                             @endforeach
                         </td>
-                        <td class="px-2 py-3 text-right align-top whitespace-nowrap md:px-4">{{ number_format($row['total']) }}円</td>
-                        <td class="px-2 py-3 text-center align-top md:px-4">
-                            <button type="button" wire:click="openDetail({{ $row['id'] }})" class="inline-flex h-11 min-w-14 cursor-pointer items-center justify-center rounded-[30px] border-2 border-action bg-white px-2 font-maru text-sm text-action transition-colors hover:bg-action-hover hover:text-action-hover-text focus-visible:bg-action-hover focus-visible:outline-none md:px-4 md:text-base" aria-label="{{ $dateLabel }}{{ $row['date'] }}の詳細を見る">詳細</button>
+                        <td class="border-b border-primary-dark px-1 py-3.5 align-middle whitespace-nowrap md:pr-0 md:pl-5">{{ number_format($row['total']) }}円</td>
+                        <td class="border-b border-primary-dark px-0.5 py-1 align-middle md:py-[7px] md:pr-0 md:pl-5">
+                            <button type="button" wire:click="openDetail({{ $row['id'] }})" class="inline-flex h-11 w-[65px] cursor-pointer items-center justify-center rounded-[10px] bg-action-hover font-maru text-base text-primary-text transition-[background-color,box-shadow] duration-200 hover:bg-detail-hover hover:shadow-button focus-visible:bg-detail-hover focus-visible:shadow-button focus-visible:outline-none md:h-[30px]" aria-label="{{ $dateLabel }}{{ $row['date'] }}の詳細を見る">詳細</button>
                         </td>
                     </tr>
                 @endforeach
