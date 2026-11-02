@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Delivery_address;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\ViewErrorBag;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\PurchaseTestHelpers;
@@ -235,9 +236,10 @@ class PurchasePageTest extends TestCase
         $this->assertNotEmpty($select);
         $this->assertStringContainsString('h-11', $select[0]);
         $this->assertStringContainsString('w-full', $select[0]);
-        // 縦並び（SP）で高さが潰れる flex-1 は md 以上だけに付ける
+        // 縦並び（SP）で高さが潰れる flex-1 は付けない（PCの幅300pxは外側の枠で決める）。矢印は専用のアイコンで描くので標準の矢印は消す
         $this->assertDoesNotMatchRegularExpression('#[\s"]flex-1[\s"]#', $select[0]);
-        $this->assertStringContainsString('md:flex-1', $select[0]);
+        $this->assertDoesNotMatchRegularExpression('#[\s"]md:flex-1[\s"]#', $select[0]);
+        $this->assertStringContainsString('appearance-none', $select[0]);
     }
 
     /**
@@ -281,5 +283,28 @@ class PurchasePageTest extends TestCase
         $this->actingAs($user)
             ->get(route('shop.items.show', $item))
             ->assertSee('href="'.route('shop.checkout.index', $item).'"', false);
+    }
+
+    /**
+     * 確認用お届け先住所が空のときは、下線の枠だけが残らないよう住所の欄を出さない
+     */
+    #[Test]
+    public function 確認用お届け先住所が空のときは枠を出さない(): void
+    {
+        $vars = [
+            'deliveryName' => '塩谷太郎',
+            'deliveryTell' => '09012345678',
+            'addressOptions' => [['value' => 'user_1', 'label' => '北海道札幌市']],
+            'addressId' => 'user_1',
+            'shippingError' => null,
+            'errors' => new ViewErrorBag,
+        ];
+
+        $empty = view('livewire.partials.delivery-fields', [...$vars, 'confirmAddress' => ''])->render();
+        $filled = view('livewire.partials.delivery-fields', [...$vars, 'confirmAddress' => '北海道札幌市'])->render();
+
+        $this->assertStringContainsString('確認用お届け先住所', $empty);
+        $this->assertStringNotContainsString('data-testid="confirm-address"', $empty);
+        $this->assertStringContainsString('data-testid="confirm-address"', $filled);
     }
 }

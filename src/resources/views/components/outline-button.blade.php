@@ -1,7 +1,7 @@
 {{--
     白地に橙の枠線のボタン。ホバー・フォーカス時は黄色の背景に濃い茶色の文字になる（枠線は透明にして大きさを変えない）。
     - href を渡すとリンク（<a>）、渡さないとボタン（<button>。type は既定で submit）として出す
-    - size は sm（既定。会員登録・詳しく見るなど）／lg（フォームの送信ボタンなど）／md（200×40で文字16px。カート追加のモーダル）／xl（200×60。商品詳細）
+    - size は sm（既定。会員登録・詳しく見るなど）／lg（フォームの送信ボタンなど）／md（200×40で文字16px。カート追加のモーダル）／xl（200×60。商品詳細）／address（160×40で文字14px、角丸20px。購入ページの「＋新しい住所を追加」と住所追加モーダル。SPは高さ44で、幅は親いっぱい。PCは160）
     - disabled のボタンは薄くして押せなくし、ホバーでも変わらない
 --}}
 @props(['href' => null, 'type' => 'submit', 'size' => 'sm'])
@@ -13,6 +13,7 @@
         'focus-visible:border-transparent focus-visible:bg-action-hover focus-visible:text-action-hover-text focus-visible:shadow-button focus-visible:outline-none',
         match ($size) {
             'xl' => 'h-15 w-50 rounded-[40px] text-base font-medium',
+            'address' => 'h-11 w-full rounded-[20px] text-sm md:h-10 md:w-40',
             'lg' => 'h-11 w-50 rounded-[30px] text-xl md:h-10',
             'md' => 'h-11 w-50 rounded-[30px] text-base md:h-10',
             default => 'h-11 w-40 rounded-[30px] text-base md:h-[34px] md:w-[130px]',

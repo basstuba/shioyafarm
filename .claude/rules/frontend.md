@@ -49,7 +49,8 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
   - `@section('heading')`：右側のパネル（SPでは上部）の見出し
   - `@section('guide')`：見出しの下の案内文とリンクボタン（ログインページなら会員登録への案内）
   - 入力欄は `<x-auth-input>`（ラベル・input・エラーメッセージをまとめたもの）を使う。
-- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う（`layouts/auth` の見出し、お問い合わせフォームのカード内の見出し、商品詳細の商品名（カードの中で画像の横に置く）、カートの見出し（緑・32px・左寄せ）はデザインが違うため除く）。
+- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う（`layouts/auth` の見出し、お問い合わせフォームのカード内の見出し、商品詳細の商品名（カードの中で画像の横に置く）、カートの見出し（緑・32px・左寄せ）、購入ページの見出し（緑・32px・中央寄せ）はデザインが違うため除く）。
+- 選択欄（`<select>`）は、Figmaの茶色の三角の矢印が付いた `<x-select>` を使う（`auth-select`・お届け先住所・住所追加モーダルの都道府県で共通）。エラー文には id を付け、`aria-describedby` でつなぐ。
 - ヘッダーは `layouts.header` が自動で読み込まれ、ナビはルート名で決まる（`.claude/rules/backend.md` を参照）。
 
 ```blade
