@@ -5,13 +5,15 @@
 @section('body-class', 'bg-cream-100')
 
 @section('content')
-    {{-- 見た目は仮置き。Figmaの上限リセット（11月1日）後にデザインの値で仕上げる --}}
-    <div class="px-4 pt-header pb-15 text-ink md:pb-24">
-        <div class="mx-auto mt-8 flex max-w-[1000px] flex-col items-center gap-6 rounded-[20px] bg-white px-4 py-10 text-center shadow-card md:mt-16">
-            <h1 class="font-maru text-2xl text-accent md:text-3xl">お支払いの確認</h1>
-            <p class="text-base leading-[1.8] break-words md:text-lg" role="alert">{{ $message }}</p>
-            {{-- 再読み込み（同じURLをもう一度開く）。「注文を確定する」からやり直すと再決済になるため、購入ページへのリンクは出さない --}}
-            <a href="{{ request()->fullUrl() }}" class="inline-flex h-11 items-center justify-center rounded-[30px] border-2 border-action bg-action px-8 font-maru text-xl text-ink no-underline transition-colors duration-200 hover:bg-primary-hover focus-visible:bg-primary-hover focus-visible:outline-none md:h-10">再読み込み</a>
+    {{-- 購入ページ・振込先のご案内と同じ、白い大きなカードに緑の中央寄せの見出し --}}
+    <div class="px-4 pt-header pb-12 text-ink md:pb-[67px]">
+        <div class="mx-auto mt-6 max-w-325 md:mt-[69px]">
+            <div class="flex flex-col items-center rounded-[20px] bg-white px-4 py-8 text-center shadow-panel md:rounded-[30px] md:px-6 md:pt-[49px] md:pb-[60px]">
+                <h1 class="font-maru text-2xl text-accent md:text-[32px]">お支払いの確認</h1>
+                <p class="mt-6 max-w-[860px] text-base leading-[1.8] break-words md:mt-[31px]" role="alert">{{ $message }}</p>
+                {{-- 再読み込み（同じURLをもう一度開く）。「注文を確定する」からやり直すと再決済になるため、購入ページへのリンクは出さない --}}
+                <x-filled-button :href="request()->fullUrl()" class="mt-8 md:mt-10">再読み込み</x-filled-button>
+            </div>
         </div>
     </div>
 @endsection
