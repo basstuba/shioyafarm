@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
-import { openItem, valueOf } from '../support/shop';
+import { openItem, startReservation, valueOf } from '../support/shop';
 
 // 予約の流れ（docs/e2e/scenarios.md E-6）
 // 北の恵みセット 5kg（825円）は予約限定の商品。5kgは80サイズで、北海道の送料は1,230円
@@ -8,7 +8,7 @@ import { openItem, valueOf } from '../support/shop';
 test('E-6 予約限定の商品を銀行振込で予約する', async ({ page, member }) => {
     await openItem(page, '北の恵みセット 5kg');
     await expect(page.getByRole('button', { name: 'カートに入れる' })).toHaveCount(0);
-    await page.getByRole('link', { name: '予約する' }).click();
+    await startReservation(page);
     await expect(page.getByRole('heading', { name: 'ご予約内容' })).toBeVisible();
 
     // 予約は先払いなので、代金引換は選べない

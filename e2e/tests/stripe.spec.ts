@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
-import { openItem } from '../support/shop';
+import { openItem, startPurchase, startReservation } from '../support/shop';
 import type { Page } from '@playwright/test';
 
 // クレジットカード（Stripe Checkout）の流れ（docs/e2e/scenarios.md E-13・E-14）
@@ -18,7 +18,7 @@ async function payWithTestCard(page: Page): Promise<void> {
 
 test('E-13 クレジットカードで購入する', { tag: '@stripe' }, async ({ page, member }) => {
     await openItem(page, 'じゃがいも 2kg');
-    await page.getByRole('link', { name: '購入する' }).click();
+    await startPurchase(page);
     await page.getByRole('radio', { name: /クレジットカード/ }).check();
     await page.getByRole('button', { name: '注文を確定する' }).click();
 
@@ -35,7 +35,7 @@ test('E-13 クレジットカードで購入する', { tag: '@stripe' }, async (
 
 test('E-14 クレジットカードで予約する', { tag: '@stripe' }, async ({ page, member }) => {
     await openItem(page, '北の恵みセット 5kg');
-    await page.getByRole('link', { name: '予約する' }).click();
+    await startReservation(page);
     await page.getByRole('radio', { name: /クレジットカード/ }).check();
     await page.getByRole('button', { name: '予約を確定する' }).click();
 

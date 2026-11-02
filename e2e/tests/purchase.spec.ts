@@ -1,6 +1,6 @@
 import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
-import { addToCart, changeQuantity, openItem, valueOf } from '../support/shop';
+import { addToCart, changeQuantity, openItem, startPurchase, valueOf } from '../support/shop';
 
 // 購入の流れ（docs/e2e/scenarios.md E-4・E-5）
 // 送料は config/shipping.php の値。2kgの商品2つ（4kg）は80サイズで、北海道 1,230円・関東 1,740円
@@ -10,7 +10,7 @@ test('E-4 カートから代金引換で購入し、住所を追加して届け�
     await addToCart(page, '玉ねぎ 2kg');
 
     await page.goto('/cart');
-    await page.getByRole('link', { name: '購入する' }).click();
+    await startPurchase(page);
     await expect(page.getByRole('heading', { name: 'ご注文内容' })).toBeVisible();
 
     // 初期値は会員登録の氏名・電話番号・住所
@@ -68,7 +68,7 @@ test('E-5 商品詳細から銀行振込で購入し、振込先のご案内か�
     await addToCart(page, '人参 2kg');
 
     await openItem(page, 'じゃがいも 2kg');
-    await page.getByRole('link', { name: '購入する' }).click();
+    await startPurchase(page);
     await changeQuantity(page, 'じゃがいも 2kg', 2);
     await expect(valueOf(page, '小計')).toHaveText('660円');
     await expect(valueOf(page, '送料')).toHaveText('1,230円');
