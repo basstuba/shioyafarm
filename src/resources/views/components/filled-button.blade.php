@@ -1,7 +1,7 @@
 {{--
     橙の塗りつぶしのボタン（購入する・予約する）。
     - href を渡すとリンク（<a>）、渡さないとボタン（<button>。type は既定で submit）として出す
-    - size は lg（既定。200×40。SPは高さ44）／xl（200×60。商品詳細）／2xl（240×60で文字24px。購入ページの「注文を確定する」）／sm（カートの小計。PCは200×34、SPは全幅）
+    - size は lg（既定。200×40。SPは高さ44）／xl（200×60。商品詳細）／2xl（240×60で文字24px。購入ページの「注文を確定する」）／sm（カートの小計。PCは200×34、SPは全幅）／xs（130×34で文字16px。登録情報変更の「変更する」。SPは高さ44）
     - variant は action（既定。購入など）／reserve（予約）
     - ホバー・フォーカスで色が変わる（枠線も背景とそろえる）。xl・2xl・sm は影も付く
     - disabled のボタンは薄くして押せなくし、ホバーでも変わらない
@@ -21,6 +21,7 @@
             'xl' => 'h-15 w-50 rounded-[40px] text-base',
             '2xl' => 'h-15 w-60 rounded-[40px] text-2xl',
             'sm' => 'h-11 w-full rounded-[40px] text-base md:h-[34px] md:w-50',
+            'xs' => 'h-11 w-[130px] rounded-[30px] text-base md:h-[34px]',
             default => 'h-11 w-50 rounded-[30px] text-xl md:h-10',
         },
     ];

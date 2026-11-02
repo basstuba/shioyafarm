@@ -39,6 +39,18 @@
     --color-muted: #6b6b6b;
     /* 購入ページの支払方法カードの名前・説明と「ご注文内容をご確認のうえ…」の文字（Figmaは #c0822f だが、読みやすさのために濃くしている） */
     --color-primary-text: #8f5e1c;
+    /* マイページのページ送りの枠と区切り線 */
+    --color-line-pager: #d7ba93;
+    /* マイページの履歴の「詳細」ボタンのホバー・フォーカスの地 */
+    --color-detail-hover: #eebc00;
+    /* マイページの「退会する」ボタンのホバー・フォーカスの地（通常の地は delete） */
+    --color-withdraw-hover: #dc0300;
+    /* 詳細モーダルの区切り線 */
+    --color-line-modal: #e6e6e6;
+    /* 退会モーダルの「キャンセル」ボタン。文字はFigmaの #8b8b8b だと地の上で約3:1しかないため濃くした（地 #e6e6e6 の上で約6.6:1、ホバーの地 #cdcdcd の上で約5.1:1） */
+    --color-cancel: #e6e6e6;
+    --color-cancel-hover: #cdcdcd;
+    --color-cancel-text: #4f4f4f;
     /* 選択中の支払方法カードの背景 */
     --color-selected: #fff278;
     /* 購入完了ページの見出し */
