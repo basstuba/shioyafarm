@@ -43,6 +43,8 @@
     --color-selected: #fff278;
     /* 購入完了ページの見出し */
     --color-leaf: #2d7e1a;
+    /* 予約完了ページの見出し（写真の雲の上に影付きで置く）。Figmaの #ff6400 は白の上でも約3:1しかないため濃くした（白の上で4.59:1、雲の上で約4.2:1） */
+    --color-reserve-text: #c75000;
 
     --spacing-header: 70px;
 
