@@ -32,10 +32,11 @@
     @endif
     {{--
         パスワード欄は、フォームを送信するとき（文字のままだとブラウザのパスワード保存が効かず、入力履歴に平文で残ることがある）と、
-        「戻る」でページが復元されたとき（表示したままの状態で戻ってくる）に伏せ字へ戻す。
+        「戻る」でページが bfcache から復元されたとき（表示したままの状態で戻ってくる）に伏せ字へ戻す。
+        pageshow は初回の読み込みの完了時にも起きるので、persisted（復元）のときだけ戻す（読み込みの途中で「表示」を押した切り替えを打ち消さないため）。
         submit はフォーム（この div の祖先）で起きるので window で受ける。type は Alpine の反映を待たずにその場で戻す
     --}}
-    <div class="relative" @if ($isPassword) x-data="{ shown: false }" x-on:submit.window="shown = false; $refs.input.type = 'password'" x-on:pageshow.window="shown = false" @endif>
+    <div class="relative" @if ($isPassword) x-data="{ shown: false }" x-on:submit.window="shown = false; $refs.input.type = 'password'" x-on:pageshow.window="if ($event.persisted) shown = false" @endif>
         <input
             @class([
                 'h-11 w-full rounded-[10px] border border-primary-dark bg-white px-4 text-base placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark lg:h-10 lg:px-5',

@@ -1,33 +1,54 @@
 import { test, expect } from '@playwright/test';
 import { fillLoginForm, fillRegisterForm, logout, newMember, register } from '../support/member';
+import { passwordToggle } from '../support/password';
 import { waitForMail } from '../support/mailpit';
+import { clickHeaderItem, expectHeaderItem } from '../support/header';
+import { clickAndWaitForLoad, waitForLoad } from '../support/navigation';
+import { openItem, startPurchase } from '../support/shop';
 
 // 会員登録・ログイン・パスワード再設定の流れ（docs/e2e/scenarios.md E-1・E-2・E-7・E-9）
 
 test('E-1 会員登録してログアウトし、もう一度ログインする', async ({ page }) => {
     const member = newMember();
-    const header = page.getByRole('banner');
 
     await page.goto('/items');
-    await header.getByRole('link', { name: 'ログイン' }).click();
-    await page.getByRole('link', { name: '会員登録' }).click();
+    await clickHeaderItem(page, 'ログイン');
+    await clickAndWaitForLoad(page.getByRole('link', { name: '会員登録' }), /\/register$/);
+
+    // パスワードの表示切替：「表示」で入力した文字が見え（確認用パスワードは伏せ字のまま）、「非表示」で伏せ字に戻る
+    const password = page.getByLabel('パスワード', { exact: true });
+    const confirmation = page.getByLabel('確認用パスワード');
+    await password.fill(member.password);
+    await confirmation.fill(member.password);
+    await expect(password).toHaveAttribute('type', 'password');
+    await (await passwordToggle(password, '表示')).click();
+    await expect(password).toHaveAttribute('type', 'text');
+    await expect(password).toHaveValue(member.password);
+    await expect(confirmation).toHaveAttribute('type', 'password');
+    await expect(await passwordToggle(confirmation, '表示')).toBeVisible();
+    await expect(await passwordToggle(password, '表示')).toHaveCount(0);
+    await (await passwordToggle(password, '非表示')).click();
+    await expect(password).toHaveAttribute('type', 'password');
+    await expect(await passwordToggle(password, '表示')).toBeVisible();
+
     await fillRegisterForm(page, member);
 
     // 会員登録の前に見ていたページ（商品一覧）へ戻り、ログイン中のナビになる
     await expect(page).toHaveURL(/\/items$/);
-    await expect(header.getByRole('link', { name: 'マイページ' })).toBeVisible();
-    await expect(header.getByRole('button', { name: 'ログアウト' })).toBeVisible();
+    await expectHeaderItem(page, 'マイページ', 'link', true);
+    await expectHeaderItem(page, 'ログアウト', 'button', true);
 
     await logout(page);
     await page.goto('/items');
-    await expect(header.getByRole('link', { name: 'ログイン' })).toBeVisible();
-    await expect(header.getByRole('link', { name: 'マイページ' })).toHaveCount(0);
+    await expectHeaderItem(page, 'ログイン', 'link', true);
+    await expectHeaderItem(page, 'マイページ', 'link', false);
 
-    // ログイン後も、ログインの前に見ていたページへ戻る
-    await header.getByRole('link', { name: 'ログイン' }).click();
-    await fillLoginForm(page, member.email, member.password);
+    // ログイン後も、ログインの前に見ていたページへ戻る。パスワードを「表示」にしたままでもログインできる
+    await clickHeaderItem(page, 'ログイン');
+    await waitForLoad(page, /\/login$/);
+    await fillLoginForm(page, member.email, member.password, { showPassword: true });
     await expect(page).toHaveURL(/\/items$/);
-    await expect(header.getByRole('link', { name: 'マイページ' })).toBeVisible();
+    await expectHeaderItem(page, 'マイページ', 'link', true);
 });
 
 test('E-2 誤ったパスワードではログインできない', async ({ page }) => {
@@ -48,20 +69,19 @@ test('E-2 誤ったパスワードではログインできない', async ({ page
 test('E-7 未ログインで商品詳細を開き、会員登録すると購入できるようになる', async ({ page }) => {
     const member = newMember();
 
-    await page.goto('/items');
-    await page.getByRole('link', { name: 'じゃがいも 2kgの詳細を見る' }).click();
+    await openItem(page, 'じゃがいも 2kg');
     const itemUrl = page.url();
 
     // 未ログインでは購入ボタンの代わりに会員登録の案内が出る
     await expect(page.getByText('※ご購入の際は会員登録とログインをお願いします。')).toBeVisible();
     await expect(page.getByRole('link', { name: '購入する' })).toHaveCount(0);
 
-    await page.getByRole('main').getByRole('link', { name: '会員登録' }).click();
+    await clickAndWaitForLoad(page.getByRole('main').getByRole('link', { name: '会員登録' }), /\/register$/);
     await fillRegisterForm(page, member);
 
     // 会員登録の前に見ていた商品詳細へ戻り、購入できる
     await expect(page).toHaveURL(itemUrl);
-    await page.getByRole('link', { name: '購入する' }).click();
+    await startPurchase(page);
     await expect(page.getByRole('heading', { name: 'ご注文内容' })).toBeVisible();
     await expect(page.getByLabel('お届け先氏名')).toHaveValue(`${member.lastName}${member.firstName}`);
 });
@@ -96,7 +116,7 @@ test('E-9 パスワードを再設定し、新しいパスワードでログイ�
     await expect(page.getByText('メールアドレスまたはパスワードが正しくありません。')).toBeVisible();
     await fillLoginForm(page, member.email, newPassword);
     await expect(page).not.toHaveURL(/\/login$/);
-    await expect(page.getByRole('banner').getByRole('link', { name: 'マイページ' })).toBeVisible();
+    await expectHeaderItem(page, 'マイページ', 'link', true);
 
     // 使用済みのリンクは無効（トップのナビにはログアウトがないので、商品一覧でログアウトする）
     await page.goto('/items');
