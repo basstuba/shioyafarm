@@ -21,6 +21,12 @@ export default defineConfig({
             name: 'pc',
             use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
         },
-        // SP（414×896）はフロントエンドの実装後に追加する
+        // スマホ（414×896、タッチ操作）。ヘッダーのリンクの一部はハンバーガーメニューに入る
+        // @stripe の項目は Stripe のページの操作が中心なので、PC だけで流す
+        {
+            name: 'sp',
+            use: { ...devices['Pixel 7'], viewport: { width: 414, height: 896 } },
+            grepInvert: /@stripe/,
+        },
     ],
 });

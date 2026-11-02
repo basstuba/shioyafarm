@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import { clickHeaderItem } from './header';
+import { passwordToggle } from './password';
 
 // テストごとに新しく作る会員（Stripe の顧客残高などの影響を受けないよう、毎回別のメールアドレスにする）
 
@@ -51,14 +53,23 @@ export async function register(page: Page, member: Member): Promise<void> {
     await expect(page).not.toHaveURL(/\/register$/);
 }
 
-/** ログインページの入力欄を埋めて「ログイン」を押す（ログインページを開いた状態で呼ぶ） */
-export async function fillLoginForm(page: Page, email: string, password: string): Promise<void> {
+/**
+ * ログインページの入力欄を埋めて「ログイン」を押す（ログインページを開いた状態で呼ぶ）
+ *
+ * showPassword を true にすると、送信前にパスワード欄の「表示」を押して文字が見える状態にする。
+ */
+export async function fillLoginForm(page: Page, email: string, password: string, options: { showPassword?: boolean } = {}): Promise<void> {
     await page.getByLabel('メールアドレス').fill(email);
-    await page.getByLabel('パスワード').fill(password);
+    const passwordField = page.getByLabel('パスワード');
+    await passwordField.fill(password);
+    if (options.showPassword) {
+        await (await passwordToggle(passwordField, '表示')).click();
+        await expect(passwordField).toHaveAttribute('type', 'text');
+    }
     await page.getByRole('button', { name: 'ログイン' }).click();
 }
 
-/** ヘッダーの「ログアウト」を押す */
+/** ヘッダーの「ログアウト」を押す（SPではメニューを開いてから押す） */
 export async function logout(page: Page): Promise<void> {
-    await page.getByRole('banner').getByRole('button', { name: 'ログアウト' }).click();
+    await clickHeaderItem(page, 'ログアウト', 'button');
 }

@@ -1,5 +1,8 @@
 import { test as guestTest, expect } from '@playwright/test';
 import { test } from '../support/fixtures';
+import { clickHeaderItem } from '../support/header';
+import { clickAndWaitForLoad } from '../support/navigation';
+import { openItem } from '../support/shop';
 
 // 商品を見る・カート・お問い合わせ・静的ページの流れ（docs/e2e/scenarios.md E-3・E-11・E-12）
 
@@ -9,16 +12,15 @@ test('E-3 トップから商品を探してカートに入れ、数量の変更�
     await expect(page.getByRole('heading', { name: 'おすすめ商品', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'お知らせ', exact: true })).toBeVisible();
 
-    await page.getByRole('banner').getByRole('link', { name: 'オンラインショップ' }).click();
+    await clickHeaderItem(page, 'オンラインショップ');
     await expect(page.getByRole('heading', { name: '商品一覧' })).toBeVisible();
 
     for (const name of ['じゃがいも 2kg', '玉ねぎ 2kg']) {
-        await page.goto('/items');
-        await page.getByRole('link', { name: `${name}の詳細を見る` }).click();
+        await openItem(page, name);
         await page.getByRole('button', { name: 'カートに入れる' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
     }
-    await page.getByRole('dialog').getByRole('link', { name: 'カートの中を確認する' }).click();
+    await clickAndWaitForLoad(page.getByRole('dialog').getByRole('link', { name: 'カートの中を確認する' }), /\/cart$/);
 
     const potato = page.getByRole('listitem').filter({ hasText: 'じゃがいも 2kg' });
     const onion = page.getByRole('listitem').filter({ hasText: '玉ねぎ 2kg' });

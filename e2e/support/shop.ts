@@ -1,12 +1,23 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { clickAndWaitForLoad } from './navigation';
 
 // ショップの操作（商品詳細を開く・カートに入れる・購入ページの金額を読む）
 
 /** 商品一覧から商品詳細を開く（name は「じゃがいも 2kg」のように商品名と重さ） */
 export async function openItem(page: Page, name: string): Promise<void> {
     await page.goto('/items');
-    await page.getByRole('link', { name: `${name}の詳細を見る` }).click();
+    await clickAndWaitForLoad(page.getByRole('link', { name: `${name}の詳細を見る` }), /\/items\/\d+$/);
     await expect(page.getByRole('heading', { name })).toBeVisible();
+}
+
+/** 「購入する」リンク（カート・商品詳細）を押し、購入ページの読み込み完了まで待つ */
+export async function startPurchase(page: Page): Promise<void> {
+    await clickAndWaitForLoad(page.getByRole('link', { name: '購入する' }), /\/purchase(\/\d+)?$/);
+}
+
+/** 商品詳細の「予約する」リンクを押し、予約ページの読み込み完了まで待つ */
+export async function startReservation(page: Page): Promise<void> {
+    await clickAndWaitForLoad(page.getByRole('link', { name: '予約する' }), /\/reservation\/\d+$/);
 }
 
 /** 商品詳細で「カートに入れる」を押し、モーダルを閉じる */
