@@ -2,9 +2,11 @@
 <html lang="ja">
 <head>
     @include('layouts.head')
+    @livewireStyles
 </head>
 {{--
-    認証ページ用のレイアウト（ログイン・会員登録）。
+    認証ページ用のレイアウト（ログイン・会員登録・パスワード再設定の2画面）。
+    パスワード欄の表示／非表示の切り替え（components/auth-input）が Livewire 同梱の Alpine.js と [x-cloak] のCSSを使うため、@livewireStyles / @livewireScripts を読み込む（外すとボタンが出なくなる）。
     SPは全面に背景画像を敷いて縦に並べ、PC（lg以上）は左にフォーム・右に背景画像のパネルを置く。
     サイト名・見出し・案内・©は右のパネルに入るため、DOMの順序はSPの並び（order-*）で決めている。
     PCの並び順は auth-direction で変えられる（省略時は左にフォーム・右にパネル。左にパネルを置くなら lg:flex-row-reverse を指定する）。
@@ -33,5 +35,7 @@
             </footer>
         </aside>
     </div>
+    {{-- Livewire同梱のAlpine.jsを使う（パスワード欄の表示切り替え） --}}
+    @livewireScripts
 </body>
 </html>
