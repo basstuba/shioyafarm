@@ -114,6 +114,7 @@ class MyPageTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('shop.mypage.index'));
 
+        $response->assertSeeInOrder(['>氏名</dt>', '塩谷 花子', '>住所</dt>', '沖縄県那覇市テスト町1-2-3', '>電話番号</dt>', '>メールアドレス</dt>'], false);
         $response->assertSee('塩谷 花子');
         $response->assertSee('沖縄県那覇市テスト町1-2-3');
         $response->assertSee('08011112222');

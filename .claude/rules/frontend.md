@@ -49,9 +49,11 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
   - `@section('heading')`：右側のパネル（SPでは上部）の見出し
   - `@section('guide')`：見出しの下の案内文とリンクボタン（ログインページなら会員登録への案内）
   - 入力欄は `<x-auth-input>`（ラベル・input・エラーメッセージをまとめたもの）を使う。
-- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う（`layouts/auth` の見出し、お問い合わせフォームのカード内の見出し、商品詳細の商品名（カードの中で画像の横に置く）、カートの見出し（緑・32px・左寄せ）、購入ページの見出し（緑・32px・中央寄せ）はデザインが違うため除く）。
+- 何度も出てくる部品はBladeコンポーネント（`resources/views/components/`）にする。ページの見出しは `<x-page-title>` を使う（`layouts/auth` の見出し、お問い合わせフォームのカード内の見出し、商品詳細の商品名（カードの中で画像の横に置く）、カートの見出し（緑・32px・左寄せ）、購入ページの見出し（緑・32px・中央寄せ）、マイページのセクション見出し（緑・24px・中央寄せ。`<x-section-title>`）、登録情報変更ページの見出し（カードの中の緑・32px・中央寄せの h1）はデザインが違うため除く）。
 - 選択欄（`<select>`）は、Figmaの茶色の三角の矢印が付いた `<x-select>` を使う（`auth-select`・お届け先住所・住所追加モーダルの都道府県で共通）。エラー文には id を付け、`aria-describedby` でつなぐ。
 - 購入ページと予約ページで共通の部品：商品の行は `<x-checkout-line>`（数量の input の属性・`wire:change` の式・エラー文のスロットを渡す。列の幅は予約ページ＝860pxにそろえてある）、金額のカードは `livewire/partials/order-summary`（`$summary` と上の余白 `$topClass` を渡して `@include`）。
+- マイページ専用の部品：セクション見出しは `<x-section-title>`（h2）。退会手続きの小さなボタン（130×30、SPは高さ44）は `<x-small-button>`（`variant` は danger＝「退会する」／cancel＝「キャンセル」）。履歴の表（`livewire/partials/history-table`）・ページ送り（`livewire/partials/pager`。`$topClass` で上の余白を渡す）・詳細モーダル（`livewire/partials/order-detail-modal`）は購入履歴と予約履歴で共通。
+- `<x-auth-input>` は、`label-class` でラベルのクラスを変えられ、スロット `labelExtra` でラベルの右に「任意」を、スロット `hint` でラベルの下の行に補足の文言を出せる（「任意」・補足の要素の id は `describedby` に渡して input の `aria-describedby` につなぐ。登録情報変更ページで使う）。`<x-filled-button>` には 130×34 の `size="xs"` がある。
 - 購入完了・予約完了のサンクスページの中身は `<x-thanks-page>`（見出しの色 `color-class`、見出しを1行にし始める画面幅 `nowrap`、見出しはスロット `heading`、本文は既定のスロット）。
 - ヘッダーは `layouts.header` が自動で読み込まれ、ナビはルート名で決まる（`.claude/rules/backend.md` を参照）。
 

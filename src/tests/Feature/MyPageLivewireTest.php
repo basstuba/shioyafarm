@@ -272,7 +272,7 @@ class MyPageLivewireTest extends TestCase
     }
 
     /**
-     * クレジットカードの詳細：購入日・商品内訳・送料・合計・お届け先・お支払い方法。代引手数料とお振込先は出ない
+     * クレジットカードの詳細：注文日・商品内訳・送料・合計・お届け先氏名・住所・電話番号・お支払い方法。代引手数料とお振込先は出ない
      */
     #[Test]
     public function クレジットカードの購入の詳細が表示される(): void
@@ -293,12 +293,17 @@ class MyPageLivewireTest extends TestCase
             ->call('openDetail', $purchase->id)
             ->assertSet('showDetail', true)
             ->assertSet('detailId', $purchase->id)
-            ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['購入日', '2025/09/02', '商品内訳', 'じゃがいも 2kg', '330円(税込)', '2個', '660円', '玉ねぎ 5kg', '1,500円(税込)', '1個', '1,500円']))
+            ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['注文日', '2025/09/02', '商品内訳', 'じゃがいも 2kg', '330円(税込)', '2個', '660円', '玉ねぎ 5kg', '1,500円(税込)', '1個', '1,500円']))
             ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['送料', '940円', '合計金額', number_format(660 + 1500 + 940).'円']))
-            ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['お届け先', '塩谷花子 様', '沖縄県那覇市1-2-3', '電話番号：08011112222']))
+            ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['お届け先氏名', '塩谷花子', 'お届け先住所', '沖縄県那覇市1-2-3', 'お届け先電話番号', '08011112222']))
             ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['お支払い方法', 'クレジットカード']))
             ->assertDontSee('代引手数料')
-            ->assertDontSee('お振込先');
+            ->assertDontSee('お振込先')
+            // 氏名に「様」は付けない。×ボタンはなく、文字だけの「閉じる」で閉じる
+            ->assertDontSee('塩谷花子 様')
+            ->assertDontSee('購入日')
+            ->assertDontSee('aria-label="閉じる"', false)
+            ->assertSee('>閉じる</button>', false);
     }
 
     /**
@@ -517,7 +522,7 @@ class MyPageLivewireTest extends TestCase
     }
 
     /**
-     * 予約の詳細：予約日・商品内訳・送料・合計・お届け先・お支払い方法。代引手数料・お振込先は出ない
+     * 予約の詳細：予約日・商品内訳・送料・合計・お届け先氏名・住所・電話番号・お支払い方法。代引手数料・お振込先は出ない
      */
     #[Test]
     public function クレジットカードの予約の詳細が表示される(): void
@@ -542,7 +547,7 @@ class MyPageLivewireTest extends TestCase
             ->assertSet('showDetail', true)
             ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['予約日', '2025/09/02', '商品内訳', '北の恵みセット 10kg', '1,450円(税込)', '2個', '2,900円']))
             ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['送料', '1,530円', '合計金額', '4,430円']))
-            ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['お届け先', '塩谷花子 様', '沖縄県那覇市1-2-3', '電話番号：08011112222']))
+            ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['お届け先氏名', '塩谷花子', 'お届け先住所', '沖縄県那覇市1-2-3', 'お届け先電話番号', '08011112222']))
             ->tap(fn (Testable $component) => $this->assertTextInOrder($component, ['お支払い方法', 'クレジットカード']))
             ->assertDontSee('代引手数料')
             ->assertDontSee('お振込先');
