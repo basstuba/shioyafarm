@@ -111,6 +111,13 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+        // 管理者（会員とはトークンのテーブルも別。有効期限・再送信の待ち時間は会員と同じ）
+        'admins' => [
+            'provider' => 'admins',
+            'table' => 'admin_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*
