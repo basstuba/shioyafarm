@@ -4,7 +4,7 @@
 |---|---|
 | 対象ルート | GET /admin/forgot-password、POST /admin/forgot-password、GET /admin/reset-password/{token}、POST /admin/reset-password |
 | ブランチ | feat/admin-password-reset |
-| 根拠 | ユーザーと決めた事項（2026-11-02 に「管理者がパスワードを忘れたときにログインできなくなるため作る」、2026-11-03 に仕様を決定）。設計書・Figmaにはないため、公開側のパスワード再設定（docs/03-page-list.md「パスワード再設定メールの送信ページ」「新しいパスワードの設定ページ」、docs/uat/password-reset.md）と管理者用ログイン（docs/uat/admin-login.md）に合わせる |
+| 根拠 | ユーザーと決めた事項（2026-11-02 に「管理者がパスワードを忘れたときにログインできなくなるため作る」、2026-11-03 に仕様を決定）。設計書・Figmaにはないため、公開側のパスワード再設定（docs/03-page-list.md「パスワード再設定メールの送信ページ」「新しいパスワードの設定ページ」、docs/uat/user/password-reset.md）と管理者用ログイン（docs/uat/admin/admin-login.md）に合わせる |
 | 実施日 | 2026-11-03 |
 
 ユーザーと決めた事項（2026-11-03）：

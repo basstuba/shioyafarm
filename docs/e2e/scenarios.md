@@ -4,7 +4,7 @@
 |---|---|
 | 対象 | ユーザー画面（管理画面は実装後に追加） |
 | ブランチ | test/e2e（1回目）、test/e2e-sp（2回目） |
-| 根拠 | docs/03-page-list.md、docs/04-feature-list.md、docs/07-basic-design.md、docs/uat/ の各シナリオ |
+| 根拠 | docs/03-page-list.md、docs/04-feature-list.md、docs/07-basic-design.md、docs/uat/admin/・docs/uat/user/ の各シナリオ |
 | 画面幅 | 1回目：PC（1280×800）のみ。2回目（フロントエンドの実装後）：SP（414×896）を追加 |
 | 作成日 | 2026-10-29（2回目の追記 2026-11-02） |
 
