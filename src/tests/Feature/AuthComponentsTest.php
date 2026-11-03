@@ -69,4 +69,37 @@ class AuthComponentsTest extends TestCase
             ->assertSee('パスワードを思い出した方は、<br class="lg:hidden">こちらからログインしてください。', false)
             ->assertSee('>パスワードを再設定する</button>', false);
     }
+
+    /**
+     * auth-input の既定（公開側）は橙系の枠線・フォーカス枠・「表示」の文字色のまま変わらない
+     */
+    #[Test]
+    public function auth_inputの既定は公開側の配色のまま(): void
+    {
+        $this->withViewErrors([]);
+        $html = Blade::render('<x-auth-input name="password" label="パスワード" type="password" />');
+
+        $this->assertStringContainsString('class="h-11 w-full rounded-[10px] border border-primary-dark bg-white px-4 text-base placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark lg:h-10 lg:px-5 pr-16 lg:pr-16"', $html);
+        $this->assertStringContainsString('class="absolute inset-y-0 right-0 flex w-16 items-center justify-center rounded-r-[10px] text-base whitespace-nowrap text-primary-text focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-dark"', $html);
+
+        // 公開側の画面は管理者用の配色を含まない
+        foreach (['login', 'register', 'password.request'] as $name) {
+            $page = $this->get(route($name))->assertOk()->getContent();
+            $this->assertStringNotContainsString('border-line-strong', $page);
+            $this->assertStringNotContainsString('focus-visible:outline-ink', $page);
+        }
+    }
+
+    /**
+     * auth-input の neutral（管理画面）はグレーの枠線・ink のフォーカス枠・muted の「表示」の文字色になる
+     */
+    #[Test]
+    public function auth_inputのneutralは管理画面のグレー系の配色になる(): void
+    {
+        $this->withViewErrors([]);
+        $html = Blade::render('<x-auth-input variant="neutral" name="password" label="パスワード" type="password" />');
+
+        $this->assertStringContainsString('class="h-11 w-full rounded-[10px] border border-line-strong bg-white px-4 text-base placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:h-10 lg:px-5 pr-16 lg:pr-16"', $html);
+        $this->assertStringContainsString('class="absolute inset-y-0 right-0 flex w-16 items-center justify-center rounded-r-[10px] text-base whitespace-nowrap text-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink"', $html);
+    }
 }
