@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Middleware\ThrottlePasswordReset;
+use App\Http\Responses\ExpiredPageResponder;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,8 +20,24 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // パスワードを変えたとき、ほかの端末のセッションをログアウト状態にする（Auth::logoutOtherDevices の前提）
         $middleware->web(append: [AuthenticateSession::class, ThrottlePasswordReset::class]);
+
+        // 管理者としてログイン済みの人が /admin/login を開いたときは、管理画面のトップへ（それ以外は従来どおり /）
+        $middleware->redirectUsersTo(fn (Request $request) => $request->routeIs('admin.*') ? route('admin.home') : '/');
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // ログイン・管理者のログアウトでCSRFトークンが古いとき（419）は、案内つきで元のページへ戻す（それ以外は従来どおり）
+        $exceptions->render(fn (HttpException $e, Request $request) => (new ExpiredPageResponder)($e, $request));
+
+        // 管理者としてログインしていない人が管理画面を開いたときは、管理者用ログインページへ（会員の /login ではない）。
+        // redirect()->guest() を使わない（ログイン後の戻り先 url.intended は会員のログインが使うため、ここでは保存しない）
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if ($e->guards() !== ['admin'] || $request->expectsJson()) {
+                return null;
+            }
+
+            return redirect()->route('admin.login');
+        });
+
         // 「注文を確定する」の同じセッションの先のリクエストが終わらず、待ちきれなかったとき（セッションの排他。500にしない）。
         // セッションを開始する前の例外のため、セッションやログイン状態を使うレイアウトは使わず、簡単な案内だけを返す
         $exceptions->render(function (LockTimeoutException $e, Request $request) {
