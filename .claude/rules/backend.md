@@ -80,3 +80,9 @@ paths:
 
 - ユーザーはFortifyで認証する（`app/Actions/Fortify`、`FortifyServiceProvider`）。2FAのカラムもある。
 - 管理者は別の `Admin` モデル・テーブルで、ログインも別（`AdminAuthController`、`auth/admin/login`）。管理画面のルートにユーザー用の認証を流用しない。
+  - 管理者は `admin` ガード（`config/auth.php`。プロバイダー `admins`、`Admin` モデルは Authenticatable）。ルート名は `admin.login`（GET。`routes/web.php` から直接 view を返す）・`admin.login.store`（POST。`throttle:admin-login`）・`admin.logout`・`admin.home`。ログイン前は `guest:admin`、ログイン後は `auth:admin` を使う。
+  - 未ログインで `auth:admin` のルートを開いたときは `/admin/login` へ（`bootstrap/app.php` の `AuthenticationException` の render。`redirect()->guest()` を通らないので、会員のログインの戻り先 `url.intended` は書き換えない）。管理者としてログイン済みで `guest:admin` のルートを開いたときは `redirectUsersTo` で `/admin` へ。
+  - ログアウト・退会はLaravel標準どおり `session()->invalidate()` と `regenerateToken()` でセッション全体を破棄する（管理者のログアウトは `Auth::guard('admin')->logout()` も行う）。同じブラウザで会員・管理者の両方にログインしていた場合は両方ログアウトされる（同時ログインは本番でまず起きないため分離しない）。`AuthenticateSession` が `auth:admin` のリクエストで保存する `password_hash_admin` も invalidate で消えるため、次に別の管理者がログインしても不一致にならない。ログイン時のセッションIDの作り直しは `attempt()` が行う（Controller では `regenerateToken()` だけ）。
+  - CSRFトークンが古い（419）とき、会員のログイン（`login.store`）・管理者のログイン（`admin.login.store`）・管理者のログアウト（`admin.logout`）だけは `App\Http\Responses\ExpiredPageResponder`（`bootstrap/app.php` の例外処理）が、案内つき（flash の `status`）で元のページへ戻す。それ以外・JSON・Livewire は従来どおり419のページ。Laravel は描画の前に `TokenMismatchException` を 419 の `HttpException` に変えるため、`HttpException` で受けて 419 だけ扱う。テストでは CSRF 検証がスキップされるので、`$this->app['env'] = 'local'` にして有効にする。
+  - ログインの試行回数の制限は `FortifyServiceProvider::loginLimit()` を会員（`login`）と管理者（`admin-login`）で共有する（同じメールアドレスで1分5回、カウントは別）。`AdminLoginRequest` は `LoginRequest` を継承して、ルールと文言を共有する。
+  - テストでは、`auth:admin` が通ると既定のガードが admin に切り替わり、アプリを使い回すテストでは次のリクエストにも残る。会員のリクエストが続くときは `Auth::shouldUse('web')` で戻す。
