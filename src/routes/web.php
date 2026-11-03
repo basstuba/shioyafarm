@@ -84,32 +84,22 @@ Route::post('/inquiry/create', [InquiryController::class, 'store'])->middleware(
 Route::get('/inquiry/thanks', [InquiryController::class, 'thanks'])->name('top.inquiry.thanks');
 
 // 送料案内
-Route::get('/shipping-fee', function () {
-    return view('shipping');
-})->name('info.shipping-fee');
+Route::view('/shipping-fee', 'shipping')->name('info.shipping-fee');
 
 // 利用規約
-Route::get('/terms-of-service', function () {
-    return view('terms_of_service');
-})->name('info.terms-of-service');
+Route::view('/terms-of-service', 'terms_of_service')->name('info.terms-of-service');
 
 // プライバシーポリシー
-Route::get('/privacy-policy', function () {
-    return view('privacy_policy');
-})->name('info.privacy-policy');
+Route::view('/privacy-policy', 'privacy_policy')->name('info.privacy-policy');
 
 // 特定商取引法に基づく表記
-Route::get('/commercial-transaction', function () {
-    return view('law');
-})->name('info.commercial-transaction');
+Route::view('/commercial-transaction', 'law')->name('info.commercial-transaction');
 
 // 管理画面（会員の認証とは別の admin ガード）
 Route::prefix('admin')->group(function () {
     // ログイン（管理者としてログイン中なら /admin へ。試行回数は同じメールアドレスで1分5回まで）
     Route::middleware('guest:admin')->group(function () {
-        Route::get('/login', function () {
-            return view('auth.admin.login');
-        })->name('admin.login');
+        Route::get('/login', [AdminAuthController::class, 'create'])->name('admin.login');
         Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:admin-login')->name('admin.login.store');
 
         // パスワード再設定（会員の再設定とは別の仕組み。送信は IP アドレスあたり1分5回まで。会員のものと同じ password-reset の上限で、ルートごとに数える）

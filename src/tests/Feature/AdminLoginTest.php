@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\AdminAuthController;
 use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -26,6 +28,17 @@ class AdminLoginTest extends TestCase
             'email' => 'admin@admin.com',
             'password' => Hash::make('admin1234'),
         ]);
+    }
+
+    /**
+     * ログインページの表示は AdminAuthController::create() が受ける
+     */
+    #[Test]
+    public function 管理者用ログインページの表示は_admin_auth_controllerのcreateが受ける(): void
+    {
+        $route = Route::getRoutes()->getByName('admin.login');
+
+        $this->assertSame(AdminAuthController::class.'@create', $route->getActionName());
     }
 
     /**
