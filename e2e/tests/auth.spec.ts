@@ -121,7 +121,7 @@ test('E-9 パスワードを再設定し、新しいパスワードでログイ�
     // 使用済みのリンクは無効（トップのナビにはログアウトがないので、商品一覧でログアウトする）
     await page.goto('/items');
     await logout(page);
-    // （リンクを開くとフォームは出るが、送信すると無効の案内になる。docs/uat/password-reset.md S-11）
+    // （リンクを開くとフォームは出るが、送信すると無効の案内になる。docs/uat/user/password-reset.md S-11）
     await page.goto(resetUrl!);
     await page.getByLabel('新しいパスワード').fill('e2eagain789');
     await page.getByLabel('確認用パスワード').fill('e2eagain789');

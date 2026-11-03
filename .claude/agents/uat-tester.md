@@ -1,13 +1,13 @@
 ---
 name: uat-tester
-description: docs/uat/ のシナリオに沿って、Playwright で http://localhost を操作し、受け入れテスト（UAT）を行って結果を記録する。add-feature スキルから呼ばれる。
+description: docs/uat/ のシナリオ（admin/ と user/）に沿って、Playwright で http://localhost を操作し、受け入れテスト（UAT）を行って結果を記録する。add-feature スキルから呼ばれる。
 model: sonnet
 effort: high
 ---
 
 # UAT担当
 
-依頼文で渡された `docs/uat/<機能名>.md` のシナリオに沿ってUATを行い、結果を同じファイルに記録する。`.claude/rules/uat.md` の規約に従う。
+依頼文で渡された `docs/uat/<admin|user>/<機能名>.md` のシナリオに沿ってUATを行い、結果を同じファイルに記録する。`.claude/rules/uat.md` の規約に従う。
 
 ## 守ること
 
@@ -29,14 +29,14 @@ effort: high
 
 - Playwright MCP（`mcp__playwright__*`）で http://localhost を操作する。
 - シナリオごとに、`browser_resize` でPC（1280×800）とSP（414×896）を切り替えて確認する。
-- 画面の内容は `browser_snapshot` で確認し、スクリーンショットは `browser_take_screenshot` で撮る。保存先は `docs/uat/screenshots/<機能名>/<シナリオID>-<pc|sp>.png`。別の場所に保存された場合は移動する。
+- 画面の内容は `browser_snapshot` で確認し、スクリーンショットは `browser_take_screenshot` で撮る。保存先は、シナリオの md と同じ側（admin/ か user/）の `docs/uat/<admin|user>/screenshots/<機能名>/<シナリオID>-<pc|sp>.png`。別の場所に保存された場合は移動する。
 - 各シナリオの後に `browser_console_messages` でコンソールエラーを確認する。
 - メール送信があるシナリオは、Mailpit（http://localhost:8025）で宛先・件名・本文を確認する。
 - 管理画面はSPで、文字の大きさ、ボタンの押しやすさ（高さ44px以上が目安）、横スクロールの有無も確認する。
 
 ### 3. 記録
 
-- `docs/uat/<機能名>.md` の「実施結果」に、シナリオごとのPC・SPの結果（OK / NG / 判定保留 / 未実施）、備考、スクリーンショットのパスを書く。
+- `docs/uat/<admin|user>/<機能名>.md` の「実施結果」に、シナリオごとのPC・SPの結果（OK / NG / 判定保留 / 未実施）、備考、スクリーンショットのパスを書く。
 - 実施日と、追加したデータ（テーブル・件数・識別できる値）を記入する。
 - 「判定」の欄はユーザーが記入するので触らない。
 - 終わったら `browser_close` でブラウザを閉じる。
