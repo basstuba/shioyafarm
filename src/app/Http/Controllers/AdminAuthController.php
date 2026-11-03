@@ -8,14 +8,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 /**
- * 管理者のログイン・ログアウト（ログインページの表示は routes/web.php から直接 view を返す）
+ * 管理者のログインページの表示・ログイン・ログアウト
  *
  * 会員（web ガード）とは別の admin ガードだけを扱う。
  */
 class AdminAuthController extends Controller
 {
+    /**
+     * ログインページ
+     */
+    public function create(): View
+    {
+        Log::debug('AdminAuthController@create start');
+
+        $view = view('auth.admin.login');
+
+        Log::debug('AdminAuthController@create end');
+
+        return $view;
+    }
+
     /**
      * ログイン
      *
