@@ -4,7 +4,7 @@
 |---|---|
 | 対象ルート | ヘッダーを使う全ページ（GET /（top.index）、GET /items（shop.items.index）、GET /shipping-fee・/terms-of-service・/privacy-policy・/commercial-transaction（info.*）） |
 | ブランチ | fix/header-nav |
-| 根拠 | docs/03-page-list.md、.claude/rules/backend.md「ルート名とヘッダーナビ」、docs/uat/item-index.md の判定コメント（ヘッダーのリンク部分の問題） |
+| 根拠 | docs/03-page-list.md、.claude/rules/backend.md「ルート名とヘッダーナビ」、docs/uat/user/item-index.md の判定コメント（ヘッダーのリンク部分の問題） |
 | デザイン | SP：Figma node 695:2（閉じた状態5パターン、幅320pxの確認、メニューを開いた状態）。PC：変更なし |
 | 実施日 | 2026-10-19 |
 

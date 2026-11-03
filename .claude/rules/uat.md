@@ -13,8 +13,9 @@ UATは、実装した機能が設計書とユーザーの要求どおりに動�
 
 ## ファイル
 
-- 機能ごとに `docs/uat/<機能名の英語ケバブケース>.md`（例：`docs/uat/item-index.md`）を作る。ファイル名はブランチ名の `feat/` 以降に合わせる。
-- スクリーンショットは `docs/uat/screenshots/<機能名>/<シナリオID>-<pc|sp>.png` に置く。主要な画面はシナリオごとにPC・SPを1枚ずつ、NGになったものは必ず残す。
+- 機能ごとに `docs/uat/<admin|user>/<機能名の英語ケバブケース>.md`（例：`docs/uat/user/item-index.md`、`docs/uat/admin/admin-login.md`）を作る。ファイル名はブランチ名の `feat/` 以降に合わせる。
+- 置き場所は機能の対象で決める。管理画面の機能（ファイル名が `admin-` で始まるもの）は `docs/uat/admin/`、公開側・会員の機能は `docs/uat/user/`。迷ったときは、操作する人（管理者か、お客さん・会員か）で決める。
+- スクリーンショットは、md と同じ側の `docs/uat/<admin|user>/screenshots/<機能名>/<シナリオID>-<pc|sp>.png` に置く。主要な画面はシナリオごとにPC・SPを1枚ずつ、NGになったものは必ず残す。
 
 ## 画面幅
 
@@ -59,7 +60,7 @@ UATは、実装した機能が設計書とユーザーの要求どおりに動�
 
 | ID | PC | SP | 備考 | スクリーンショット |
 |---|---|---|---|---|
-| S-1 | OK | NG | SPで価格が2行に折り返す | screenshots/item-index/S-1-sp.png |
+| S-1 | OK | NG | SPで価格が2行に折り返す | screenshots/item-index/S-1-sp.png（md からの相対パス） |
 
 - コンソールエラー：なし
 - メール（Mailpit）：対象外
