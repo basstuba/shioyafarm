@@ -19,6 +19,7 @@
         @endif
         <x-auth-input variant="neutral" name="email" label="メールアドレス" type="email" placeholder="例：sample@example.com" autocomplete="email" />
         <x-auth-input variant="neutral" name="password" label="パスワード" type="password" placeholder="例：demo12345" autocomplete="current-password" />
+        <a class="-mt-2 inline-flex min-h-11 items-center self-end text-base text-ink underline lg:-mt-10 lg:min-h-0" href="{{ route('admin.password.request') }}">パスワードをお忘れの方</a>
         <x-auth-submit variant="accent" class="lg:mt-6">ログイン</x-auth-submit>
     </form>
 @endsection

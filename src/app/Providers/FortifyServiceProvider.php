@@ -86,9 +86,9 @@ class FortifyServiceProvider extends ServiceProvider
         // 管理者のログイン（会員と同じ上限・メッセージ。管理者用ログインページへ戻す。カウントは会員とは別）
         RateLimiter::for('admin-login', fn (Request $request) => $this->loginLimit($request, route('admin.login')));
 
-        // パスワード再設定の送信（再設定メールの送信・新しいパスワードの設定）は、ルートごとにIPアドレスあたり1分5回まで。
+        // パスワード再設定の送信（再設定メールの送信・新しいパスワードの設定。管理者用のルートも含む）は、ルートごとにIPアドレスあたり1分5回まで。
         // 上限に達したとき、通常のリクエストは入力欄の近くに日本語のメッセージを表示し、JSONを期待するリクエストは429で返す。
-        // 対象のルートは ThrottlePasswordReset（bootstrap/app.php で web グループに追加）で絞る。
+        // 会員のルートは ThrottlePasswordReset（bootstrap/app.php で web グループに追加）で絞り、管理者のルートは routes/web.php で throttle:password-reset を付ける。
         RateLimiter::for('password-reset', function (Request $request) {
             return Limit::perMinute(5)->by($request->route()?->getName().'|'.$request->ip())->response(function (Request $request, array $headers) {
                 $message = trans('passwords.rate_limited', ['seconds' => $headers['Retry-After']]);
@@ -98,7 +98,7 @@ class FortifyServiceProvider extends ServiceProvider
                 }
 
                 // メールアドレスの入力欄と、新しいパスワードの入力欄の近くに出す（再設定ページの email は無効リンクの案内になるため使わない）
-                throw ValidationException::withMessages([$request->routeIs('password.update') ? 'password' : 'email' => [$message]]);
+                throw ValidationException::withMessages([$request->routeIs('password.update', 'admin.password.update') ? 'password' : 'email' => [$message]]);
             });
         });
 

@@ -4,7 +4,15 @@
 
 ## Mermaid版
 
-上の画像と同じ内容をテキストで表したものです。カラムの詳細は [テーブル仕様書](05-table-specification.md) を参照してください。
+このMermaid版が元の図で、上の画像（`images/er-diagram.png`）はここから生成したものです。カラムの詳細は [テーブル仕様書](05-table-specification.md) を参照してください。自分たちで作ったテーブルだけを載せ、Laravel 標準のテーブル（`password_reset_tokens`・`sessions`・`cache`・`jobs` など）は載せません。
+
+テーブルを変えたときは、下のMermaidを直してから、画像を作り直します（mermaid-cli はプロジェクトには入れず、`npx` で一時的に使う。一時ファイルはリポジトリの外に置く）。
+
+```bash
+# docs/06-er-diagram.md の mermaid ブロックの中身（コードフェンスは除く）を /tmp/er.mmd に保存してから実行
+echo '{"args":["--no-sandbox"]}' > /tmp/puppeteer.json
+npx --yes @mermaid-js/mermaid-cli -i /tmp/er.mmd -o docs/images/er-diagram.png -b white -s 3 -p /tmp/puppeteer.json
+```
 
 ```mermaid
 erDiagram
@@ -27,6 +35,10 @@ erDiagram
         varchar email
         varchar password
         varchar stripe_customer_id
+        text two_factor_secret
+        text two_factor_recovery_codes
+        timestamp two_factor_confirmed_at
+        varchar remember_token
         timestamp created_at
         timestamp updated_at
         timestamp deleted_at
@@ -134,6 +146,12 @@ erDiagram
         varchar password
         timestamp created_at
         timestamp updated_at
+    }
+
+    admin_password_reset_tokens {
+        varchar email PK
+        varchar token
+        timestamp created_at
     }
 
     notices {

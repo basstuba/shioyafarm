@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Repositories\AdminRepository;
 use App\Repositories\AreaRepository;
 use App\Repositories\DeliveryAddressRepository;
 use App\Repositories\InquiryRepository;
+use App\Repositories\Interfaces\AdminRepositoryInterface;
 use App\Repositories\Interfaces\AreaRepositoryInterface;
 use App\Repositories\Interfaces\DeliveryAddressRepositoryInterface;
 use App\Repositories\Interfaces\InquiryRepositoryInterface;
@@ -32,6 +34,7 @@ class RepositoryServiceProvider extends ServiceProvider
     #[Override]
     public function register(): void
     {
+        $this->app->bind(AdminRepositoryInterface::class, AdminRepository::class);
         $this->app->bind(AreaRepositoryInterface::class, AreaRepository::class);
         $this->app->bind(DeliveryAddressRepositoryInterface::class, DeliveryAddressRepository::class);
         $this->app->bind(InquiryRepositoryInterface::class, InquiryRepository::class);
