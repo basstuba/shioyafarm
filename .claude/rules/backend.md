@@ -11,6 +11,7 @@ paths:
 
 **Controller → Service → Repository（インターフェース） → Eloquentモデル** の順に依存する。参考実装は `HomeController` → `HomeService` → `ItemRepository` / `NoticeRepository`。
 
+- **ルートとビュー**：データも処理もない静的なページ（利用規約・送料案内など）は、コントローラーを作らず `Route::view('/パス', 'ビュー名')->name(...)` で書く。POST と組になっているフォームの表示は、クロージャで view を返さず、その POST を受けるコントローラーの `create()` で view を返す（リソースコントローラーの命名。例：`AdminPasswordResetController::create()`、`AdminAuthController::create()`）。
 - **Controller**：シングルアクション（`__invoke`）か薄く保つ。ロジックは書かず、Serviceをメソッドインジェクションで受け取る。処理の最初と最後に `Log::debug('XxxController start')` / `Log::debug('XxxController end')` を出力する。
 - **Service**（`app/Services`）：コンストラクタでリポジトリの**インターフェース**を受け取る。具象クラスやモデルに直接依存しない。
 - **Repository**（`app/Repositories`）：`app/Repositories/Interfaces/XxxRepositoryInterface.php` を実装する。実装メソッドには `#[Override]` を付ける。
@@ -80,7 +81,7 @@ paths:
 
 - ユーザーはFortifyで認証する（`app/Actions/Fortify`、`FortifyServiceProvider`）。2FAのカラムもある。
 - 管理者は別の `Admin` モデル・テーブルで、ログインも別（`AdminAuthController`、`auth/admin/login`）。管理画面のルートにユーザー用の認証を流用しない。
-  - 管理者は `admin` ガード（`config/auth.php`。プロバイダー `admins`、`Admin` モデルは Authenticatable）。ルート名は `admin.login`（GET。`routes/web.php` から直接 view を返す）・`admin.login.store`（POST。`throttle:admin-login`）・`admin.logout`・`admin.home`。ログイン前は `guest:admin`、ログイン後は `auth:admin` を使う。
+  - 管理者は `admin` ガード（`config/auth.php`。プロバイダー `admins`、`Admin` モデルは Authenticatable）。ルート名は `admin.login`（GET。`AdminAuthController::create()`）・`admin.login.store`（POST。`throttle:admin-login`）・`admin.logout`・`admin.home`。ログイン前は `guest:admin`、ログイン後は `auth:admin` を使う。
   - 未ログインで `auth:admin` のルートを開いたときは `/admin/login` へ（`bootstrap/app.php` の `AuthenticationException` の render。`redirect()->guest()` を通らないので、会員のログインの戻り先 `url.intended` は書き換えない）。管理者としてログイン済みで `guest:admin` のルートを開いたときは `redirectUsersTo` で `/admin` へ。
   - ログアウト・退会はLaravel標準どおり `session()->invalidate()` と `regenerateToken()` でセッション全体を破棄する（管理者のログアウトは `Auth::guard('admin')->logout()` も行う）。同じブラウザで会員・管理者の両方にログインしていた場合は両方ログアウトされる（同時ログインは本番でまず起きないため分離しない）。`AuthenticateSession` が `auth:admin` のリクエストで保存する `password_hash_admin` も invalidate で消えるため、次に別の管理者がログインしても不一致にならない。ログイン時のセッションIDの作り直しは `attempt()` が行う（Controller では `regenerateToken()` だけ）。
   - CSRFトークンが古い（419）とき、会員のログイン（`login.store`）・管理者のログイン（`admin.login.store`）・管理者のログアウト（`admin.logout`）・管理者のパスワード再設定の送信（`admin.password.email`・`admin.password.update`）だけは `App\Http\Responses\ExpiredPageResponder`（`bootstrap/app.php` の例外処理）が、案内つき（flash の `status`）で元のページへ戻す。それ以外・JSON・Livewire は従来どおり419のページ。Laravel は描画の前に `TokenMismatchException` を 419 の `HttpException` に変えるため、`HttpException` で受けて 419 だけ扱う。テストでは CSRF 検証がスキップされるので、`$this->app['env'] = 'local'` にして有効にする。

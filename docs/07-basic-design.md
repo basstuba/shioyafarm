@@ -12,10 +12,10 @@
 | `/inquiry` | GET | InquiryController | create | | お問い合わせフォームページ表示 |
 | `/inquiry/create` | POST | InquiryController | store | | お問い合わせフォーム送信機能 |
 | `/inquiry/thanks` | GET | InquiryController | thanks | | お問い合わせサンクスページ表示 |
-| `/terms-of-service` | VIEW | Routeからviewを呼び出し | | | 利用規約ページ表示 |
-| `/privacy-policy` | VIEW | Routeからviewを呼び出し | | | プライバシーポリシーページ表示 |
-| `/commercial-transaction` | VIEW | Routeからviewを呼び出し | | | 特定商取引法に基づく表記ページ表示 |
-| `/shipping-fee` | VIEW | Routeからviewを呼び出し | | | 送料案内ページ表示 |
+| `/terms-of-service` | VIEW | Route::view | | | 利用規約ページ表示 |
+| `/privacy-policy` | VIEW | Route::view | | | プライバシーポリシーページ表示 |
+| `/commercial-transaction` | VIEW | Route::view | | | 特定商取引法に基づく表記ページ表示 |
+| `/shipping-fee` | VIEW | Route::view | | | 送料案内ページ表示 |
 | `/cart` | GET | CartController | index | 必須 | カートページ表示 |
 | `/purchase/{item?}` | GET | PurchaseController | index | 必須 | 購入ページ表示 |
 | `/purchase/success` | GET | PurchaseController | purchaseSuccess | 必須 | 購入履歴作成機能（クレジットカード：Stripeの決済後に戻る先） |
@@ -57,8 +57,8 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
-| `/admin/login` | VIEW | Routeからviewを呼び出し | | | ログインページ表示 |
-| `/admin/login` | POST | AdminAuthController | login | 必須 | ログイン機能 |
+| `/admin/login` | GET | AdminAuthController | create | | ログインページ表示 |
+| `/admin/login` | POST | AdminAuthController | login | | ログイン機能 |
 | `/admin/forgot-password` | GET | AdminPasswordResetController | create | | 管理者のパスワード再設定メールの送信ページ表示（ルート名 `admin.password.request`。管理者としてログイン中は `/admin` へ移動する。設計書にはなかった追加機能） |
 | `/admin/forgot-password` | POST | AdminPasswordResetController | store | | 管理者のパスワード再設定メール送信機能（ルート名 `admin.password.email`。会員とは別のパスワードブローカー `admins`。管理者でないメールアドレス（会員を含む）、1分以内の再送信でも、送れたときと同じ案内を表示する。IPごとに1分5回まで） |
 | `/admin/reset-password/{token}` | GET | AdminPasswordResetController | edit | | 管理者の新しいパスワードの設定ページ表示（ルート名 `admin.password.reset`。再設定メールのリンクから開く） |
