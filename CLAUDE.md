@@ -49,9 +49,9 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 - `shipping.md`：送料計算（`config/shipping.php`）と支払方法
 
 - `testing.md`：テストの書き方（`#[Test]` アトリビュートを使う）
-- `uat.md`：UAT（受け入れテスト）のシナリオの書き方と、`docs/uat/` のファイルの書式
+- `uat.md`：UAT（受け入れテスト）のシナリオの書き方と、`docs/uat/` のファイルの書式（管理画面の機能は `docs/uat/admin/`、公開側・会員の機能は `docs/uat/user/`）
 
-設計書のルートを実装するときは `/add-feature` スキルを使う。作業ブランチを切る → 受け入れ条件とUATシナリオ（`docs/uat/`）を作ってユーザーのOKをもらう → `implementer` エージェント（sonnet / effort: high）が実装・テスト → テストが通ってから `uat-tester` エージェントがPlaywrightでUAT → `/code-review` でレビュー → ユーザーがチェックリストで受け入れ確認、の順に進める。`main` ブランチ上で `src/` を編集するとhookでブロックされる。マイグレーションは、`main` にコミット済みのものと、DBに適用済みのものの書き換えがhookでブロックされる（修正用のマイグレーションを追加して直す）。
+設計書のルートを実装するときは `/add-feature` スキルを使う。作業ブランチを切る → 受け入れ条件とUATシナリオ（`docs/uat/admin/` または `docs/uat/user/`）を作ってユーザーのOKをもらう → `implementer` エージェント（sonnet / effort: high）が実装・テスト → テストが通ってから `uat-tester` エージェントがPlaywrightでUAT → `/code-review` でレビュー → ユーザーがチェックリストで受け入れ確認、の順に進める。`main` ブランチ上で `src/` を編集するとhookでブロックされる。マイグレーションは、`main` にコミット済みのものと、DBに適用済みのものの書き換えがhookでブロックされる（修正用のマイグレーションを追加して直す）。
 
 作業ブランチを `main` にマージする前には、作業ブランチ上ですべてコミットしてから `./scripts/verify.sh` を実行し、CIと同じ項目（Pint `--test`・Larastan・テストとカバレッジ80%・`composer audit`・`npm run build`・`npm audit`）に、`composer validate`・`route:cache`・`view:cache`（全Bladeのコンパイル。終わったらキャッシュは消す）を加えて通ることを確かめる。`main` 上の `git merge` は、マージするブランチの先頭コミットが検証済みでないとhookでブロックされる（検証のあとにコミットを足したら再実行する）。静的解析はエラー0件を保つ。`laravel-verification` スキルは毎回は使わず、2回目のE2Eの前とREADMEを書く前の節目に手動で実行する。
 
