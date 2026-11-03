@@ -6,6 +6,8 @@ ER図は [ER図](06-er-diagram.md) を参照。
 
 退会は論理削除で、退会した会員は deleted_at に退会日時が入る。退会した会員は、ログイン・会員登録・登録情報変更のいずれでもメールアドレスを再利用できない。購入履歴・予約・配送先住所は消さない。物理削除は、取引の終了後に管理者が管理画面から行う（管理画面の実装時に作る）。
 
+二段階認証のカラム（two_factor_*）は Fortify のもので、二段階認証は未実装のため使っていない。remember_token は Laravel 標準のカラムで、ログイン状態の保持は使っていない。
+
 | カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
 |---|---|:---:|:---:|:---:|---|
 | id | bigint unsigned | ○ | | | |
@@ -14,9 +16,13 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | prefecture | varchar(255) | | | ○ | |
 | city | varchar(255) | | | ○ | |
 | tell | varchar(15) | | | ○ | |
-| email | varchar(30) | | | ○ | |
+| email | varchar(30) | | ○ | ○ | |
 | password | varchar(255) | | | ○ | |
 | stripe_customer_id | varchar(255) | | ○ | | |
+| two_factor_secret | text | | | | |
+| two_factor_recovery_codes | text | | | | |
+| two_factor_confirmed_at | timestamp | | | | |
+| remember_token | varchar(100) | | | | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
 | deleted_at | timestamp | | | | |
@@ -27,10 +33,20 @@ ER図は [ER図](06-er-diagram.md) を参照。
 |---|---|:---:|:---:|:---:|---|
 | id | bigint unsigned | ○ | | | |
 | name | varchar(255) | | | ○ | |
-| email | varchar(30) | | | ○ | |
+| email | varchar(30) | | ○ | ○ | |
 | password | varchar(255) | | | ○ | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+
+## admin_password_reset_tokens（管理者のパスワード再設定トークンデータ）
+
+管理者のパスワード再設定（`/admin/forgot-password`。設計書にはなかった追加機能）で発行するトークンを保存する。会員の再設定のトークン（`password_reset_tokens`）とは別のテーブルで、Laravel のパスワードブローカー `admins` が使う。管理者1人につき1件で、再発行すると上書きされる。token はハッシュ化して保存し、有効期限は60分。使用後・送信失敗時は削除する。
+
+| カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
+|---|---|:---:|:---:|:---:|---|
+| email | varchar(255) | ○ | | ○ | |
+| token | varchar(255) | | | ○ | |
+| created_at | timestamp | | | | |
 
 ## items（掲載商品データ）
 

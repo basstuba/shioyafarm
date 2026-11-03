@@ -60,13 +60,40 @@ class AdminLoginTest extends TestCase
     {
         $response = $this->get(route('admin.login'));
 
-        $response->assertDontSee('パスワードをお忘れの方');
         $response->assertDontSee('会員登録');
         $response->assertDontSee('お知らせ');
         $response->assertDontSee('送料案内');
         $response->assertDontSee('href="'.route('top.index').'"', false);
         $response->assertDontSee('href="'.route('password.request').'"', false);
         $response->assertDontSee('href="'.route('register').'"', false);
+    }
+
+    /**
+     * フォームの下に、管理者用のパスワード再設定の送信ページへのリンクがある（会員用の /forgot-password ではない）
+     */
+    #[Test]
+    public function 管理者用ログインページにパスワードをお忘れの方のリンクがある(): void
+    {
+        $response = $this->get(route('admin.login'));
+
+        $response->assertSee('パスワードをお忘れの方');
+        $response->assertSee('href="'.route('admin.password.request').'"', false);
+    }
+
+    /**
+     * 「パスワードをお忘れの方」は会員側と同じ配置（パスワード欄の下・ログインボタンの上。右寄せ、SPは高さ44px）で、色は管理画面の ink
+     */
+    #[Test]
+    public function パスワードをお忘れの方のリンクはパスワード欄とログインボタンの間に右寄せで置かれる(): void
+    {
+        $html = $this->get(route('admin.login'))->getContent();
+
+        $this->assertStringContainsString('class="-mt-2 inline-flex min-h-11 items-center self-end text-base text-ink underline lg:-mt-10 lg:min-h-0" href="'.route('admin.password.request').'"', $html);
+        $password = strpos($html, 'name="password"');
+        $link = strpos($html, 'パスワードをお忘れの方');
+        $submit = strpos($html, '>ログイン</button>');
+        $this->assertTrue($password < $link && $link < $submit);
+        $this->assertStringNotContainsString('text-primary-dark underline', $html);
     }
 
     /**

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AddAddressController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminHomeController;
+use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
@@ -110,6 +111,12 @@ Route::prefix('admin')->group(function () {
             return view('auth.admin.login');
         })->name('admin.login');
         Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:admin-login')->name('admin.login.store');
+
+        // パスワード再設定（会員の再設定とは別の仕組み。送信は IP アドレスあたり1分5回まで。会員のものと同じ password-reset の上限で、ルートごとに数える）
+        Route::get('/forgot-password', [AdminPasswordResetController::class, 'create'])->name('admin.password.request');
+        Route::post('/forgot-password', [AdminPasswordResetController::class, 'store'])->middleware('throttle:password-reset')->name('admin.password.email');
+        Route::get('/reset-password/{token}', [AdminPasswordResetController::class, 'edit'])->name('admin.password.reset');
+        Route::post('/reset-password', [AdminPasswordResetController::class, 'update'])->middleware('throttle:password-reset')->name('admin.password.update');
     });
 
     // 未ログインは /admin/login へ（会員の /login ではない。bootstrap/app.php）

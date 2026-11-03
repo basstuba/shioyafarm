@@ -59,6 +59,10 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 |---|---|---|---|:---:|---|
 | `/admin/login` | VIEW | Routeからviewを呼び出し | | | ログインページ表示 |
 | `/admin/login` | POST | AdminAuthController | login | 必須 | ログイン機能 |
+| `/admin/forgot-password` | GET | AdminPasswordResetController | create | | 管理者のパスワード再設定メールの送信ページ表示（ルート名 `admin.password.request`。管理者としてログイン中は `/admin` へ移動する。設計書にはなかった追加機能） |
+| `/admin/forgot-password` | POST | AdminPasswordResetController | store | | 管理者のパスワード再設定メール送信機能（ルート名 `admin.password.email`。会員とは別のパスワードブローカー `admins`。管理者でないメールアドレス（会員を含む）、1分以内の再送信でも、送れたときと同じ案内を表示する。IPごとに1分5回まで） |
+| `/admin/reset-password/{token}` | GET | AdminPasswordResetController | edit | | 管理者の新しいパスワードの設定ページ表示（ルート名 `admin.password.reset`。再設定メールのリンクから開く） |
+| `/admin/reset-password` | POST | AdminPasswordResetController | update | | 管理者のパスワード再設定機能（ルート名 `admin.password.update`。成功したら管理者用ログインページへ。使用済み・期限切れ（60分）・改ざんされたリンクはエラーにして、送信ページへのリンクを表示する。IPごとに1分5回まで） |
 | `/admin/logout` | POST | AdminAuthController | logout | 必須 | ログアウト機能 |
 | `/admin` | GET | AdminHomeController | index | 必須 | 管理画面トップページ表示 |
 | `/admin/users` | GET | AdminUserController | index | 必須 | 管理画面ユーザー一覧ページ表示機能 |
@@ -170,6 +174,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | Mailable | 送るタイミング | 件名 |
 |---|---|---|
 | PasswordResetMail | パスワード再設定メールの送信ページで、登録済みのメールアドレスを送信したとき（`/forgot-password`。`User::sendPasswordResetNotification` から送る） | 【しおや農園】パスワード再設定のご案内 |
+| AdminPasswordResetMail | 管理者のパスワード再設定メールの送信ページで、登録済みの管理者のメールアドレスを送信したとき（`/admin/forgot-password`。`Admin::sendPasswordResetNotification` から送る。宛名は管理者名。会員のメールとは別の仕組み） | 【しおや農園】管理画面のパスワード再設定のご案内 |
 
 本文の構成（Markdownメール。HTML版とテキスト版）：宛名（会員の氏名）、再設定の手順、「パスワードを再設定する」ボタン、リンクの有効期限（60分）、心当たりがなければ破棄してよい旨、署名。Laravel 標準の英語の通知は使わない。送信に失敗したときは、発行したトークンを削除してからエラーにする（使えないトークンを残さない）。未登録・退会済みのメールアドレスと、1分以内の再送信では送らない。
 
