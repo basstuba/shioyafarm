@@ -57,7 +57,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
-| `/admin/login` | GET | AdminAuthController | showLoginForm | | ログインページ表示 |
+| `/admin/login` | VIEW | Routeからviewを呼び出し | | | ログインページ表示 |
 | `/admin/login` | POST | AdminAuthController | login | 必須 | ログイン機能 |
 | `/admin/logout` | POST | AdminAuthController | logout | 必須 | ログアウト機能 |
 | `/admin` | GET | AdminHomeController | index | 必須 | 管理画面トップページ表示 |

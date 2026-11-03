@@ -79,23 +79,12 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-        RateLimiter::for('login', function (Request $request) {
-            // 配列などの文字列でない入力でもTypeErrorにならないよう、文字列のときだけ使う
-            $username = $request->input(Fortify::username());
-            $throttleKey = Str::transliterate(Str::lower(is_string($username) ? $username : '').'|'.$request->ip());
+        // 会員のログイン。上限に達したとき、通常のリクエストはログインページに日本語のエラーメッセージを表示する。
+        // JSONを期待するリクエストは、入力エラーと区別できるよう429で返す。
+        RateLimiter::for('login', fn (Request $request) => $this->loginLimit($request));
 
-            // 上限に達したとき、通常のリクエストはログインページに日本語のエラーメッセージを表示する。
-            // JSONを期待するリクエストは、入力エラーと区別できるよう429で返す。
-            return Limit::perMinute(5)->by($throttleKey)->response(function (Request $request, array $headers) {
-                $message = trans('auth.throttle', ['seconds' => $headers['Retry-After']]);
-
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => $message], 429, $headers);
-                }
-
-                throw ValidationException::withMessages([Fortify::username() => [$message]]);
-            });
-        });
+        // 管理者のログイン（会員と同じ上限・メッセージ。管理者用ログインページへ戻す。カウントは会員とは別）
+        RateLimiter::for('admin-login', fn (Request $request) => $this->loginLimit($request, route('admin.login')));
 
         // パスワード再設定の送信（再設定メールの送信・新しいパスワードの設定）は、ルートごとにIPアドレスあたり1分5回まで。
         // 上限に達したとき、通常のリクエストは入力欄の近くに日本語のメッセージを表示し、JSONを期待するリクエストは429で返す。
@@ -115,6 +104,30 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+    }
+
+    /**
+     * ログインの試行回数の制限（メールアドレスとIPアドレスの組あたり1分5回まで）
+     *
+     * @param  string|null  $redirectTo  上限に達したときの戻り先（省略すると直前のページ）
+     */
+    private function loginLimit(Request $request, ?string $redirectTo = null): Limit
+    {
+        // 配列などの文字列でない入力でもTypeErrorにならないよう、文字列のときだけ使う
+        $username = $request->input(Fortify::username());
+        $throttleKey = Str::transliterate(Str::lower(is_string($username) ? $username : '').'|'.$request->ip());
+
+        return Limit::perMinute(5)->by($throttleKey)->response(function (Request $request, array $headers) use ($redirectTo) {
+            $message = trans('auth.throttle', ['seconds' => $headers['Retry-After']]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 429, $headers);
+            }
+
+            $exception = ValidationException::withMessages([Fortify::username() => [$message]]);
+
+            throw $redirectTo === null ? $exception : $exception->redirectTo($redirectTo);
         });
     }
 }

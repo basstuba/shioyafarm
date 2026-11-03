@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AddAddressController;
+use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
@@ -99,6 +101,23 @@ Route::get('/privacy-policy', function () {
 Route::get('/commercial-transaction', function () {
     return view('law');
 })->name('info.commercial-transaction');
+
+// 管理画面（会員の認証とは別の admin ガード）
+Route::prefix('admin')->group(function () {
+    // ログイン（管理者としてログイン中なら /admin へ。試行回数は同じメールアドレスで1分5回まで）
+    Route::middleware('guest:admin')->group(function () {
+        Route::get('/login', function () {
+            return view('auth.admin.login');
+        })->name('admin.login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:admin-login')->name('admin.login.store');
+    });
+
+    // 未ログインは /admin/login へ（会員の /login ではない。bootstrap/app.php）
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('/', [AdminHomeController::class, 'index'])->name('admin.home');
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+    });
+});
 
 // 存在しないURL（404）。定義のないURLは web ミドルウェアを通らずセッションが使えず、ログイン中でも未ログインのヘッダーになるため、
 // fallback で web ミドルウェアを通してから 404 を返す（errors/404.blade.php が描画される）。ナビは top.* と同じ。
