@@ -16,7 +16,7 @@
         {{-- SPで「くださ／い」のように語の途中で折り返さないよう、折り返してよい位置だけ <wbr> で示す --}}
         <p class="leading-[1.6] break-keep">ご登録のメールアドレスを<wbr>入力してください。<br>パスワード再設定用のメールを<wbr>お送りします。</p>
         @if (session('status'))
-            <p class="rounded-[10px] border border-line-strong bg-surface px-4 py-3 text-base text-ink" role="status">{{ session('status') }}</p>
+            <x-admin-status>{{ session('status') }}</x-admin-status>
         @endif
         <x-auth-input variant="neutral" name="email" label="メールアドレス" type="email" placeholder="例：sample@example.com" autocomplete="email" />
         <x-auth-submit variant="accent">再設定メールを送信</x-auth-submit>

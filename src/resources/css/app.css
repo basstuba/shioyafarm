@@ -14,7 +14,7 @@
     --color-primary-dark: #c0822f;
     --color-primary-hover: #ff8800;
     --color-accent: #60b04e;
-    /* 管理者用ログインのボタンのホバー・フォーカス時の濃い緑 */
+    /* 管理者用ログインのボタンのホバー・フォーカス時の濃い緑。管理画面トップの「各種一覧」の見出しとリンクの下線にも使う */
     --color-accent-hover: #427835;
     --color-cream-50: #fffdf0;
     --color-cream-100: #fff9db;
@@ -39,7 +39,7 @@
     --color-delete-hover: #ff3d3b;
     /* 購入ページの小計・送料の文字と区切り線（Figmaは #8f8f8f だが、読みやすさのために濃くしている） */
     --color-muted: #6b6b6b;
-    /* 購入ページの支払方法カードの名前・説明と「ご注文内容をご確認のうえ…」の文字（Figmaは #c0822f だが、読みやすさのために濃くしている） */
+    /* 購入ページの支払方法カードの名前・説明と「ご注文内容をご確認のうえ…」の文字（Figmaは #c0822f だが、読みやすさのために濃くしている）。管理画面トップの「作成・登録」の見出しとリンクの下線にも使う */
     --color-primary-text: #8f5e1c;
     /* マイページのページ送りの枠と区切り線 */
     --color-line-pager: #d7ba93;
@@ -59,6 +59,10 @@
     --color-leaf: #2d7e1a;
     /* 予約完了ページの見出し（写真の雲の上に影付きで置く）。Figmaの #ff6400 は白の上でも約3:1しかないため濃くした（白の上で4.59:1、雲の上で約4.2:1） */
     --color-reserve-text: #c75000;
+
+    /* 管理画面トップのヘッダー（左から右へ薄いグレーから少し濃いグレーのグラデーション）とフッターの地 */
+    --color-admin-bar: #f9f9f9;
+    --color-admin-bar-end: #ededed;
 
     --spacing-header: 70px;
 
@@ -92,7 +96,12 @@
 
 /* リンクのホバー時の下線（`hover:underline` と組み合わせて使う） */
 @utility underline-accent {
+    @apply underline-thick;
     text-decoration-color: var(--color-accent);
+}
+
+/* 下線の太さと文字からの距離だけ（色は decoration-xxx で別に指定する。管理画面トップのカード内のリンクで使う） */
+@utility underline-thick {
     text-decoration-thickness: 0.2em;
     text-underline-offset: 0.3em;
 }

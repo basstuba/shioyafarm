@@ -4,7 +4,8 @@
     @include('layouts.head')
 </head>
 {{--
-    管理画面のレイアウト（仮）。管理画面のトップページをFigmaから作るブランチで、サイドバー付きの構成に作り直す。
+    トップページ以外の管理画面用のレイアウト（いまは仮で、どのページも使っていない）。一覧ページのブランチで、サイドメニュー付き（layouts/admin/sidebar）に作り直す。
+    トップページは layouts/admin/top。
     セクション：page-title（<title>）、content（本文）
 --}}
 <body class="bg-white font-maru text-ink">
