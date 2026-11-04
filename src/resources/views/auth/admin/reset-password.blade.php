@@ -21,7 +21,7 @@
         <input type="hidden" name="email" value="{{ is_string(old('email')) ? old('email') : $email }}" />
         <p class="leading-[1.6]">新しいパスワードを入力してください。</p>
         @if (session('status'))
-            <p class="rounded-[10px] border border-line-strong bg-surface px-4 py-3 text-base text-ink" role="status">{{ session('status') }}</p>
+            <x-admin-status>{{ session('status') }}</x-admin-status>
         @endif
         @if ($errors->has('email') || $errors->has('token'))
             <p class="rounded-[10px] border border-line-strong bg-surface px-4 py-3 text-base text-danger" role="alert">

@@ -11,7 +11,7 @@ use Illuminate\View\View;
 class AdminHomeController extends Controller
 {
     /**
-     * 管理画面のトップ（いまは見出しとログアウトだけの仮のページ）
+     * 管理画面のトップ（各画面へのリンクの2枚のカード。ヘッダー・フッターはトップ専用のレイアウト）
      */
     public function index(): View
     {
