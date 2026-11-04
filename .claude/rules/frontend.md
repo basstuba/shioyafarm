@@ -38,11 +38,13 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
 ## Blade
 
 - ビューは `resources/views/{shop,admin,auth,layouts,shipping}` に分かれている。トップページや静的ページは `resources/views` の直下に置く。
-- ユーザー画面は `layouts/app`、管理画面は `layouts/admin/app`、認証画面（ログイン・会員登録）は `layouts/auth`、サンクスページ（お問い合わせ・購入・予約の完了）は `layouts/thanks` を継承する。
+- ユーザー画面は `layouts/app`、管理画面のトップページは `layouts/admin/top`、それ以外の管理画面は `layouts/admin/app`（いまは仮で、一覧ページのブランチでサイドメニュー付きに作り直す）、認証画面（ログイン・会員登録）は `layouts/auth`、サンクスページ（お問い合わせ・購入・予約の完了）は `layouts/thanks` を継承する。
 - `<head>`（メタ・フォント・favicon・`@vite`）は `layouts/head` にまとめてあり、各レイアウトから `@include` する。レイアウトに直接書かない。`<title>` は `@section('page-title')` で変えられる（省略時は「Shioya Farm」）。
 - `layouts/app` のセクション：
   - `@section('body-class')`：`<body>` に付けるクラス（背景色の `bg-cream-100` や、フッターの色を変える目印の `legal-page` など）
   - `@section('content')`：`<main>` の中身
+- `layouts/admin/top` は管理画面のトップページ専用のレイアウト（ヘッダー `layouts/admin/top-header`・フッター `layouts/admin/top-footer` はトップだけのもの。トップページ以外は `layouts/admin/app` のサイドメニュー付きレイアウトになる）。`min-h-dvh` の縦積み（スマホのアドレスバーで高さがずれないよう `dvh`）で `<main>` を伸ばし、本文を縦横中央に置く（画面が低くても重ならない）。セクションは `page-title`・`content`。flash の `status` があれば、レイアウトがヘッダーの下に `<x-admin-status>` で案内を出す（出ている間、カードはその分下がり、残りの領域の上下中央に置かれる）。ヘッダーはPC 1行・SP 2段（タイトルの下に右寄せで「サイトを見る」「ログアウト」）。本文は `font-sans`、フッターの © だけ `font-maru`。色の地は `@theme` の `admin-bar`・`admin-bar-end`。トップのカードのリンクは未実装の画面のため `url()` で書いてあり、各画面のブランチで `route()` に置き換える。
+- 管理画面の案内（flash の `status`。ログアウトの有効期限切れなど）は `<x-admin-status>`（灰色の枠の `role="status"`。幅や余白は `class` で渡す）。管理者用のログイン・パスワード再設定の3画面と管理画面トップで使う。
 - `layouts/thanks` は、共通ヘッダー・フッターを表示せず、`<main>` の中身だけを出す（Figmaのサンクスページにヘッダー・フッターがないため）。セクションは `page-title`・`body-class`・`content`。
 - `layouts/auth` は、共通ヘッダー・フッター（`layouts.header` / `layouts.footer`）を使わず、認証ページ用のヘッダー（ロゴ）と © を持つ。PC（`lg:` 以上）は左にフォーム、右に背景画像のパネルの2分割、SPは画面全体に背景画像を敷いて縦に並べる。セクション：
   - `@section('form')`：左側（SPでは見出しの下）のフォーム
@@ -85,7 +87,7 @@ Figmaの数値（px）はそのまま使う。画面幅に比例して拡大縮�
 - **Tailwind CSS v4** を使い、Viteでビルドする。入口は `resources/css/app.css` だけで、`layouts/app` の `@vite` で読み込み済み。ページごとのCSSファイルは作らない。
 - スタイルはBladeにTailwindのクラスで書く。`app.css` に手書きするのは次の場合だけにする。
   - `@theme`：色・フォント・ヘッダー高さなどのデザイントークン
-  - `@utility`：複数の場所で使う小さなスタイルのまとまり（例：リンクの下線の `underline-accent`）
+  - `@utility`：複数の場所で使う小さなスタイルのまとまり（例：リンクの下線の `underline-accent`。太さと距離だけの `underline-thick` は `underline-accent` も使っており、色を別に指定したいとき（管理画面トップのカード内のリンクは `decoration-accent-hover` / `decoration-primary-text`）に単独で使う）
   - `@layer components`：利用規約などの長文の文書のように、子要素にまとめてスタイルを当てる場合（例：`.legal-document`）
 - `container` はTailwindのクラス名と重なるため、独自のクラス名として使わない。
 - `grid` の子要素の中に横長の表を置く場合は、親に `min-w-0` を付け、表は `overflow-x-auto` で囲んでページ全体が横スクロールしないようにする。
