@@ -15,7 +15,7 @@
     <form class="mx-auto flex w-full max-w-[600px] flex-col gap-6 rounded-[20px] bg-white px-6 py-8 shadow-card lg:min-h-[450px] lg:gap-15 lg:px-8 lg:pt-12 xl:px-25" action="{{ route('admin.login.store') }}" method="POST" novalidate>
         @csrf
         @if (session('status'))
-            <p class="rounded-[10px] border border-line-strong bg-surface px-4 py-3 text-base text-ink" role="status">{{ session('status') }}</p>
+            <x-admin-status>{{ session('status') }}</x-admin-status>
         @endif
         <x-auth-input variant="neutral" name="email" label="メールアドレス" type="email" placeholder="例：sample@example.com" autocomplete="email" />
         <x-auth-input variant="neutral" name="password" label="パスワード" type="password" placeholder="例：demo12345" autocomplete="current-password" />

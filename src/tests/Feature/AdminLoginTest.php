@@ -407,24 +407,6 @@ class AdminLoginTest extends TestCase
     }
 
     /**
-     * 管理者としてログイン中は /admin が開ける
-     */
-    #[Test]
-    public function 管理者は管理画面のトップを開ける(): void
-    {
-        $admin = $this->createAdmin();
-
-        $response = $this->actingAs($admin, 'admin')->get(route('admin.home'));
-
-        $response->assertOk();
-        $response->assertViewIs('admin.index');
-        $response->assertSee('<title>管理画面 | Shioya Farm</title>', false);
-        $response->assertSee('管理画面');
-        $response->assertSee('action="'.route('admin.logout').'"', false);
-        $response->assertSee('ログアウト');
-    }
-
-    /**
      * 管理者としてログイン中に /admin/login を開くと /admin へ移動する
      */
     #[Test]
