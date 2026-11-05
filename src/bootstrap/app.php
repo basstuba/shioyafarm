@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\NoStore;
 use App\Http\Middleware\ThrottlePasswordReset;
 use App\Http\Responses\ExpiredPageResponder;
 use Illuminate\Auth\AuthenticationException;
@@ -20,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // パスワードを変えたとき、ほかの端末のセッションをログアウト状態にする（Auth::logoutOtherDevices の前提）
         $middleware->web(append: [AuthenticateSession::class, ThrottlePasswordReset::class]);
+
+        // 応答をブラウザに保存させない（管理者のログインが必要なページ）
+        $middleware->alias(['no-store' => NoStore::class]);
 
         // 管理者としてログイン済みの人が /admin/login を開いたときは、管理画面のトップへ（それ以外は従来どおり /）
         $middleware->redirectUsersTo(fn (Request $request) => $request->routeIs('admin.*') ? route('admin.home') : '/');

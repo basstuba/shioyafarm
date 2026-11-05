@@ -96,6 +96,7 @@ erDiagram
         int shipping_fee
         int cod_fee
         int total_price
+        boolean shipped
         timestamp created_at
         timestamp updated_at
     }

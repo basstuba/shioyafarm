@@ -2,29 +2,46 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ExportType;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Override;
 
-class ExportRequest extends FormRequest
+/**
+ * 管理画面のエクスポート（出力の種類と、一覧と同じ検索条件）
+ */
+class ExportRequest extends PurchaseSearchRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
+    #[Override]
     public function rules(): array
     {
         return [
-            'keyword' => 'nullable|string|max:255',
-            'updated_at' => 'nullable|date',
+            'type' => ['required', Rule::enum(ExportType::class)],
+            ...parent::rules(),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    #[Override]
+    public function messages(): array
+    {
+        return [
+            'type.required' => 'エクスポートの種類を指定してください。',
+            'type.enum' => 'エクスポートの種類が正しくありません。',
+            ...parent::messages(),
+        ];
+    }
+
+    /**
+     * エクスポートの種類
+     */
+    public function type(): ExportType
+    {
+        return ExportType::from($this->validated()['type']);
     }
 }
