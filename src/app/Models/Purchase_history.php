@@ -15,6 +15,7 @@ class Purchase_history extends Model
 {
     use HasFactory;
 
+    // shipped（発送済み）は一括代入の対象にしない。管理画面の更新（リポジトリの updateShipped）だけで変える
     protected $fillable = [
         'user_id',
         'delivery_name',
@@ -25,7 +26,6 @@ class Purchase_history extends Model
         'shipping_fee',
         'cod_fee',
         'total_price',
-        'shipped',
     ];
 
     /**

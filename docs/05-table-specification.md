@@ -106,8 +106,11 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | shipping_fee | integer | | | ○ | |
 | total_price | integer | | | ○ | |
 | payment_method | varchar(25) | | | ○ | |
+| shipped | boolean | | | ○ | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+
+`shipped` は発送済みかどうか（既定値 false）。管理画面の予約一覧のチェックで切り替える（設計書にはなかった追加カラム）。管理者だけが見て、マイページ・メールには出さない。日時は持たない。
 
 ## purchase_histories（購入履歴データ）
 
