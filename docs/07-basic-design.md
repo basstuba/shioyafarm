@@ -68,7 +68,8 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/users` | GET | AdminUserController | index | 必須 | 管理画面ユーザー一覧ページ表示機能 |
 | `/admin/users/search` | GET | AdminUserController | search | 必須 | ユーザー検索機能 |
 | `/admin/purchase` | GET | AdminPurchaseController | index | 必須 | 管理画面注文一覧ページ表示機能 |
-| `/admin/purchase/search` | GET | AdminPurchaseController | search | 必須 | 注文検索機能 |
+| `/admin/purchase/search` | GET | AdminPurchaseController | search | 必須 | 注文検索機能（発送状況 `shipped`＝0 未発送・1 発送済、注文日 `date`＝Y-m-d、注文者名 `name`。入力の誤りは `/admin/purchase` に戻してエラーを表示） |
+| `/admin/purchase/update` | POST | AdminPurchaseController | update | 必須 | 注文発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない注文は422） |
 | `/admin/reservations` | GET | AdminReservationController | index | 必須 | 管理画面予約一覧ページ表示機能 |
 | `/admin/reservations/search` | GET | AdminReservationController | search | 必須 | 予約検索機能 |
 | `/admin/notices` | GET | AdminNoticeController | index | 必須 | 管理画面お知らせ一覧ページ表示 |
@@ -84,7 +85,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/items/edit` | GET | AdminItemController | edit | 必須 | 掲載商品修正ページ表示 |
 | `/admin/items/update` | POST | AdminItemController | update | 必須 | 掲載商品修正機能 |
 | `/admin/items/delete` | DELETE | AdminItemController | delete | 必須 | 掲載商品削除機能 |
-| `/admin/export` | POST | AdminExportController | export | 必須 | エクスポート機能 |
+| `/admin/export` | POST | AdminExportController | export | 必須 | エクスポート機能（`type` で種類を指定する。現在は `purchase`＝注文一覧のみで、予約一覧の実装時に `reservation` を足す。不正な種類はエラー。検索条件 `shipped`・`date`・`name` は注文一覧の検索と同じで、ページ番号は無視して全件を出力する。.xlsx・ファイル名 `注文一覧_YYYYMMDD.xlsx`） |
 | `/admin/mail/user/{user_id}` | GET | AdminMailController | createUserMail | 必須 | メール作成ページ表示 |
 | `/admin/mail/inquiry/{inquiry_id}` | GET | AdminMailController | createInquiryMail | 必須 | メール作成ページ表示 |
 | `/admin/mail/send` | POST | AdminMailController | send | 必須 | メール送信機能 |
@@ -270,10 +271,22 @@ user_idと合計金額はcontrollerで取得
 
 ### ExportRequest.php（エクスポート）
 
+注文一覧の検索条件（PurchaseSearchRequest）を引き継ぎ、種類を加えたもの。
+
 | フォーム | ルール |
 |---|---|
-| 検索キーワード（注文者or予約者名） | 必須ではない、文字列、255文字以下 |
-| 検索日付 | 必須ではない、日付 |
+| 種類（type） | 入力必須、指定の値のみ（`purchase`） |
+| 発送状況（shipped） | 必須ではない、0 か 1 |
+| 注文日（date） | 必須ではない、`Y-m-d` 形式の日付 |
+| 注文者名（name） | 必須ではない、文字列、100文字以下 |
+
+### PurchaseSearchRequest.php（注文検索）・AdminPurchaseUpdateRequest.php（発送済みの更新）
+
+| フォーム | ルール |
+|---|---|
+| 発送状況（shipped）・注文日（date）・注文者名（name） | ExportRequest と同じ（すべて必須ではない） |
+| 注文（id）※更新 | 入力必須、整数値、存在する注文 |
+| 発送済み（shipped）※更新 | 入力必須、真偽値 |
 
 ### MailRequest.php（メール作成）
 
@@ -281,3 +294,7 @@ user_idと合計金額はcontrollerで取得
 |---|---|
 | メールタイトル | 入力必須、文字列、255文字以下 |
 | メール本文 | 入力必須、文字列 |
+
+## 管理画面のキャッシュ
+
+管理者のログインが必要なページ（`auth:admin` のルート）の応答には `Cache-Control: no-store` を付ける（ミドルウェア `no-store`）。ログアウト後にブラウザの戻るボタンで管理画面が表示されないようにするため。公開側・ログイン画面には付けない。

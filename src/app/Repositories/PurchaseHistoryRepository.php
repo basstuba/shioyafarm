@@ -5,8 +5,11 @@ namespace App\Repositories;
 use App\Enums\PaymentMethod;
 use App\Models\Purchase_history;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\LazyCollection;
 use Override;
 
 /**
@@ -14,6 +17,9 @@ use Override;
  */
 class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
 {
+    /** エクスポートで一度に読み込む注文の件数 */
+    private const int EXPORT_CHUNK_SIZE = 500;
+
     /**
      * 購入履歴・購入明細（銀行振込のときは振込先も）をトランザクションで作成
      *
@@ -77,5 +83,74 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
         }
 
         return $purchase;
+    }
+
+    /**
+     * 管理画面の注文一覧を新しい順（ID の降順）にページ分けして取得（注文者を Eager Load する）
+     *
+     * @param  array{shipped: bool|null, from: CarbonInterface|null, to: CarbonInterface|null, name: string}  $criteria
+     * @return LengthAwarePaginator<int, Purchase_history>
+     */
+    #[Override]
+    public function paginateForAdmin(array $criteria, int $perPage, ?int $page = null): LengthAwarePaginator
+    {
+        return $this->searchQuery($criteria)
+            ->with('user')
+            ->orderByDesc('id')
+            ->paginate($perPage, page: $page);
+    }
+
+    /**
+     * @param  array{shipped: bool|null, from: CarbonInterface|null, to: CarbonInterface|null, name: string}  $criteria
+     * @return LazyCollection<int, Purchase_history>
+     */
+    #[Override]
+    public function lazyForExport(array $criteria): LazyCollection
+    {
+        return $this->searchQuery($criteria)
+            ->with(['user', 'purchaseHistoryItems.item'])
+            ->lazyByIdDesc(self::EXPORT_CHUNK_SIZE);
+    }
+
+    #[Override]
+    public function findDetailForAdmin(int $id): ?Purchase_history
+    {
+        return Purchase_history::with(['user', 'purchaseHistoryItems.item', 'purchaseBankTransfer'])->find($id);
+    }
+
+    #[Override]
+    public function updateShipped(int $id, bool $shipped): void
+    {
+        Purchase_history::whereKey($id)->update(['shipped' => $shipped]);
+    }
+
+    /**
+     * 管理画面の検索条件を適用したクエリ
+     *
+     * 注文者名は users の姓と名をつなげた文字列（スペースを除く）への部分一致で、LIKE のワイルドカード（%・_）と、その退避文字（!）は文字として扱う。
+     * 退会済みの会員の注文も対象にする（Purchase_history::user が withTrashed のため）。
+     *
+     * @param  array{shipped: bool|null, from: CarbonInterface|null, to: CarbonInterface|null, name: string}  $criteria
+     * @return Builder<Purchase_history>
+     */
+    private function searchQuery(array $criteria): Builder
+    {
+        $query = Purchase_history::query();
+
+        if ($criteria['shipped'] !== null) {
+            $query->where('shipped', $criteria['shipped']);
+        }
+        if ($criteria['from'] !== null && $criteria['to'] !== null) {
+            $query->where('created_at', '>=', $criteria['from'])->where('created_at', '<', $criteria['to']);
+        }
+        if ($criteria['name'] !== '') {
+            $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $criteria['name']).'%';
+            $joined = DB::connection()->getDriverName() === 'sqlite' ? '(last_name || first_name)' : 'CONCAT(last_name, first_name)';
+            // DB側の姓名も、入力と同じく半角・全角スペースを除いてから比較する（名前の中にスペースがある会員も見つかる）
+            $fullName = "REPLACE(REPLACE({$joined}, ' ', ''), '　', '')";
+            $query->whereHas('user', fn (Builder $user) => $user->whereRaw("{$fullName} LIKE ? ESCAPE '!'", [$pattern]));
+        }
+
+        return $query;
     }
 }

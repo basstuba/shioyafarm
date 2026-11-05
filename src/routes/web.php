@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\AddAddressController;
 use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminPasswordResetController;
+use App\Http\Controllers\AdminPurchaseController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
@@ -109,10 +111,19 @@ Route::prefix('admin')->group(function () {
         Route::post('/reset-password', [AdminPasswordResetController::class, 'update'])->middleware('throttle:password-reset')->name('admin.password.update');
     });
 
-    // 未ログインは /admin/login へ（会員の /login ではない。bootstrap/app.php）
-    Route::middleware('auth:admin')->group(function () {
+    // 未ログインは /admin/login へ（会員の /login ではない。bootstrap/app.php）。
+    // 応答はブラウザに保存させない（no-store。ログアウト後に戻るボタンで管理画面が表示されないようにする）
+    Route::middleware(['auth:admin', 'no-store'])->group(function () {
         Route::get('/', [AdminHomeController::class, 'index'])->name('admin.home');
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
+        // 注文一覧（検索・発送済みの更新。詳細のモーダルは Livewire の AdminPurchaseDetail）
+        Route::get('/purchase', [AdminPurchaseController::class, 'index'])->name('admin.purchase.index');
+        Route::get('/purchase/search', [AdminPurchaseController::class, 'search'])->name('admin.purchase.search');
+        Route::post('/purchase/update', [AdminPurchaseController::class, 'update'])->name('admin.purchase.update');
+
+        // エクスポート（type で種類を指定する。注文一覧のほか、予約一覧でも使う）
+        Route::post('/export', [AdminExportController::class, 'export'])->name('admin.export');
     });
 });
 

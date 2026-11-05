@@ -123,8 +123,11 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | shipping_fee | integer | | | ○ | |
 | cod_fee | integer | | | ○ | |
 | total_price | integer | | | ○ | |
+| shipped | boolean | | | ○ | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+
+`shipped` は発送済みかどうか（既定値 false）。管理画面の注文一覧のチェックで切り替える（設計書にはなかった追加カラム）。管理者だけが見て、マイページ・メールには出さない。日時は持たない。
 
 ## purchase_history_items（購入商品データ）
 
