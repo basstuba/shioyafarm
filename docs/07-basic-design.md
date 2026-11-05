@@ -71,7 +71,8 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/purchase/search` | GET | AdminPurchaseController | search | 必須 | 注文検索機能（発送状況 `shipped`＝0 未発送・1 発送済、注文日 `date`＝Y-m-d、注文者名 `name`。入力の誤りは `/admin/purchase` に戻してエラーを表示） |
 | `/admin/purchase/update` | POST | AdminPurchaseController | update | 必須 | 注文発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない注文は422） |
 | `/admin/reservations` | GET | AdminReservationController | index | 必須 | 管理画面予約一覧ページ表示機能 |
-| `/admin/reservations/search` | GET | AdminReservationController | search | 必須 | 予約検索機能 |
+| `/admin/reservations/search` | GET | AdminReservationController | search | 必須 | 予約検索機能（発送状況 `shipped`＝0 未発送・1 発送済、予約日 `date`＝Y-m-d、予約者名 `name`。入力の誤りは `/admin/reservations` に戻してエラーを表示） |
+| `/admin/reservations/update` | POST | AdminReservationController | update | 必須 | 予約発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない予約は422） |
 | `/admin/notices` | GET | AdminNoticeController | index | 必須 | 管理画面お知らせ一覧ページ表示 |
 | `/admin/notices/search` | GET | AdminNoticeController | search | 必須 | お知らせ検索機能 |
 | `/admin/notices/create` | GET | AdminNoticeController | create | 必須 | お知らせ作成ページ表示 |
@@ -85,7 +86,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/items/edit` | GET | AdminItemController | edit | 必須 | 掲載商品修正ページ表示 |
 | `/admin/items/update` | POST | AdminItemController | update | 必須 | 掲載商品修正機能 |
 | `/admin/items/delete` | DELETE | AdminItemController | delete | 必須 | 掲載商品削除機能 |
-| `/admin/export` | POST | AdminExportController | export | 必須 | エクスポート機能（`type` で種類を指定する。現在は `purchase`＝注文一覧のみで、予約一覧の実装時に `reservation` を足す。不正な種類はエラー。検索条件 `shipped`・`date`・`name` は注文一覧の検索と同じで、ページ番号は無視して全件を出力する。.xlsx・ファイル名 `注文一覧_YYYYMMDD.xlsx`） |
+| `/admin/export` | POST | AdminExportController | export | 必須 | エクスポート機能（`type` で種類を指定する。`purchase`＝注文一覧、`reservation`＝予約一覧。不正な種類はエラー。検索条件 `shipped`・`date`・`name` は各一覧の検索と同じで、ページ番号は無視して全件を出力する。入力の誤りは、種類に応じて `/admin/purchase`・`/admin/reservations` に戻してエラーを表示する（種類が不正なときは `/admin/purchase`）。.xlsx・ファイル名 `注文一覧_YYYYMMDD.xlsx`・`予約一覧_YYYYMMDD.xlsx`） |
 | `/admin/mail/user/{user_id}` | GET | AdminMailController | createUserMail | 必須 | メール作成ページ表示 |
 | `/admin/mail/inquiry/{inquiry_id}` | GET | AdminMailController | createInquiryMail | 必須 | メール作成ページ表示 |
 | `/admin/mail/send` | POST | AdminMailController | send | 必須 | メール送信機能 |
@@ -140,6 +141,8 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 ### 管理画面
 
 - 管理者用ログインページ
+- 管理者のパスワード再設定メールの送信ページ
+- 管理者の新しいパスワードの設定ページ
 - 管理画面トップページ
 - 管理画面ユーザー一覧ページ
 - 管理画面注文一覧ページ
@@ -177,7 +180,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | PasswordResetMail | パスワード再設定メールの送信ページで、登録済みのメールアドレスを送信したとき（`/forgot-password`。`User::sendPasswordResetNotification` から送る） | 【しおや農園】パスワード再設定のご案内 |
 | AdminPasswordResetMail | 管理者のパスワード再設定メールの送信ページで、登録済みの管理者のメールアドレスを送信したとき（`/admin/forgot-password`。`Admin::sendPasswordResetNotification` から送る。宛名は管理者名。会員のメールとは別の仕組み） | 【しおや農園】管理画面のパスワード再設定のご案内 |
 
-本文の構成（Markdownメール。HTML版とテキスト版）：宛名（会員の氏名）、再設定の手順、「パスワードを再設定する」ボタン、リンクの有効期限（60分）、心当たりがなければ破棄してよい旨、署名。Laravel 標準の英語の通知は使わない。送信に失敗したときは、発行したトークンを削除してからエラーにする（使えないトークンを残さない）。未登録・退会済みのメールアドレスと、1分以内の再送信では送らない。
+本文の構成（Markdownメール。HTML版とテキスト版。会員のメールと管理者のメールで共通）：宛名（「〇〇 様」。会員のメールは会員の氏名、管理者のメールは管理者名）、再設定のご依頼を受け付けた旨と手順、「パスワードを再設定する」ボタン、リンクの有効期限（60分）と、期限切れ・使用済みのときの再請求の案内、ボタンを押せないときのURL、心当たりがなければ破棄してよい旨、送信専用である旨、署名。違いは次のとおり。会員のメールは「パスワードの再設定」と書き、再請求の案内は「ログインページ」の「パスワードをお忘れの方」、送信専用の案内の後にお問い合わせフォームへのリンクを付ける。管理者のメールは「管理画面のパスワードの再設定」と書き、再請求の案内は「管理者用ログインページ」の「パスワードをお忘れの方」、お問い合わせフォームの案内とリンクは付けない（送信専用である旨のみ）。Laravel 標準の英語の通知は使わない。送信に失敗したときは、発行したトークンを削除してからエラーにする（使えないトークンを残さない）。未登録・退会済みのメールアドレス（管理者のメールは、管理者として登録されていないメールアドレス）と、1分以内の再送信では送らない。
 
 ## バリデーション
 
@@ -271,22 +274,42 @@ user_idと合計金額はcontrollerで取得
 
 ### ExportRequest.php（エクスポート）
 
-注文一覧の検索条件（PurchaseSearchRequest）を引き継ぎ、種類を加えたもの。
+注文一覧・予約一覧の検索条件（PurchaseSearchRequest・ReservationSearchRequest。共通の AdminListSearchRequest）を引き継ぎ、種類を加えたもの。エラーの戻り先と、メッセージの「注文」「予約」は、種類で切り替える（種類は一覧の種類を表す `AdminListType`。値は `purchase`・`reservation`。語・ルート・テーブルなどの対応はこの enum を正とする）。
 
 | フォーム | ルール |
 |---|---|
-| 種類（type） | 入力必須、指定の値のみ（`purchase`） |
+| 種類（type） | 入力必須、指定の値のみ（`purchase`・`reservation`） |
 | 発送状況（shipped） | 必須ではない、0 か 1 |
-| 注文日（date） | 必須ではない、`Y-m-d` 形式の日付 |
-| 注文者名（name） | 必須ではない、文字列、100文字以下 |
+| 注文日・予約日（date） | 必須ではない、`Y-m-d` 形式の日付 |
+| 注文者名・予約者名（name） | 必須ではない、文字列、100文字以下、正しい UTF-8（壊れた文字を含む値はエラーにする。絞り込みが外れて全件が表示・出力されるのを防ぐため） |
 
-### PurchaseSearchRequest.php（注文検索）・AdminPurchaseUpdateRequest.php（発送済みの更新）
+### PurchaseSearchRequest.php（注文検索）・ReservationSearchRequest.php（予約検索）・AdminPurchaseUpdateRequest.php・AdminReservationUpdateRequest.php（発送済みの更新）
 
 | フォーム | ルール |
 |---|---|
-| 発送状況（shipped）・注文日（date）・注文者名（name） | ExportRequest と同じ（すべて必須ではない） |
-| 注文（id）※更新 | 入力必須、整数値、存在する注文 |
+| 発送状況（shipped）・注文日／予約日（date）・注文者名／予約者名（name） | ExportRequest と同じ（すべて必須ではない） |
+| 注文／予約（id）※更新 | 入力必須、整数値、存在する注文／予約 |
 | 発送済み（shipped）※更新 | 入力必須、真偽値 |
+
+### AdminPasswordResetLinkRequest.php（管理者のパスワード再設定メールの送信）
+
+会員の PasswordResetLinkRequest を引き継ぐ（ルールとメッセージは同じ）。入力の誤りは `/admin/forgot-password` に戻す。
+
+| フォーム | ルール |
+|---|---|
+| メールアドレス（email） | 入力必須、文字列、メールアドレスの形式（エラーメッセージは会員登録と同じ。「メールアドレスを入力してください」「メールアドレスは文字で入力してください」「メールアドレスは有効なメールアドレス形式で入力してください」）。管理者として登録されているかどうかは検証しない（結果を漏らさないため） |
+
+### AdminNewPasswordRequest.php（管理者の新しいパスワードの設定）
+
+会員の NewPasswordRequest を引き継ぐ（ルールとメッセージは同じ）。入力の誤りは直前のページ（メールのリンクの再設定ページ）に戻す。
+
+| フォーム | ルール |
+|---|---|
+| トークン（token） | 入力必須、文字列（エラーは「このリンクは無効です」） |
+| メールアドレス（email） | 入力必須、文字列、メールアドレスの形式（メッセージは会員登録と同じ） |
+| パスワード（password） | 入力必須、文字列（「パスワードを入力してください」「パスワードは文字で入力してください」） |
+
+パスワードの桁数（8文字以上）と確認用パスワードとの一致は、トークンの確認の後に AdminPasswordResetService で検証する（「パスワードは8文字以上で入力してください」「パスワードと確認用パスワードが一致しません」。会員の再設定と同じ順）。検証に失敗したときはトークンを消さないので、同じリンクで入力し直せる。使用済み・期限切れ・改ざんされたトークン（メールアドレスの食い違いを含む）は、再設定ページに「このリンクは無効か、有効期限が切れています。もう一度再設定メールを送信してください。」を表示する。
 
 ### MailRequest.php（メール作成）
 

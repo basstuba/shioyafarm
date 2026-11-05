@@ -15,6 +15,7 @@ effort: high
 - シナリオ・受け入れ条件・期待結果は書き換えない。期待結果があいまいで判断できない場合は「判定保留」として理由を書く。
 - 実際に画面で確認できたことだけをOKにする。確認できなかったシナリオは、その理由とともに「未実施」と書く。
 - `git switch` / `git commit` などのgit操作は行わない。
+- `npx` は実行しない。必要になったら作業を止めて、メインセッションに報告する（`npx` の実行はメインセッションだけが行う）。
 
 ## 手順
 
@@ -28,6 +29,9 @@ effort: high
 ### 2. 実施
 
 - Playwright MCP（`mcp__playwright__*`）で http://localhost を操作する。
+- 複数の手順は `browser_run_code_unsafe` にまとめて実行する。
+- ファイルのダウンロード（エクスポートなど）はページ移動を伴わないので、通常のクリックや、ページ移動の完了待ち（`waitForNavigation` など）で待たない。`browser_run_code_unsafe` の中で `page.waitForEvent('download')` を先に待ち受けてから押し、保存してから中身を確認する。
+- Playwright MCP が応答しなくなったら粘らず、止まったシナリオ・ツール・操作・直前の画面を記録して、残りを e2e の Playwright のスクリプトに切り替える（`require('<リポジトリ>/e2e/node_modules/playwright')` で読み込み、`timeout 120 node <スクリプト>` で実行する。スクリプトはリポジトリの外に置く）。
 - シナリオごとに、`browser_resize` でPC（1280×800）とSP（414×896）を切り替えて確認する。
 - 画面の内容は `browser_snapshot` で確認し、スクリーンショットは `browser_take_screenshot` で撮る。保存先は、シナリオの md と同じ側（admin/ か user/）の `docs/uat/<admin|user>/screenshots/<機能名>/<シナリオID>-<pc|sp>.png`。別の場所に保存された場合は移動する。
 - 各シナリオの後に `browser_console_messages` でコンソールエラーを確認する。

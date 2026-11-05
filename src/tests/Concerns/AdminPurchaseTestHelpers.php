@@ -4,11 +4,12 @@ namespace Tests\Concerns;
 
 use App\Models\Admin;
 use App\Models\Purchase_history;
+use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * 管理画面の注文一覧のテストで使う、管理者のログインと注文を作る補助
+ * 管理画面の注文一覧・予約一覧のテストで使う、管理者のログインと注文・予約を作る補助
  */
 trait AdminPurchaseTestHelpers
 {
@@ -74,5 +75,34 @@ trait AdminPurchaseTestHelpers
         }
 
         return $orders;
+    }
+
+    /**
+     * 予約を作る（会員を指定しないときは新しい会員）。$createdAt は日本時間。商品は「北の恵みセット 10kg 1,450円」
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function makeAdminReservation(?User $user = null, ?string $createdAt = null, string $method = 'card', array $overrides = []): Reservation
+    {
+        return $this->makeReservation(
+            $user ?? User::factory()->create(),
+            $method,
+            $createdAt === null ? $overrides : [...$overrides, 'created_at' => $createdAt],
+        );
+    }
+
+    /**
+     * 予約を n 件作る（作った順＝ID の昇順）
+     *
+     * @return list<Reservation>
+     */
+    private function makeAdminReservations(int $count): array
+    {
+        $reservations = [];
+        for ($i = 0; $i < $count; $i++) {
+            $reservations[] = $this->makeAdminReservation();
+        }
+
+        return $reservations;
     }
 }

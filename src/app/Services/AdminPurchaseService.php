@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Exports\PurchaseExport;
 use App\Models\Purchase_history;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
-use Carbon\CarbonImmutable;
+use App\Services\Concerns\PaginatesAdminList;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
@@ -15,8 +15,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class AdminPurchaseService
 {
-    /** 一覧の1ページの件数 */
-    public const int PER_PAGE = 10;
+    use PaginatesAdminList;
 
     public function __construct(
         private readonly PurchaseHistoryRepositoryInterface $purchaseHistoryRepository,
@@ -30,15 +29,9 @@ class AdminPurchaseService
      */
     public function search(array $conditions): LengthAwarePaginator
     {
-        $criteria = $this->criteria($conditions);
-        $paginator = $this->purchaseHistoryRepository->paginateForAdmin($criteria, self::PER_PAGE);
+        $criteria = AdminListCriteria::fromConditions($conditions);
 
-        // 存在しないページ（?page=99 など）は、空の表ではなく最終ページを表示する
-        if ($paginator->total() > 0 && $paginator->currentPage() > $paginator->lastPage()) {
-            $paginator = $this->purchaseHistoryRepository->paginateForAdmin($criteria, self::PER_PAGE, $paginator->lastPage());
-        }
-
-        return $paginator;
+        return $this->paginateWithinRange(fn (?int $page): LengthAwarePaginator => $this->purchaseHistoryRepository->paginateForAdmin($criteria, self::PER_PAGE, $page));
     }
 
     /**
@@ -66,29 +59,6 @@ class AdminPurchaseService
      */
     public function purchaseExport(array $conditions): PurchaseExport
     {
-        return new PurchaseExport($this->purchaseHistoryRepository->lazyForExport($this->criteria($conditions)));
-    }
-
-    /**
-     * 検索欄の値を、リポジトリに渡す条件にする
-     *
-     * 注文日は日本時間（アプリのタイムゾーン）のその日の0時から翌日の0時の手前まで。
-     * 注文者名は、半角・全角のスペースを除く（「山田 太郎」でも「山田太郎」でも見つかるように、姓名をつなげた文字列に合わせる）。
-     *
-     * @param  array{shipped?: string, date?: string, name?: string}  $conditions
-     * @return array{shipped: bool|null, from: CarbonImmutable|null, to: CarbonImmutable|null, name: string}
-     */
-    private function criteria(array $conditions): array
-    {
-        $shipped = $conditions['shipped'] ?? '';
-        $date = $conditions['date'] ?? '';
-        $from = $date === '' ? null : CarbonImmutable::createFromFormat('!Y-m-d', $date, (string) config('app.timezone'));
-
-        return [
-            'shipped' => $shipped === '' ? null : $shipped === '1',
-            'from' => $from ?: null,
-            'to' => $from ? $from->addDay() : null,
-            'name' => (string) preg_replace('/[\s\x{3000}]+/u', '', $conditions['name'] ?? ''),
-        ];
+        return new PurchaseExport($this->purchaseHistoryRepository->lazyForExport(AdminListCriteria::fromConditions($conditions)));
     }
 }

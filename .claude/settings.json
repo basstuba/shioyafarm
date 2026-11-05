@@ -15,7 +15,8 @@
       "Bash(git clean:*)",
       "Bash(*migrate:fresh*)",
       "Bash(*migrate:reset*)",
-      "Bash(*db:wipe*)"
+      "Bash(*db:wipe*)",
+      "Bash(*npx*)"
     ]
   },
   "hooks": {

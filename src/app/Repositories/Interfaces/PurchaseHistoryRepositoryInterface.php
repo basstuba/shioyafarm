@@ -3,7 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Purchase_history;
-use Carbon\CarbonInterface;
+use App\Services\AdminListCriteria;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\LazyCollection;
 use Throwable;
@@ -44,18 +44,16 @@ interface PurchaseHistoryRepositoryInterface
     /**
      * 管理画面の注文一覧を新しい順にページ分けして取得（注文者を Eager Load する。退会済みの会員の注文も含む）
      *
-     * @param  array{shipped: bool|null, from: CarbonInterface|null, to: CarbonInterface|null, name: string}  $criteria  発送状況・注文日の範囲（from 以上 to 未満）・注文者名（スペースを除いた姓名の部分一致）。絞り込まない項目は null か空文字
      * @return LengthAwarePaginator<int, Purchase_history>
      */
-    public function paginateForAdmin(array $criteria, int $perPage, ?int $page = null): LengthAwarePaginator;
+    public function paginateForAdmin(AdminListCriteria $criteria, int $perPage, ?int $page = null): LengthAwarePaginator;
 
     /**
      * 管理画面のエクスポート用に、検索条件に合う注文を新しい順に少しずつ取得する（注文者・購入商品を Eager Load する）
      *
-     * @param  array{shipped: bool|null, from: CarbonInterface|null, to: CarbonInterface|null, name: string}  $criteria
      * @return LazyCollection<int, Purchase_history>
      */
-    public function lazyForExport(array $criteria): LazyCollection;
+    public function lazyForExport(AdminListCriteria $criteria): LazyCollection;
 
     /**
      * 管理画面の詳細の表示に必要な関連（注文者・商品・振込先）つきで、注文を1件取得する（存在しない注文は null）
