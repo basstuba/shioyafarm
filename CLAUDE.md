@@ -53,6 +53,8 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 
 設計書のルートを実装するときは `/add-feature` スキルを使う。作業ブランチを切る → 受け入れ条件とUATシナリオ（`docs/uat/admin/` または `docs/uat/user/`）を作ってユーザーのOKをもらう → `implementer` エージェント（sonnet / effort: high）が実装・テスト → テストが通ってから `uat-tester` エージェントがPlaywrightでUAT → `/code-review` でレビュー → ユーザーがチェックリストで受け入れ確認、の順に進める。`main` ブランチ上で `src/` を編集するとhookでブロックされる。マイグレーションは、`main` にコミット済みのものと、DBに適用済みのものの書き換えがhookでブロックされる（修正用のマイグレーションを追加して直す）。
 
+サブエージェント（`implementer`・`uat-tester` など）の Bash は、`.claude/hooks/guard-agent-commands.py` が検査し、git の読み取り以外のサブコマンド・`rm` の再帰/強制などの削除・DBやコンテナの破壊（`migrate:fresh`・`docker compose down -v` など）・`npx` をブロックする（メインセッションは対象外。必要な操作はメインセッションに報告して任せる）。
+
 作業ブランチを `main` にマージする前には、作業ブランチ上ですべてコミットしてから `./scripts/verify.sh` を実行し、CIと同じ項目（Pint `--test`・Larastan・テストとカバレッジ80%・`composer audit`・`npm run build`・`npm audit`）に、`composer validate`・`route:cache`・`view:cache`（全Bladeのコンパイル。終わったらキャッシュは消す）を加えて通ることを確かめる。`main` 上の `git merge` は、マージするブランチの先頭コミットが検証済みでないとhookでブロックされる（検証のあとにコミットを足したら再実行する）。静的解析はエラー0件を保つ。`laravel-verification` スキルは毎回は使わず、2回目のE2Eの前とREADMEを書く前の節目に手動で実行する。
 
 `main` への push のたびに GitHub Actions（`.github/workflows/ci.yml`）が、Pint（`--test`）・Larastan・テスト（カバレッジ80%未満で失敗）・`composer audit`・`npm run build`・`npm audit` を実行する。E2Eは含めない。
