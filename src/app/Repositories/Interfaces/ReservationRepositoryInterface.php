@@ -3,7 +3,9 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Reservation;
+use App\Services\AdminListCriteria;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\LazyCollection;
 use Throwable;
 
 /**
@@ -42,4 +44,28 @@ interface ReservationRepositoryInterface
      * サンクスメールの表示に必要な関連（会員・商品。銀行振込のときは振込先も）を、まだ読み込んでいなければ読み込む
      */
     public function loadForThanksMail(Reservation $reservation): Reservation;
+
+    /**
+     * 管理画面の予約一覧を新しい順にページ分けして取得（予約者を Eager Load する。退会済みの会員の予約も含む）
+     *
+     * @return LengthAwarePaginator<int, Reservation>
+     */
+    public function paginateForAdmin(AdminListCriteria $criteria, int $perPage, ?int $page = null): LengthAwarePaginator;
+
+    /**
+     * 管理画面のエクスポート用に、検索条件に合う予約を新しい順に少しずつ取得する（予約者・商品を Eager Load する）
+     *
+     * @return LazyCollection<int, Reservation>
+     */
+    public function lazyForExport(AdminListCriteria $criteria): LazyCollection;
+
+    /**
+     * 管理画面の詳細の表示に必要な関連（予約者・商品・振込先）つきで、予約を1件取得する（存在しない予約は null）
+     */
+    public function findDetailForAdmin(int $id): ?Reservation;
+
+    /**
+     * 予約の発送済みかどうかを更新する
+     */
+    public function updateShipped(int $id, bool $shipped): void;
 }

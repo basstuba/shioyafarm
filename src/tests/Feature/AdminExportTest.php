@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Exports\PurchaseExport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -279,5 +280,77 @@ class AdminExportTest extends TestCase
         $response = $this->export();
 
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+    }
+
+    /**
+     * 壊れた文字（不正な UTF-8）を含む注文者名は、注文一覧に戻ってエラーになり、ファイルは出力されない
+     */
+    #[Test]
+    public function 不正なutf8の注文者名はエクスポートできない(): void
+    {
+        $this->makeOrder($this->makeUser('山田', '太郎'));
+        $this->makeOrder($this->makeUser('佐藤', '花子'));
+
+        $this->export(['type' => 'purchase', 'name' => "山田\xFF"])
+            ->assertRedirect(route('admin.purchase.index'))
+            ->assertSessionHasErrors(['name' => '注文者名は文字で入力してください。'])
+            ->assertHeaderMissing('Content-Disposition');
+    }
+
+    /**
+     * 注文のエクスポートは Eager Load され、注文・商品の件数が増えてもクエリ数が変わらない
+     */
+    #[Test]
+    public function 注文のエクスポートのクエリ数は件数に依らない(): void
+    {
+        $this->loginAsAdmin();
+        $this->makeOrder(lines: [['じゃがいも', 2, 330, 1], ['玉ねぎ', 5, 795, 1]]);
+        $this->makeOrder();
+        DB::enableQueryLog();
+        $this->post(route('admin.export'), ['type' => 'purchase'])->assertOk();
+        $few = count(DB::getQueryLog());
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->makeOrder(lines: [['にんじん', 2, 418, 1], ['人参', 10, 500, 3]]);
+        }
+        DB::flushQueryLog();
+        $this->post(route('admin.export'), ['type' => 'purchase'])->assertOk();
+        $many = count(DB::getQueryLog());
+
+        $this->assertSame($few, $many);
+    }
+
+    /**
+     * 注文の検索条件の誤りは、これまでどおり注文一覧に戻って注文の文言になる
+     */
+    #[Test]
+    public function 注文の検索条件の誤りは注文一覧に戻り注文の文言になる(): void
+    {
+        $this->loginAsAdmin();
+
+        $this->post(route('admin.export'), ['type' => 'purchase', 'date' => 'abc'])
+            ->assertRedirect(route('admin.purchase.index'))
+            ->assertSessionHasErrors(['date' => '注文日は日付で入力してください。']);
+        $this->post(route('admin.export'), ['type' => 'purchase', 'name' => str_repeat('あ', 101)])
+            ->assertSessionHasErrors(['name' => '注文者名は100文字以内で入力してください。']);
+    }
+
+    /**
+     * 種類が不正・未指定・配列のときは、注文一覧に戻る
+     */
+    #[Test]
+    public function 種類が不正なときは注文一覧に戻る(): void
+    {
+        $this->loginAsAdmin();
+
+        foreach ([['type' => 'unknown'], [], ['type' => ['reservation']]] as $data) {
+            $this->post(route('admin.export'), $data)
+                ->assertRedirect(route('admin.purchase.index'))
+                ->assertSessionHasErrors('type');
+        }
+        // 種類が不正でも、日付の誤りは注文の文言で戻る
+        $this->post(route('admin.export'), ['type' => 'unknown', 'date' => 'abc'])
+            ->assertRedirect(route('admin.purchase.index'))
+            ->assertSessionHasErrors(['date' => '注文日は日付で入力してください。']);
     }
 }

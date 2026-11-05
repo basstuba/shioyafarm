@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Livewire\MyPagePurchaseHistory;
+use App\Models\Item;
+use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -20,14 +22,30 @@ class AdminPurchaseUpdateTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * 新しい注文は未発送で始まる
+     * 発送済みを渡さずに作った注文は、DB の既定値で未発送になる（Factory を通さず、購入の保存の経路で作る）
      */
     #[Test]
-    public function 新しい注文は未発送で始まる(): void
+    public function 購入の保存の経路で作った注文は未発送で始まる(): void
     {
-        $order = $this->makeOrder();
+        $user = $this->makeUser('山田', '太郎');
+        $item = Item::factory()->create(['is_reserved_only' => false, 'price' => 330]);
 
-        $this->assertFalse($order->fresh()->shipped);
+        $created = app(PurchaseHistoryRepositoryInterface::class)->createWithItems([
+            'user_id' => $user->id,
+            'delivery_name' => '山田 太郎',
+            'delivery_prefecture' => '北海道',
+            'delivery_city' => '札幌市',
+            'delivery_tell' => '09012345678',
+            'payment_method' => 'card',
+            'shipping_fee' => 940,
+            'cod_fee' => 0,
+            'total_price' => 1270,
+        ], [
+            ['item_id' => $item->id, 'quantity' => 1, 'price' => 330, 'subtotal' => 330],
+        ]);
+
+        $this->assertDatabaseHas('purchase_histories', ['id' => $created->id, 'shipped' => 0]);
+        $this->assertFalse($created->fresh()->shipped);
     }
 
     /**
