@@ -3,34 +3,11 @@
 @section('page-title', '管理画面 | Shioya Farm')
 
 {{--
-    管理画面のトップページ。ヘッダー・フッターは layouts/admin/top。
-    リンク先の画面は未実装のため url() で書く（画面ができるまでは404）。各画面のブランチで route() に置き換える。
+    管理画面のトップページ。レイアウトは layouts/admin/top（サイドメニューなし）。
+    リンクは、サイドメニューと共通の App\Support\AdminNav。未実装の画面は url() で書いてある（画面ができるまでは404）ため、各画面のブランチで AdminNav の route() に置き換える。
 --}}
 @php
-    $cards = [
-        [
-            'title' => '各種一覧',
-            'titleClass' => 'text-accent-hover',
-            'linkClass' => 'decoration-accent-hover',
-            'links' => [
-                ['label' => '注文一覧', 'url' => url('/admin/purchase')],
-                ['label' => '予約一覧', 'url' => url('/admin/reservations')],
-                ['label' => '会員一覧', 'url' => url('/admin/users')],
-                ['label' => 'お問い合わせ一覧', 'url' => url('/admin/inquiries')],
-                ['label' => 'お知らせ一覧', 'url' => url('/admin/notices')],
-                ['label' => '掲載商品一覧', 'url' => url('/admin/items')],
-            ],
-        ],
-        [
-            'title' => '作成・登録',
-            'titleClass' => 'text-primary-text',
-            'linkClass' => 'decoration-primary-text',
-            'links' => [
-                ['label' => 'お知らせ作成', 'url' => url('/admin/notices/create')],
-                ['label' => '掲載商品登録', 'url' => url('/admin/items/create')],
-            ],
-        ],
-    ];
+    $cards = \App\Support\AdminNav::groups();
 @endphp
 
 @section('content')

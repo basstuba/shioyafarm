@@ -64,6 +64,15 @@
     --color-admin-bar: #f9f9f9;
     --color-admin-bar-end: #ededed;
 
+    /*
+     * 管理画面の灰色（注文一覧など）。admin-gray：ボタン（リセットのホバー・エクスポート）・ページ送り・チェックボックス、
+     * admin-head：表の見出し行の地、admin-dark：エクスポートのホバー・フォーカスの地、admin-shipped：発送済みの行の地
+     */
+    --color-admin-gray: #6c6c6c;
+    --color-admin-head: #545454;
+    --color-admin-dark: #424242;
+    --color-admin-shipped: #d4d4d4;
+
     --spacing-header: 70px;
 
     --shadow-card: 0 4px 20px rgb(0 0 0 / 0.25);

@@ -22,6 +22,8 @@ final readonly class OrderDetail
      *
      * @param  list<array{name: string, price: int, quantity: int, subtotal: int}>  $lines  商品の明細
      * @param  int|null  $codFee  代引手数料（代金引換のときだけ）
+     * @param  int|null  $orderId  注文管理番号（購入履歴のID。管理画面の詳細だけ）
+     * @param  string|null  $ordererName  注文者の姓名（管理画面の詳細だけ。会員を Eager Load 済みのときだけ入る）
      */
     public function __construct(
         public ?CarbonInterface $orderedAt,
@@ -34,6 +36,8 @@ final readonly class OrderDetail
         public string $deliveryTell,
         public string $paymentLabel,
         public ?BankTransferInfo $bankTransfer,
+        public ?int $orderId = null,
+        public ?string $ordererName = null,
     ) {}
 
     /**
@@ -64,6 +68,8 @@ final readonly class OrderDetail
             deliveryTell: $purchase->delivery_tell,
             paymentLabel: $method?->label() ?? $purchase->payment_method,
             bankTransfer: $method?->usesBankTransfer() ? self::bankTransferInfo($purchase->purchaseBankTransfer) : null,
+            orderId: $purchase->id,
+            ordererName: $purchase->relationLoaded('user') ? $purchase->user->full_name : null,
         );
     }
 
