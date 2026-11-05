@@ -25,7 +25,20 @@ class Purchase_history extends Model
         'shipping_fee',
         'cod_fee',
         'total_price',
+        'shipped',
     ];
+
+    /**
+     * キャストする属性
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'shipped' => 'boolean',
+        ];
+    }
 
     /**
      * 購入した会員（退会済みの会員を含む）

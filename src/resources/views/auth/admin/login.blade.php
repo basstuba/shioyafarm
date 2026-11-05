@@ -14,6 +14,8 @@
 @section('form')
     <form class="mx-auto flex w-full max-w-[600px] flex-col gap-6 rounded-[20px] bg-white px-6 py-8 shadow-card lg:min-h-[450px] lg:gap-15 lg:px-8 lg:pt-12 xl:px-25" action="{{ route('admin.login.store') }}" method="POST" novalidate>
         @csrf
+        {{-- ログイン画面を開いたら、サイドメニューの開閉の保存（layouts/admin/app の open）を消す（ログイン直後は開く） --}}
+        <div x-data x-init="localStorage.removeItem('admin-sidebar-open')" hidden></div>
         @if (session('status'))
             <x-admin-status>{{ session('status') }}</x-admin-status>
         @endif

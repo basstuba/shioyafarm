@@ -28,6 +28,7 @@ class Purchase_historyFactory extends Factory
             'shipping_fee' => 940,
             'cod_fee' => 0,
             'total_price' => 1270,
+            'shipped' => false,
         ];
     }
 }
