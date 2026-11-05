@@ -14,6 +14,7 @@ class Reservation extends Model
 {
     use HasFactory;
 
+    // shipped（発送済み）は一括代入の対象にしない。管理画面の更新（リポジトリの updateShipped）だけで変える
     protected $fillable = [
         'user_id',
         'item_id',
@@ -28,6 +29,18 @@ class Reservation extends Model
         'shipping_fee',
         'total_price',
     ];
+
+    /**
+     * キャストする属性
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'shipped' => 'boolean',
+        ];
+    }
 
     /**
      * 予約した会員（退会済みの会員を含む）

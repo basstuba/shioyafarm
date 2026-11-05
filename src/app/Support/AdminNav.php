@@ -38,7 +38,7 @@ class AdminNav
                 'linkClass' => 'decoration-accent-hover',
                 'links' => [
                     ['label' => '注文一覧', 'url' => route('admin.purchase.index'), 'active' => ['admin/purchase', 'admin/purchase/*']],
-                    ['label' => '予約一覧', 'url' => url('/admin/reservations'), 'active' => ['admin/reservations']],
+                    ['label' => '予約一覧', 'url' => route('admin.reservations.index'), 'active' => ['admin/reservations', 'admin/reservations/*']],
                     ['label' => '会員一覧', 'url' => url('/admin/users'), 'active' => ['admin/users']],
                     ['label' => 'お問い合わせ一覧', 'url' => url('/admin/inquiries'), 'active' => ['admin/inquiries']],
                     ['label' => 'お知らせ一覧', 'url' => url('/admin/notices'), 'active' => ['admin/notices']],

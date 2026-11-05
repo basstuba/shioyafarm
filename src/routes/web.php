@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
+use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
@@ -121,6 +122,11 @@ Route::prefix('admin')->group(function () {
         Route::get('/purchase', [AdminPurchaseController::class, 'index'])->name('admin.purchase.index');
         Route::get('/purchase/search', [AdminPurchaseController::class, 'search'])->name('admin.purchase.search');
         Route::post('/purchase/update', [AdminPurchaseController::class, 'update'])->name('admin.purchase.update');
+
+        // 予約一覧（検索・発送済みの更新。詳細のモーダルは Livewire の AdminReservationDetail）
+        Route::get('/reservations', [AdminReservationController::class, 'index'])->name('admin.reservations.index');
+        Route::get('/reservations/search', [AdminReservationController::class, 'search'])->name('admin.reservations.search');
+        Route::post('/reservations/update', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
 
         // エクスポート（type で種類を指定する。注文一覧のほか、予約一覧でも使う）
         Route::post('/export', [AdminExportController::class, 'export'])->name('admin.export');

@@ -314,4 +314,28 @@ class AdminPurchaseSearchTest extends TestCase
         $this->get(route('admin.purchase.search', ['name' => ['a']]))->assertSessionHasErrors('name');
         $this->get(route('admin.purchase.search', ['date' => ['2026-11-04']]))->assertSessionHasErrors('date');
     }
+
+    /**
+     * 壊れた文字（不正な UTF-8）を含む注文者名はエラーにする（絞り込みが外れて全件が出ないようにする）
+     */
+    #[Test]
+    public function 不正なutf8の注文者名はエラーになり全件は表示されない(): void
+    {
+        $this->loginAsAdmin();
+        $this->makeOrder($this->makeUser('山田', '太郎'));
+        $this->makeOrder($this->makeUser('佐藤', '花子'));
+        $broken = "山田\xFF";
+
+        $this->get(route('admin.purchase.search', ['name' => $broken]))
+            ->assertRedirect(route('admin.purchase.index'))
+            ->assertSessionHasErrors(['name' => '注文者名は文字で入力してください。']);
+
+        // 戻った一覧は壊れず表示され、エラーは1件だけで、エクスポートは押せない
+        $html = $this->followingRedirects()
+            ->get(route('admin.purchase.search', ['name' => $broken]))
+            ->assertOk()
+            ->getContent();
+        $this->assertSame(1, substr_count($html, '注文者名は文字で入力してください。'));
+        $this->assertStringContainsString('type="submit" disabled>エクスポート</button>', $html);
+    }
 }

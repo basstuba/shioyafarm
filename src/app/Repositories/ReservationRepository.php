@@ -4,9 +4,13 @@ namespace App\Repositories;
 
 use App\Enums\PaymentMethod;
 use App\Models\Reservation;
+use App\Repositories\Concerns\AppliesAdminSearch;
 use App\Repositories\Interfaces\ReservationRepositoryInterface;
+use App\Services\AdminListCriteria;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\LazyCollection;
 use Override;
 
 /**
@@ -14,6 +18,11 @@ use Override;
  */
 class ReservationRepository implements ReservationRepositoryInterface
 {
+    use AppliesAdminSearch;
+
+    /** エクスポートで一度に読み込む予約の件数 */
+    private const int EXPORT_CHUNK_SIZE = 500;
+
     /**
      * 商品のすでに予約された数量の合計を取得
      */
@@ -84,5 +93,52 @@ class ReservationRepository implements ReservationRepositoryInterface
         }
 
         return $reservation;
+    }
+
+    /**
+     * 管理画面の予約一覧を新しい順（ID の降順）にページ分けして取得（予約者を Eager Load する）
+     *
+     * @return LengthAwarePaginator<int, Reservation>
+     */
+    #[Override]
+    public function paginateForAdmin(AdminListCriteria $criteria, int $perPage, ?int $page = null): LengthAwarePaginator
+    {
+        return $this->searchQuery($criteria)
+            ->with('user')
+            ->orderByDesc('id')
+            ->paginate($perPage, page: $page);
+    }
+
+    /**
+     * @return LazyCollection<int, Reservation>
+     */
+    #[Override]
+    public function lazyForExport(AdminListCriteria $criteria): LazyCollection
+    {
+        return $this->searchQuery($criteria)
+            ->with(['user', 'item'])
+            ->lazyByIdDesc(self::EXPORT_CHUNK_SIZE);
+    }
+
+    #[Override]
+    public function findDetailForAdmin(int $id): ?Reservation
+    {
+        return Reservation::with(['user', 'item', 'reservationBankTransfer'])->find($id);
+    }
+
+    #[Override]
+    public function updateShipped(int $id, bool $shipped): void
+    {
+        Reservation::whereKey($id)->update(['shipped' => $shipped]);
+    }
+
+    /**
+     * 管理画面の検索条件を適用したクエリ（条件の適用は AppliesAdminSearch）
+     *
+     * @return Builder<Reservation>
+     */
+    private function searchQuery(AdminListCriteria $criteria): Builder
+    {
+        return $this->applyAdminSearch(Reservation::query(), $criteria);
     }
 }

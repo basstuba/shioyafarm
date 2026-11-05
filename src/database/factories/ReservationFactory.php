@@ -32,6 +32,7 @@ class ReservationFactory extends Factory
             'payment_method' => 'card',
             'shipping_fee' => 1530,
             'total_price' => 2980,
+            'shipped' => false,
         ];
     }
 }
