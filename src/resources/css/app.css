@@ -72,6 +72,8 @@
     --color-admin-head: #545454;
     --color-admin-dark: #424242;
     --color-admin-shipped: #d4d4d4;
+    /* 会員一覧の「メール送信」リンク（Figmaの #2857ff。白の上で約5.4:1） */
+    --color-mail-link: #2857ff;
 
     --spacing-header: 70px;
 
@@ -113,6 +115,11 @@
 @utility underline-thick {
     text-decoration-thickness: 0.2em;
     text-underline-offset: 0.3em;
+}
+
+/* 管理画面の一覧の検索欄の入力欄・選択欄（<x-admin-search-input>・<x-admin-search-select>）。SPは高さ48px、PC（lg以上）は40px */
+@utility admin-search-control {
+    @apply h-12 w-full rounded-[10px] border border-line-strong bg-admin-bar px-3 text-base text-ink lg:h-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink;
 }
 
 /* Edge が出すパスワード欄の目のアイコンを隠す（入力欄の右端の「表示」ボタン（components/auth-input）と重なるため） */

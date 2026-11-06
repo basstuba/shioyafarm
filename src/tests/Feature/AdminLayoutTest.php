@@ -55,6 +55,7 @@ class AdminLayoutTest extends TestCase
         ], $links);
         // 注文一覧は route() で書く
         $this->assertSame(route('admin.purchase.index'), $links['注文一覧']);
+        $this->assertSame(route('admin.users.index'), $links['会員一覧']);
     }
 
     /**
@@ -79,6 +80,8 @@ class AdminLayoutTest extends TestCase
         $this->assertSame(['トップページ'], $current('/admin'));
         $this->assertSame(['注文一覧'], $current('/admin/purchase'));
         $this->assertSame(['注文一覧'], $current('/admin/purchase/search?name=a'));
+        $this->assertSame(['会員一覧'], $current('/admin/users'));
+        $this->assertSame(['会員一覧'], $current('/admin/users/search?name=a'));
     }
 
     /**

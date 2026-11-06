@@ -2,8 +2,9 @@
 
 namespace App\Livewire;
 
-use App\Livewire\Concerns\WithAdminOrderDetail;
+use App\Livewire\Concerns\WithAdminDetailModal;
 use App\Services\AdminReservationService;
+use App\Services\OrderDetail;
 use Illuminate\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -15,7 +16,8 @@ use Livewire\Component;
  */
 class AdminReservationDetail extends Component
 {
-    use WithAdminOrderDetail;
+    /** @use WithAdminDetailModal<OrderDetail> */
+    use WithAdminDetailModal;
 
     /**
      * 詳細を開く（存在しない予約は何も開かない）

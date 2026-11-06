@@ -47,6 +47,34 @@ trait AdminPurchaseTestHelpers
     }
 
     /**
+     * 退会済みの会員（deleted_at が入っている）を作る
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function makeWithdrawnUser(string $lastName = '退会', string $firstName = '花子', array $overrides = []): User
+    {
+        $user = User::factory()->create(['last_name' => $lastName, 'first_name' => $firstName, ...$overrides]);
+        $user->delete();
+
+        return $user;
+    }
+
+    /**
+     * 会員を n 人作る（作った順＝ID の昇順。登録日時は1分ずつ新しくなる）
+     *
+     * @return list<User>
+     */
+    private function makeUsers(int $count): array
+    {
+        $users = [];
+        for ($i = 0; $i < $count; $i++) {
+            $users[] = User::factory()->create(['created_at' => now()->subHour()->addMinutes($i)]);
+        }
+
+        return $users;
+    }
+
+    /**
      * 注文を作る（会員を指定しないときは新しい会員）。$createdAt は日本時間
      *
      * @param  list<array{0: string, 1: int, 2: int, 3: int}>  $lines  [商品名, 重量, 単価, 数量] の配列
