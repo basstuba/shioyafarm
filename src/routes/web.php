@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
 use App\Http\Controllers\AdminReservationController;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
@@ -127,6 +128,11 @@ Route::prefix('admin')->group(function () {
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('admin.reservations.index');
         Route::get('/reservations/search', [AdminReservationController::class, 'search'])->name('admin.reservations.search');
         Route::post('/reservations/update', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
+
+        // 会員一覧（検索・退会済みの会員の物理削除。詳細のモーダルは Livewire の AdminUserDetail。設計書にない追加ルート：delete）
+        Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+        Route::get('/users/search', [AdminUserController::class, 'search'])->name('admin.users.search');
+        Route::delete('/users/delete', [AdminUserController::class, 'delete'])->name('admin.users.delete');
 
         // エクスポート（type で種類を指定する。注文一覧のほか、予約一覧でも使う）
         Route::post('/export', [AdminExportController::class, 'export'])->name('admin.export');

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\AdminListType;
+use App\Support\SearchName;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Override;
@@ -39,8 +40,7 @@ abstract class AdminListSearchRequest extends FormRequest
             // 「0」「1」だけ（in:0,1 は緩い比較で「1.0」「01」も通ってしまい、サービスの判定とずれる）
             'shipped' => ['nullable', 'regex:/\A[01]\z/'],
             'date' => ['nullable', 'date_format:Y-m-d'],
-            // 文字列で、正しい UTF-8 であること（壊れた文字を含むと検索の処理が失敗し、絞り込みが外れて全件になるため。\A.*\z の /u は正しい UTF-8 でないと一致しない）。bail は、同じ文言のエラーを重ねて出さないため
-            'name' => ['nullable', 'bail', 'string', 'regex:/\A.*\z/su', 'max:100'],
+            'name' => SearchName::RULES,
         ];
     }
 

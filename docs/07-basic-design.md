@@ -65,8 +65,9 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/reset-password` | POST | AdminPasswordResetController | update | | 管理者のパスワード再設定機能（ルート名 `admin.password.update`。成功したら管理者用ログインページへ。使用済み・期限切れ（60分）・改ざんされたリンクはエラーにして、送信ページへのリンクを表示する。IPごとに1分5回まで） |
 | `/admin/logout` | POST | AdminAuthController | logout | 必須 | ログアウト機能 |
 | `/admin` | GET | AdminHomeController | index | 必須 | 管理画面トップページ表示 |
-| `/admin/users` | GET | AdminUserController | index | 必須 | 管理画面ユーザー一覧ページ表示機能 |
-| `/admin/users/search` | GET | AdminUserController | search | 必須 | ユーザー検索機能 |
+| `/admin/users` | GET | AdminUserController | index | 必須 | 管理画面ユーザー一覧ページ表示機能（画面の表示は「会員一覧」。退会済みの会員も含め、新しく登録した順に1ページ10件） |
+| `/admin/users/search` | GET | AdminUserController | search | 必須 | ユーザー検索機能（状態 `status`＝`member` 退会していない会員・`withdrawn` 退会済み、氏名 `name`。入力の誤りは `/admin/users` に戻してエラーを表示） |
+| `/admin/users/delete` | DELETE | AdminUserController | delete | 必須 | 退会済みの会員の物理削除機能（設計書にはなかった追加機能。`id` を受け取り、成功・失敗とも削除の前に見ていた検索条件・ページの一覧（直前のページが会員一覧・検索結果のとき。それ以外は `/admin/users`）に戻る。会員と、その会員の注文・予約・振込情報・配送先住所、パスワード再設定のトークンを完全に削除する（セッションは消さない）。未発送の注文・予約が残っている会員、退会していない会員、存在しない会員は削除せずエラーにする（退会済みかの判定は、行をロックするリポジトリだけで行う）。成功の案内「会員を削除しました。」は、検索欄の下に緑の文字で表示する（flash の `list_status`。layout の案内には出さない）。データベースのエラー（ロック待ちのタイムアウトなど）のときはログに残し、「削除できませんでした。時間をおいてもう一度お試しください。」を表示する。判定と削除は同じトランザクションの中で行う。Stripe の顧客データは削除しない。物理削除で発送済みの予約が消えると、その分だけ予約可能数の残りが増える。物理削除は取引の終了後で予約の受付も終わっている想定のため許容する） |
 | `/admin/purchase` | GET | AdminPurchaseController | index | 必須 | 管理画面注文一覧ページ表示機能 |
 | `/admin/purchase/search` | GET | AdminPurchaseController | search | 必須 | 注文検索機能（発送状況 `shipped`＝0 未発送・1 発送済、注文日 `date`＝Y-m-d、注文者名 `name`。入力の誤りは `/admin/purchase` に戻してエラーを表示） |
 | `/admin/purchase/update` | POST | AdminPurchaseController | update | 必須 | 注文発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない注文は422） |
@@ -290,6 +291,16 @@ user_idと合計金額はcontrollerで取得
 | 発送状況（shipped）・注文日／予約日（date）・注文者名／予約者名（name） | ExportRequest と同じ（すべて必須ではない） |
 | 注文／予約（id）※更新 | 入力必須、整数値、存在する注文／予約 |
 | 発送済み（shipped）※更新 | 入力必須、真偽値 |
+
+### UserSearchRequest.php（会員検索）・UserDeleteRequest.php（会員の物理削除）
+
+入力の誤りは、会員検索（UserSearchRequest）は `/admin/users`（全件の表示）に戻して、会員の物理削除（UserDeleteRequest）は削除の前に見ていた会員一覧（直前のページが会員一覧・検索結果のとき。それ以外は `/admin/users`）に戻して、エラーを表示する。
+
+| フォーム | ルール |
+|---|---|
+| 状態（status） | 必須ではない、`member`・`withdrawn` のみ（文字列以外はエラー） |
+| 氏名（name） | 必須ではない、文字列、100文字以下、正しい UTF-8（ExportRequest の氏名と同じ） |
+| 会員（id）※削除 | 入力必須、整数値（退会済みの会員として存在するかは、入力の検証ではなく、削除の処理の中で判定する。退会していない会員・存在しない会員は同じエラー） |
 
 ### AdminPasswordResetLinkRequest.php（管理者のパスワード再設定メールの送信）
 
