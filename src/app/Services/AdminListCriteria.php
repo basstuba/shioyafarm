@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\SearchName;
 use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
@@ -34,16 +35,11 @@ final readonly class AdminListCriteria
         $shipped = $conditions['shipped'] ?? '';
         $from = self::parseDate($conditions['date'] ?? '');
 
-        $name = preg_replace('/[\s\x{3000}]+/u', '', $conditions['name'] ?? '');
-        if ($name === null) {
-            throw new InvalidArgumentException('名前が正しい UTF-8 ではありません。');
-        }
-
         return new self(
             shipped: $shipped === '' ? null : $shipped === '1',
             from: $from,
             to: $from?->addDay(),
-            name: $name,
+            name: SearchName::normalize($conditions['name'] ?? ''),
         );
     }
 
