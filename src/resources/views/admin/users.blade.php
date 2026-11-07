@@ -7,7 +7,7 @@
     注文一覧・予約一覧（admin/partials/order-list）と同じ作りで、表の列が違うため別のビューにしている（検索フォームは <x-admin-search-form> などの部品、ページ送りは admin/partials/pager を共有）。
     - $users：会員のページネーター（退会済みを含む）
     - $conditions：検索欄に戻す検索条件（status・name）
-    PC（lg以上）は最大幅960pxの表（列の幅は割合）、SPはカード形式（同じ table 要素を、グリッドでカードの形にする）。
+    PC（lg以上）は最大幅960pxの表（列の幅は割合。最後の「メール送信」の列は右寄せ）、SPはカード形式（同じ table 要素を、グリッドでカードの形にする）。
     「メール送信」のリンク先 /admin/mail/user/{会員ID} は、メール機能のブランチで route() に置き換える（それまでは404）。
 --}}
 @php
@@ -44,10 +44,10 @@
                     <caption class="sr-only">会員一覧</caption>
                     <colgroup>
                         <col class="lg:w-[12%]">
-                        <col class="lg:w-[28%]">
-                        <col class="lg:w-[22%]">
-                        <col class="lg:w-[12%]">
+                        <col class="lg:w-[32%]">
                         <col class="lg:w-[26%]">
+                        <col class="lg:w-[12%]">
+                        <col class="lg:w-[18%]">
                     </colgroup>
                     <thead class="hidden lg:table-header-group">
                         <tr class="h-[35px] bg-admin-head text-left text-white">
@@ -55,7 +55,7 @@
                             <th scope="col" class="px-3 text-base font-normal">氏名</th>
                             <th scope="col" class="px-3 text-base font-normal">電話番号</th>
                             <th scope="col" class="px-3 text-base font-normal"><span class="sr-only">詳細</span></th>
-                            <th scope="col" class="px-3 text-base font-normal"><span class="sr-only">メール送信</span></th>
+                            <th scope="col" class="px-3 text-base font-normal lg:text-right"><span class="sr-only">メール送信</span></th>
                         </tr>
                     </thead>
                     <tbody class="flex flex-col gap-3 lg:table-row-group">
@@ -73,7 +73,7 @@
                                 <td class="col-start-2 row-start-1 {{ $cellClass }}">
                                     <x-admin-detail-button :label="$user->full_name.'の詳細を見る'" event="open-user-detail" :id="$user->id" />
                                 </td>
-                                <td class="col-start-2 row-span-2 row-start-2 self-start {{ $cellClass }}">
+                                <td class="col-start-2 row-span-2 row-start-2 self-start lg:text-right {{ $cellClass }}">
                                     <a
                                         class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ $focusClass }}"
                                         href="{{ url('/admin/mail/user/'.$user->id) }}"
