@@ -31,7 +31,25 @@ effort: high
 - Playwright MCP（`mcp__playwright__*`）で http://localhost を操作する。
 - 複数の手順は `browser_run_code_unsafe` にまとめて実行する。
 - ファイルのダウンロード（エクスポートなど）はページ移動を伴わないので、通常のクリックや、ページ移動の完了待ち（`waitForNavigation` など）で待たない。`browser_run_code_unsafe` の中で `page.waitForEvent('download')` を先に待ち受けてから押し、保存してから中身を確認する。
-- Playwright MCP が応答しなくなったら粘らず、止まったシナリオ・ツール・操作・直前の画面を記録して、残りを e2e の Playwright のスクリプトに切り替える（`require('<リポジトリ>/e2e/node_modules/playwright')` で読み込み、`timeout 120 node <スクリプト>` で実行する。スクリプトはリポジトリの外に置く）。
+- ページ側のJSが本文を読まないレスポンスの本文は、読まない。Alpine の `save()`（管理画面一覧の「発送済み」チェックなど）のように、`fetch` を送って `response.ok` しか見ない通信では、ブラウザ内でレスポンスが「受信完了」にならない。そのレスポンスに Playwright の `response.text()`・`json()`・`body()` を呼ぶと、永久に返ってこない（Playwright 側にタイムアウトはなく、ステータスが409でも200でも起きる）。
+  - ステータスコードは `waitForResponse` で確認し、メッセージは画面の文字（DOM）で確認する。
+  - 本文が必要なときは、自分でリクエストを送って読む（`page.request`、または `page.evaluate` の中で `fetch(...).then(r => r.text())`）。
+- `browser_run_code_unsafe` には全体のタイムアウトがなく、中の操作が1つ返ってこないとツール呼び出しごと返ってこなくなり、止まったことにも気づけない。コード全体を `Promise.race` で見張り（120秒程度）で包み、いま実行中の操作の名前を変数に持っておいて、時間切れのときはどの操作の途中だったかを返す。各操作にも従来どおり `timeout` を渡す。
+
+  ```js
+  async (page) => {
+    let current = '開始前';
+    const step = async (name, fn) => { current = name; return await fn(); };
+    const watchdog = new Promise((resolve) =>
+      setTimeout(() => resolve(`見張りの時間切れ: 「${current}」の途中で止まっている`), 120000));
+    return await Promise.race([watchdog, (async () => {
+      await step('一覧を開く', () => page.goto('http://localhost/admin/purchase', { timeout: 30000 }));
+      // ……以降も step('操作名', () => ...) で包む
+      return '完了';
+    })()]);
+  }
+  ```
+- Playwright MCP が応答しなくなったら粘らず、止まったシナリオ・ツール・操作・直前の画面を記録して、残りを e2e の Playwright のスクリプトに切り替える（`require('<リポジトリ>/e2e/node_modules/playwright')` で読み込み、`timeout 120 node <スクリプト>` で実行する。スクリプトはリポジトリの外に置く）。止まった呼び出しは戻ってこないので、事前に上の見張りで防ぐ。スクリプトに切り替えても、上の「本文を読まない」は同じく守る。`timeout` で打ち切れても原因は分からないので、止まった操作の名前を見張りで記録しておく。
 - シナリオごとに、`browser_resize` でPC（1280×800）とSP（414×896）を切り替えて確認する。
 - 画面の内容は `browser_snapshot` で確認し、スクリーンショットは `browser_take_screenshot` で撮る。保存先は、シナリオの md と同じ側（admin/ か user/）の `docs/uat/<admin|user>/screenshots/<機能名>/<シナリオID>-<pc|sp>.png`。別の場所に保存された場合は移動する。
 - 各シナリオの後に `browser_console_messages` でコンソールエラーを確認する。
