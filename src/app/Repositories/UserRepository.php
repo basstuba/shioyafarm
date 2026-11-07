@@ -87,7 +87,7 @@ class UserRepository implements UserRepositoryInterface
     /**
      * 退会済みの会員を物理削除する（会員と、注文・予約・振込情報・配送先住所は外部キーの cascade で消える）
      *
-     * 会員の行と、その会員の注文・予約の行をロックしてから判定するため、判定と削除の間に発送済みのチェックが変わらない。
+     * 会員の行と、その会員の注文・予約の行をロックしてから判定するため、判定と削除の間に発送済みのチェックや取消が変わらない。
      * 同じトランザクションの中で、その会員のパスワード再設定のトークンも、会員のパスワードブローカー（SendsPasswordResetMail と同じ取り方）の deleteToken で消す
      * （同じメールアドレスで再登録した人に、古いトークンが使われないようにする）。
      * セッション（sessions）は消さない。sessions.user_id は既定のガードのIDで、管理者のセッションにも管理者のIDが入るため、同じ番号の管理者のセッションを消してしまう。
@@ -102,9 +102,11 @@ class UserRepository implements UserRepositoryInterface
                 return UserDeleteResult::NotWithdrawn;
             }
 
-            $purchases = Purchase_history::where('user_id', $id)->lockForUpdate()->get(['id', 'shipped']);
-            $reservations = Reservation::where('user_id', $id)->lockForUpdate()->get(['id', 'shipped']);
-            if ($purchases->contains('shipped', false) || $reservations->contains('shipped', false)) {
+            // 未発送で未取消のものが1件でもあれば止める（発送済みか取消済みなら削除できる）
+            $purchases = Purchase_history::where('user_id', $id)->lockForUpdate()->get(['id', 'shipped', 'canceled_at']);
+            $reservations = Reservation::where('user_id', $id)->lockForUpdate()->get(['id', 'shipped', 'canceled_at']);
+            $isUnshipped = fn (Purchase_history|Reservation $order): bool => ! $order->shipped && $order->canceled_at === null;
+            if ($purchases->contains($isUnshipped) || $reservations->contains($isUnshipped)) {
                 return UserDeleteResult::HasUnshipped;
             }
 

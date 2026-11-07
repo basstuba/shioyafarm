@@ -23,5 +23,7 @@
 
 @include('mail.partials.bank-transfer')
 
+@include('mail.partials.cancel-guide', ['cancelGuide' => \App\Support\OrderCancelGuide::parts(\App\Enums\AdminListType::Reservation)])
+
 @include('mail.partials.closing', ['historyGuide' => 'ご予約の内容は、マイページの予約履歴でもご確認いただけます。'])
 </x-mail::message>

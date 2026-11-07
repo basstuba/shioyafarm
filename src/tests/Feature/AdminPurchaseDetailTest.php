@@ -143,7 +143,9 @@ class AdminPurchaseDetailTest extends TestCase
         $this->assertTextMissing($paidView, ['振込先をご案内済みです']);
 
         foreach ([$guidedView, $paidView] as $view) {
-            $this->assertTextMissing($view, ['いろは銀行', '中央支店', '口座番号', 'ストライプジャパン', '入金済み', '未入金']);
+            $this->assertTextMissing($view, ['いろは銀行', '中央支店', '口座番号', 'ストライプジャパン', '未入金']);
+            // 「入金済み」は、取消の確認の返金の案内（入金済みの場合、返金は〜）にだけ出る
+            $this->assertStringNotContainsString('入金済み', str_replace('入金済みの場合、返金はStripeの管理画面で行ってください。', '', $view->html()));
         }
     }
 
@@ -241,9 +243,10 @@ class AdminPurchaseDetailTest extends TestCase
 
         $this->assertStringContainsString('role="dialog"', $html);
         $this->assertStringContainsString('aria-modal="true"', $html);
-        $this->assertStringContainsString('x-on:keydown.escape.window="$wire.showDetail = false"', $html);
-        $this->assertStringContainsString('absolute inset-0 bg-black/35" x-on:click="$wire.showDetail = false"', $html);
-        $this->assertMatchesRegularExpression('#<button type="button" class="[^"]*min-h-11[^"]*" x-on:click="\$wire.showDetail = false">閉じる</button>#u', $html);
+        // 確認のモーダル（取消）が開いているときは、Esc・背景・「閉じる」は確認だけを閉じる（Esc）／確認も閉じて詳細を閉じる（背景・「閉じる」）
+        $this->assertStringContainsString('x-on:keydown.escape.window="if (confirming) { confirming = false } else { $wire.showDetail = false }"', $html);
+        $this->assertStringContainsString('absolute inset-0 bg-black/35" x-on:click="confirming = false; $wire.showDetail = false"', $html);
+        $this->assertMatchesRegularExpression('#<button type="button" class="[^"]*min-h-11[^"]*" x-on:click="confirming = false; \$wire.showDetail = false">閉じる</button>#u', $html);
         $this->assertStringNotContainsString('×', $html);
         $this->assertStringContainsString('max-h-full w-full max-w-[400px] overflow-y-auto rounded-[30px]', $html);
         $this->assertStringContainsString('shadow-panel', $html);

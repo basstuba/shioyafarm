@@ -2,8 +2,10 @@
 
 namespace App\Repositories\Interfaces;
 
+use App\Enums\OrderCancelResult;
 use App\Models\Reservation;
 use App\Services\AdminListCriteria;
+use Closure;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\LazyCollection;
 use Throwable;
@@ -14,7 +16,7 @@ use Throwable;
 interface ReservationRepositoryInterface
 {
     /**
-     * 商品のすでに予約された数量の合計を取得
+     * 商品のすでに予約された数量の合計を取得（取消済みの予約は含めない）
      */
     public function getReservedQuantity(int $itemId): int;
 
@@ -55,9 +57,16 @@ interface ReservationRepositoryInterface
     /**
      * 管理画面のエクスポート用に、検索条件に合う予約を新しい順に少しずつ取得する（予約者・商品を Eager Load する）
      *
+     * 取消済みの予約は、発送状況が「取消済」のとき以外は含めない。
+     *
      * @return LazyCollection<int, Reservation>
      */
     public function lazyForExport(AdminListCriteria $criteria): LazyCollection;
+
+    /**
+     * エクスポートで出力される予約の件数（lazyForExport と同じ条件）
+     */
+    public function countForExport(AdminListCriteria $criteria): int;
 
     /**
      * 管理画面の詳細の表示に必要な関連（予約者・商品・振込先）つきで、予約を1件取得する（存在しない予約は null）
@@ -65,7 +74,19 @@ interface ReservationRepositoryInterface
     public function findDetailForAdmin(int $id): ?Reservation;
 
     /**
-     * 予約の発送済みかどうかを更新する
+     * 予約の発送済みかどうかを更新する（取消済みの予約は更新しない）
+     *
+     * @return bool 更新できたか（存在しない予約・取消済みの予約は false）
      */
-    public function updateShipped(int $id, bool $shipped): void;
+    public function updateShipped(int $id, bool $shipped): bool;
+
+    /**
+     * 予約を取り消す（行をロックして、存在・発送済み・取消済みを判定する）
+     *
+     * 取り消せるときだけ $beforeCancel（支払方法と、銀行振込の PaymentIntent の ID（振込先の行がなければ null）を受け取り、Stripe の支払いの取消などをする）を行のロックを持ったまま呼び、
+     * 取消済みにしてよい結果（OrderCancelResult::isCanceled）を返したときに取消日時を入れる。それ以外を返したときは、取消日時を入れずにその結果を返す。
+     *
+     * @param  Closure(string, string|null): OrderCancelResult  $beforeCancel
+     */
+    public function cancel(int $id, Closure $beforeCancel): OrderCancelResult;
 }

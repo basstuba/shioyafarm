@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Admin;
 use App\Models\Item;
 use App\Models\Reservation;
+use App\Repositories\Interfaces\ReservationRepositoryInterface;
 use App\Services\ReservationLimitService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -110,5 +112,56 @@ class ReservationLimitServiceTest extends TestCase
         $this->assertSame(10, $service->maxQuantityByRemaining(10));
         $this->assertSame(10, $service->maxQuantityByRemaining(200));
         $this->assertSame(10, $service->maxQuantityByRemaining(null));
+    }
+
+    /**
+     * 取消済みの予約の数量は、予約済みの合計に含めない。残数に戻る（AC-17）
+     */
+    #[Test]
+    public function 取消済みの予約は予約可能数の残りに戻る(): void
+    {
+        $service = app(ReservationLimitService::class);
+        $item = $this->item(10);
+        Reservation::factory()->create(['item_id' => $item->id, 'quantity' => 4]);
+        Reservation::factory()->create(['item_id' => $item->id, 'quantity' => 3, 'canceled_at' => '2026-11-05 10:00:00']);
+
+        $this->assertSame(4, app(ReservationRepositoryInterface::class)->getReservedQuantity($item->id));
+        $this->assertSame(6, $service->remaining($item));
+        $this->assertSame(6, $service->maxQuantity($item));
+    }
+
+    /**
+     * 予約可能数に達して受付を締め切っていた商品は、管理画面で予約を取り消すと、残りが戻って受け付けを再開する（AC-17）
+     */
+    #[Test]
+    public function 管理画面で取り消すと締め切っていた商品が予約できるようになる(): void
+    {
+        $service = app(ReservationLimitService::class);
+        $item = $this->item(5);
+        $reservation = Reservation::factory()->create(['item_id' => $item->id, 'quantity' => 5, 'shipped' => false]);
+        $this->assertTrue($service->isClosed($item));
+        $this->assertSame(0, $service->remaining($item));
+        $this->actingAs(Admin::factory()->create(), 'admin');
+
+        $this->post(route('admin.reservations.cancel'), ['id' => $reservation->id])->assertSessionHas('list_status', '予約を取り消しました。クレジットカードの返金は、Stripeの管理画面で行ってください。');
+
+        $this->assertFalse($service->isClosed($item));
+        $this->assertSame(5, $service->remaining($item));
+    }
+
+    /**
+     * 取り消しても、ほかの商品の予約可能数には影響しない
+     */
+    #[Test]
+    public function 取消はほかの商品の残りに影響しない(): void
+    {
+        $service = app(ReservationLimitService::class);
+        $a = $this->item(10);
+        $b = $this->item(10);
+        Reservation::factory()->create(['item_id' => $a->id, 'quantity' => 2, 'canceled_at' => '2026-11-05 10:00:00']);
+        Reservation::factory()->create(['item_id' => $b->id, 'quantity' => 2]);
+
+        $this->assertSame(10, $service->remaining($a));
+        $this->assertSame(8, $service->remaining($b));
     }
 }

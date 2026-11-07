@@ -73,6 +73,13 @@
                 </dd>
             </section>
             <hr class="border-line">
+            <section class="my-8 text-base">
+                <dt class="mb-4 font-extrabold">注文・予約の取り消しについて</dt>
+                <dd class="flex flex-col gap-4">
+                    <p>ご注文・ご予約の取り消しをご希望の場合は、発送前に<a class="text-primary-text underline decoration-1 hover:no-underline focus-visible:no-underline" href="{{ route('top.inquiry') }}">お問い合わせフォーム</a>からご連絡ください。発送後の取り消しはお受けできません。</p>
+                </dd>
+            </section>
+            <hr class="border-line">
         </div>
     </div>
 @endsection

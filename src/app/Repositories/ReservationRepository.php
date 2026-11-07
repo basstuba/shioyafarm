@@ -2,11 +2,14 @@
 
 namespace App\Repositories;
 
+use App\Enums\OrderCancelResult;
 use App\Enums\PaymentMethod;
 use App\Models\Reservation;
 use App\Repositories\Concerns\AppliesAdminSearch;
+use App\Repositories\Concerns\CancelsOrder;
 use App\Repositories\Interfaces\ReservationRepositoryInterface;
 use App\Services\AdminListCriteria;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -19,17 +22,18 @@ use Override;
 class ReservationRepository implements ReservationRepositoryInterface
 {
     use AppliesAdminSearch;
+    use CancelsOrder;
 
     /** エクスポートで一度に読み込む予約の件数 */
     private const int EXPORT_CHUNK_SIZE = 500;
 
     /**
-     * 商品のすでに予約された数量の合計を取得
+     * 商品のすでに予約された数量の合計を取得（取消済みの予約は含めない）
      */
     #[Override]
     public function getReservedQuantity(int $itemId): int
     {
-        return (int) Reservation::where('item_id', $itemId)->sum('quantity');
+        return (int) Reservation::where('item_id', $itemId)->whereNull('canceled_at')->sum('quantity');
     }
 
     /**
@@ -115,9 +119,15 @@ class ReservationRepository implements ReservationRepositoryInterface
     #[Override]
     public function lazyForExport(AdminListCriteria $criteria): LazyCollection
     {
-        return $this->searchQuery($criteria)
+        return $this->exportQuery($criteria)
             ->with(['user', 'item'])
             ->lazyByIdDesc(self::EXPORT_CHUNK_SIZE);
+    }
+
+    #[Override]
+    public function countForExport(AdminListCriteria $criteria): int
+    {
+        return $this->exportQuery($criteria)->count();
     }
 
     #[Override]
@@ -126,10 +136,33 @@ class ReservationRepository implements ReservationRepositoryInterface
         return Reservation::with(['user', 'item', 'reservationBankTransfer'])->find($id);
     }
 
+    /**
+     * 取消済みの予約は更新しない
+     *
+     * 行をロックして読み、存在して未取消のときだけ更新する（取消 cancel と同じロックのため、判定と更新の間に取消が入らない）。
+     */
     #[Override]
-    public function updateShipped(int $id, bool $shipped): void
+    public function updateShipped(int $id, bool $shipped): bool
     {
-        Reservation::whereKey($id)->update(['shipped' => $shipped]);
+        return DB::transaction(function () use ($id, $shipped): bool {
+            $order = Reservation::whereKey($id)->lockForUpdate()->first();
+            if ($order === null || $order->canceled_at !== null) {
+                return false;
+            }
+
+            $order->forceFill(['shipped' => $shipped])->save();
+
+            return true;
+        });
+    }
+
+    /**
+     * 取消（CancelsOrder）。銀行振込の振込先を読み込んで渡す
+     */
+    #[Override]
+    public function cancel(int $id, Closure $beforeCancel): OrderCancelResult
+    {
+        return $this->cancelLocked(Reservation::with('reservationBankTransfer'), $id, $beforeCancel, 'reservationBankTransfer');
     }
 
     /**
@@ -140,5 +173,15 @@ class ReservationRepository implements ReservationRepositoryInterface
     private function searchQuery(AdminListCriteria $criteria): Builder
     {
         return $this->applyAdminSearch(Reservation::query(), $criteria);
+    }
+
+    /**
+     * エクスポートの検索条件を適用したクエリ（取消済みは、発送状況が「取消済」のとき以外は含めない。AppliesAdminSearch）
+     *
+     * @return Builder<Reservation>
+     */
+    private function exportQuery(AdminListCriteria $criteria): Builder
+    {
+        return $this->applyExportSearch(Reservation::query(), $criteria);
     }
 }

@@ -45,6 +45,7 @@ class MyPagePurchaseHistory extends Component
                 ->map(fn (Purchase_history_item $line): string => $line->item->display_name)
                 ->all(),
             'total' => $purchase->total_price,
+            'canceled' => $purchase->canceled_at !== null,
         ]);
 
         return view('livewire.my-page-purchase-history', [
