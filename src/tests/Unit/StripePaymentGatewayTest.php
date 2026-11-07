@@ -244,6 +244,34 @@ class StripePaymentGatewayTest extends TestCase
     }
 
     /**
+     * 振込の残り（amountRemaining）は、全銀の振込先を読めなくても取り出す。next_action が無ければ null
+     */
+    #[Test]
+    public function 振込の残りは振込先を読めなくても取り出す(): void
+    {
+        $noZengin = $this->intentResponse('pi_test_6', 'requires_action', 3723, true);
+        $noZengin['next_action']['display_bank_transfer_instructions']['amount_remaining'] = 1000;
+        $noZengin['next_action']['display_bank_transfer_instructions']['financial_addresses'] = [];
+        $withZengin = $this->intentResponse('pi_test_7', 'requires_action', 3723, true);
+        $withZengin['next_action']['display_bank_transfer_instructions']['amount_remaining'] = 2000;
+        $noAction = $this->intentResponse('pi_test_8', 'canceled', 3723, false);
+        $this->fakeStripe([
+            'get /v1/payment_intents/pi_test_6' => $noZengin,
+            'get /v1/payment_intents/pi_test_7' => $withZengin,
+            'get /v1/payment_intents/pi_test_8' => $noAction,
+        ]);
+        $gateway = new StripePaymentGateway('sk_test_dummy');
+
+        $first = $gateway->retrieveBankTransferIntent('pi_test_6');
+        $this->assertNull($first->instructions);
+        $this->assertSame(1000, $first->amountRemaining);
+        $second = $gateway->retrieveBankTransferIntent('pi_test_7');
+        $this->assertSame(2000, $second->amountRemaining);
+        $this->assertSame(2000, $second->instructions->amount);
+        $this->assertNull($gateway->retrieveBankTransferIntent('pi_test_8')->amountRemaining);
+    }
+
+    /**
      * 振込先が無い PaymentIntent（キャンセル済みなど）は instructions が null
      */
     #[Test]

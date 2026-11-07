@@ -219,7 +219,7 @@ class StripePaymentGateway implements PaymentGatewayInterface
     }
 
     /**
-     * PaymentIntent から必要な項目（status・金額・振込先）を取り出す
+     * PaymentIntent から必要な項目（status・金額・振込先・振込の残り）を取り出す
      *
      * 振込先は next_action.display_bank_transfer_instructions の financial_addresses のうち zengin を使う。
      * 振込金額は amount_remaining（無ければ PaymentIntent の金額）。
@@ -230,8 +230,11 @@ class StripePaymentGateway implements PaymentGatewayInterface
         $data = $intent->toArray();
 
         $instructions = null;
+        $amountRemaining = null;
         $display = $data['next_action']['display_bank_transfer_instructions'] ?? null;
         if (is_array($display)) {
+            // 振込の残りは、全銀の振込先が読めなくても取り出す（一部入金の判定に使う）
+            $amountRemaining = isset($display['amount_remaining']) ? (int) $display['amount_remaining'] : null;
             $zengin = null;
             foreach ($display['financial_addresses'] ?? [] as $address) {
                 if (is_array($address) && is_array($address['zengin'] ?? null)) {
@@ -252,7 +255,7 @@ class StripePaymentGateway implements PaymentGatewayInterface
             }
         }
 
-        return new BankTransferIntentData($intent->id, (string) $intent->status, (int) $intent->amount, $instructions);
+        return new BankTransferIntentData($intent->id, (string) $intent->status, (int) $intent->amount, $instructions, $amountRemaining);
     }
 
     /**

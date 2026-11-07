@@ -215,6 +215,83 @@ class AdminUserDeleteTest extends TestCase
     }
 
     /**
+     * 未発送でも取消済みの注文・予約だけなら、削除できる（AC-19）
+     */
+    #[Test]
+    public function 取消済みなら未発送でも削除できる(): void
+    {
+        $this->loginAsAdmin();
+        $target = $this->makeWithdrawnUser();
+        $this->attachRecords($target);
+        $this->makeOrder($target, overrides: ['shipped' => false, 'canceled_at' => '2026-11-05 10:00:00']);
+        $this->makeAdminReservation($target, overrides: ['shipped' => false, 'canceled_at' => '2026-11-05 10:00:00']);
+
+        $this->deleteUser($target->id)
+            ->assertRedirect(route('admin.users.index'))
+            ->assertSessionHas('list_status', '会員を削除しました。')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+        $this->assertDatabaseMissing('purchase_histories', ['user_id' => $target->id]);
+        $this->assertDatabaseMissing('reservations', ['user_id' => $target->id]);
+    }
+
+    /**
+     * 取消済みの注文があっても、未発送で未取消の予約が1件でもあれば止まる。データは変わらない（AC-19）
+     */
+    #[Test]
+    public function 取消済みの注文があっても未発送の予約が残っていれば削除できない(): void
+    {
+        $this->loginAsAdmin();
+        $target = $this->makeWithdrawnUser();
+        $this->makeOrder($target, overrides: ['shipped' => false, 'canceled_at' => '2026-11-05 10:00:00']);
+        $this->makeAdminReservation($target, overrides: ['shipped' => false]);
+        $before = $this->counts();
+
+        $this->deleteUser($target->id)
+            ->assertRedirect(route('admin.users.index'))
+            ->assertSessionHasErrors(['delete' => '未発送の注文・予約があるため削除できません。']);
+
+        $this->assertSame($before, $this->counts());
+        $this->assertNotNull(User::onlyTrashed()->find($target->id));
+    }
+
+    /**
+     * 取消済みの予約があっても、未発送で未取消の注文が1件でもあれば止まる（AC-19）
+     */
+    #[Test]
+    public function 取消済みの予約があっても未発送の注文が残っていれば削除できない(): void
+    {
+        $this->loginAsAdmin();
+        $target = $this->makeWithdrawnUser();
+        $this->makeAdminReservation($target, overrides: ['shipped' => false, 'canceled_at' => '2026-11-05 10:00:00']);
+        $this->makeOrder($target, overrides: ['shipped' => false]);
+
+        $this->deleteUser($target->id)->assertSessionHasErrors(['delete' => '未発送の注文・予約があるため削除できません。']);
+
+        $this->assertNotNull(User::onlyTrashed()->find($target->id));
+    }
+
+    /**
+     * 管理画面で取り消せば、削除できなかった会員を削除できるようになる（AC-19, S-25, S-26）
+     */
+    #[Test]
+    public function 取り消したあとに削除できる(): void
+    {
+        $this->loginAsAdmin();
+        $target = $this->makeWithdrawnUser();
+        $order = $this->makeOrder($target, overrides: ['shipped' => false]);
+        $reservation = $this->makeAdminReservation($target, overrides: ['shipped' => false]);
+        $this->deleteUser($target->id)->assertSessionHasErrors('delete');
+
+        $this->post(route('admin.purchase.cancel'), ['id' => $order->id])->assertSessionHas('list_status');
+        $this->post(route('admin.reservations.cancel'), ['id' => $reservation->id])->assertSessionHas('list_status');
+        $this->deleteUser($target->id)->assertSessionHas('list_status', '会員を削除しました。');
+
+        $this->assertDatabaseMissing('users', ['id' => $target->id]);
+    }
+
+    /**
      * 他の会員の未発送の注文・予約は、削除の判定に影響しない
      */
     #[Test]

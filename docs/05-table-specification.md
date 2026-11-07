@@ -107,10 +107,13 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | total_price | integer | | | ○ | |
 | payment_method | varchar(25) | | | ○ | |
 | shipped | boolean | | | ○ | |
+| canceled_at | timestamp | | | | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
 
 `shipped` は発送済みかどうか（既定値 false）。管理画面の予約一覧のチェックで切り替える（設計書にはなかった追加カラム）。管理者だけが見て、マイページ・メールには出さない。日時は持たない。
+
+`canceled_at` は取消日時（NULL 可。取り消されていない予約は NULL）。管理画面の予約の取消（`POST /admin/reservations/cancel`）で記録する（設計書にはなかった追加カラム）。`shipped` と同じく一括代入の対象にしない。取消済みの予約は発送済みにできず、予約可能数の合計に含めない。マイページには「取消済」と表示し、管理画面の詳細には取消日として表示する。
 
 ## purchase_histories（購入履歴データ）
 
@@ -127,10 +130,13 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | cod_fee | integer | | | ○ | |
 | total_price | integer | | | ○ | |
 | shipped | boolean | | | ○ | |
+| canceled_at | timestamp | | | | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
 
 `shipped` は発送済みかどうか（既定値 false）。管理画面の注文一覧のチェックで切り替える（設計書にはなかった追加カラム）。管理者だけが見て、マイページ・メールには出さない。日時は持たない。
+
+`canceled_at` は取消日時（NULL 可。取り消されていない注文は NULL）。管理画面の注文の取消（`POST /admin/purchase/cancel`）で記録する（設計書にはなかった追加カラム）。`shipped` と同じく一括代入の対象にしない。取消済みの注文は発送済みにできない。マイページには「取消済」と表示し、管理画面の詳細には取消日として表示する。
 
 ## purchase_history_items（購入商品データ）
 

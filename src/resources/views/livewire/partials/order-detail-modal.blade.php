@@ -4,7 +4,10 @@
     - $dateLabel：日付の見出し（注文日／予約日）
     - $title：モーダルの見出し（画面には出さず、スクリーンリーダー用）
     - $titleId：見出しのid（同じページに購入・予約のモーダルが並ぶため、コンポーネントごとに変える）
+    - $listType：購入履歴か予約履歴か（App\Enums\AdminListType。取消の案内文の「ご注文」「ご予約」の語はここから決まる）
     各項目は「ラベル（16px）→ 値（12px）→ 薄い灰色の線」の形。下の「閉じる」・背景・Esc で閉じる。
+    取消済みは、先頭に「状況：取消済」を出し、銀行振込の振込先は出さない（OrderDetail が振込先を持たない）。
+    未発送で未取消のときだけ、「閉じる」の上に取消の案内（お問い合わせフォームへのリンクつき）を出す。取り消せるのは農園だけ。
 --}}
 @php
     $itemClass = 'border-b border-line-modal pb-1';
@@ -27,6 +30,12 @@
         <h2 id="{{ $titleId }}" class="sr-only">{{ $title }}</h2>
 
         <dl class="flex flex-col gap-7">
+            @if ($detail->isCanceled())
+                <div class="{{ $itemClass }}">
+                    <dt class="{{ $labelClass }}">状況</dt>
+                    <dd class="{{ $valueClass }}">取消済</dd>
+                </div>
+            @endif
             <div class="{{ $itemClass }}">
                 <dt class="{{ $labelClass }}">{{ $dateLabel }}</dt>
                 <dd class="{{ $valueClass }}">{{ $detail->orderedAt?->format('Y/m/d') }}</dd>
@@ -100,6 +109,11 @@
                 </div>
             @endif
         </dl>
+
+        @if ($detail->canRequestCancel())
+            @php($guide = \App\Support\OrderCancelGuide::parts($listType))
+            <p class="mt-6 text-xs">{{ $guide['before'] }}<a class="text-primary-text underline hover:no-underline focus-visible:no-underline" href="{{ route('top.inquiry') }}">{{ \App\Support\OrderCancelGuide::LINK_LABEL }}</a>{{ $guide['after'] }}</p>
+        @endif
 
         {{-- 文字だけの「閉じる」（住所追加モーダルと同じ） --}}
         <div class="mt-4 flex justify-center">

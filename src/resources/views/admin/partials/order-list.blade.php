@@ -2,10 +2,12 @@
     管理画面の注文一覧・予約一覧の本体（見出し・検索・エクスポート・表・ページ送り）。両方のページから @include する。
     - $records：注文または予約のページネーター（注文者・予約者を Eager Load 済み）
     - $conditions：検索欄に戻す検索条件（shipped・date・name。エクスポートにも同じ条件を渡す）
+    - $exportCount：エクスポートで出力される件数（発送状況が「取消済」のとき以外は取消済みを含めない。0件のときはエクスポートを押せない）
     - $listType：一覧の種類（App\Enums\AdminListType）。見出し・ラベル・案内文の語（注文・予約）、リセット・検索・発送済みの更新のルート、「詳細」ボタンのイベント名はここから決まる
     検索フォームと入力欄・ボタンは <x-admin-search-form> などの部品（会員一覧と共通）。
     PC（lg以上）は最大幅960pxの表（列の幅は割合）、SPはカード形式（同じ table 要素を、グリッドでカードの形にする）。
     発送済みのチェックは、押した瞬間に Alpine から、発送済みの更新のルートへ送る（ページは移動しない）。保存できなかったときは、チェックと行の色を戻して案内を出す。
+    取消済みの行は、チェックの代わりに「取消済」と出し、文字を灰色にする（地は未発送と同じ。発送済みの色にしない）。取消の操作は詳細のモーダルにある（admin/partials/order-detail-modal）。
 --}}
 @php
     $subject = $listType->subject();
@@ -23,10 +25,11 @@
     {{-- 検索（GET）。ラベルはPCでは読み上げ専用、SPでは表示する。入力の誤り（注文日が日付でないなど）は、検索欄の近くに出す --}}
     <x-admin-search-form :action="route($listType->searchRoute())" :label="$subject.'の検索'" :reset-href="route($listType->listRoute())">
         <x-admin-search-field label="発送状況" for="shipped" width="lg:w-[200px]">
-            {{-- 何も選ばないときの表示は、PCは「発送済 / 未発送」、SPは「すべて」 --}}
-            <x-admin-search-select id="shipped" name="shipped" blank-label="発送済 / 未発送" :blank-selected="$shippedValue === ''">
-                <option value="0" @selected($shippedValue === '0')>未発送</option>
-                <option value="1" @selected($shippedValue === '1')>発送済</option>
+            {{-- 何も選ばないときの表示は、PCは「発送状況」、SPは「すべて」 --}}
+            <x-admin-search-select id="shipped" name="shipped" blank-label="発送状況" :blank-selected="$shippedValue === ''">
+                <option value="{{ \App\Enums\AdminListStatus::Unshipped->value }}" @selected($shippedValue === \App\Enums\AdminListStatus::Unshipped->value)>未発送</option>
+                <option value="{{ \App\Enums\AdminListStatus::Shipped->value }}" @selected($shippedValue === \App\Enums\AdminListStatus::Shipped->value)>発送済</option>
+                <option value="{{ \App\Enums\AdminListStatus::Canceled->value }}" @selected($shippedValue === \App\Enums\AdminListStatus::Canceled->value)>取消済</option>
             </x-admin-search-select>
         </x-admin-search-field>
         <x-admin-search-field :label="$subject.'日'" for="date" width="lg:w-[190px]">
@@ -44,10 +47,12 @@
             async save(id, shipped) {
                 this.message = '';
                 let expired = false;
+                let conflict = false;
+                let missing = false;
                 try {
-                    const response = await fetch('{{ route($listType->updateRoute()) }}', {
+                    const response = await fetch(@js(route($listType->updateRoute())), {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @js(csrf_token()) },
                         body: JSON.stringify({ id: id, shipped: shipped }),
                     });
                     if (response.ok) {
@@ -55,10 +60,14 @@
                     }
                     // ログインの期限切れ（401）・ページの期限切れ（419）は、再試行しても直らない
                     expired = response.status === 401 || response.status === 419;
+                    // 別の画面で取り消された（取消済みは発送済みにできない）
+                    conflict = response.status === 409;
+                    // 別の画面で物理削除された（再試行しても直らない）
+                    missing = response.status === 404;
                 } catch (error) {
                     // 通信エラーも、保存できなかった扱いにする
                 }
-                this.message = expired ? 'ページの有効期限が切れました。ページを再読み込みしてください。' : '保存できませんでした。もう一度お試しください。';
+                this.message = expired ? @js('ページの有効期限が切れました。ページを再読み込みしてください。') : conflict ? @js(\App\Enums\ShippedUpdateResult::Canceled->listMessage($listType)) : missing ? @js(\App\Enums\ShippedUpdateResult::NotFound->listMessage($listType)) : @js('保存できませんでした。もう一度お試しください。');
                 return false;
             },
         }"
@@ -66,14 +75,14 @@
         {{-- 発送済みの保存に失敗したときの案内 --}}
         <p class="mb-4 rounded-[10px] border border-line-strong bg-surface px-4 py-3 text-base text-ink" role="status" x-text="message" x-show="message" x-cloak></p>
 
-        {{-- エクスポート（検索中は、その条件に合う全件を出力する）。0件のとき、検索欄に入力エラーがあるとき（検索欄の値と、一覧・出力の条件がずれるため）は押せない --}}
+        {{-- エクスポート（検索中は、その条件に合う全件を出力する。発送状況が「取消済」のとき以外は取消済みを含めない）。出力が0件のとき、検索欄に入力エラーがあるとき（検索欄の値と、一覧・出力の条件がずれるため）は押せない。取消の案内（errors の cancel）は検索条件の誤りではないため、押せなくしない --}}
         <form class="flex justify-end" action="{{ route('admin.export') }}" method="POST">
             @csrf
             <input type="hidden" name="type" value="{{ $listType->value }}">
             <input type="hidden" name="shipped" value="{{ $conditions['shipped'] }}">
             <input type="hidden" name="date" value="{{ $conditions['date'] }}">
             <input type="hidden" name="name" value="{{ $conditions['name'] }}">
-            <x-admin-search-button variant="export" :disabled="$records->total() === 0 || $errors->any()">エクスポート</x-admin-search-button>
+            <x-admin-search-button variant="export" :disabled="$exportCount === 0 || collect($errors->keys())->diff(['cancel'])->isNotEmpty()">エクスポート</x-admin-search-button>
         </form>
 
         @if ($records->total() === 0)
@@ -99,34 +108,45 @@
                 </thead>
                 <tbody class="flex flex-col gap-3 lg:table-row-group">
                     @foreach ($records as $record)
-                        {{-- 発送済みの行は地が admin-shipped（白と灰色の交互より優先）。文字色は変えない --}}
+                        @php
+                            $canceled = $record->canceled_at !== null;
+                            // 取消済みの行の SP のラベルも、値と同じ灰色にする（ふだんは濃い灰色）
+                            $labelClass = $canceled ? 'text-admin-gray' : 'text-cancel-text';
+                        @endphp
+                        {{-- 発送済みの行は地が admin-shipped（白と灰色の交互より優先）。文字色は変えない。取消済みの行は地を未発送と同じにして、文字を灰色にする --}}
                         <tr
-                            class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 rounded-[10px] border border-line px-4 py-3 lg:table-row lg:h-[45px] lg:rounded-none lg:border-0 lg:p-0 {{ $record->shipped ? 'bg-admin-shipped' : 'bg-white lg:even:bg-admin-bar' }}"
-                            x-data="{ shipped: @js($record->shipped), saving: false }"
-                            x-bind:class="{ 'bg-admin-shipped': shipped, 'bg-white lg:even:bg-admin-bar': ! shipped }"
+                            class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 rounded-[10px] border border-line px-4 py-3 lg:table-row lg:h-[45px] lg:rounded-none lg:border-0 lg:p-0 {{ ! $canceled && $record->shipped ? 'bg-admin-shipped' : 'bg-white lg:even:bg-admin-bar' }} {{ $canceled ? 'text-admin-gray' : '' }}"
+                            @unless ($canceled)
+                                x-data="{ shipped: @js($record->shipped), saving: false }"
+                                x-bind:class="{ 'bg-admin-shipped': shipped, 'bg-white lg:even:bg-admin-bar': ! shipped }"
+                            @endunless
                         >
                             <td class="col-start-2 row-start-1 {{ $cellClass }} lg:text-center">
-                                <label class="flex h-11 cursor-pointer items-center justify-end gap-2 text-base lg:justify-center">
-                                    <span class="lg:sr-only">発送済</span>
-                                    <input
-                                        class="size-6 cursor-pointer accent-admin-gray aria-busy:cursor-wait {{ $focusClass }}"
-                                        type="checkbox"
-                                        aria-label="{{ $subject }}{{ $record->id }}を発送済みにする"
-                                        @checked($record->shipped)
-                                        x-model="shipped"
-                                        x-bind:aria-busy="saving"
-                                        x-on:change="if (saving) { shipped = ! shipped; return } saving = true; if (! await save({{ $record->id }}, shipped)) { shipped = ! shipped } saving = false"
-                                    >
-                                </label>
+                                @if ($canceled)
+                                    <span class="flex h-11 items-center justify-end text-base lg:justify-center">取消済</span>
+                                @else
+                                    <label class="flex h-11 cursor-pointer items-center justify-end gap-2 text-base lg:justify-center">
+                                        <span class="lg:sr-only">発送済</span>
+                                        <input
+                                            class="size-6 cursor-pointer accent-admin-gray aria-busy:cursor-wait {{ $focusClass }}"
+                                            type="checkbox"
+                                            aria-label="{{ $subject }}{{ $record->id }}を発送済みにする"
+                                            @checked($record->shipped)
+                                            x-model="shipped"
+                                            x-bind:aria-busy="saving"
+                                            x-on:change="if (saving) { shipped = ! shipped; return } saving = true; if (! await save({{ $record->id }}, shipped)) { shipped = ! shipped } saving = false"
+                                        >
+                                    </label>
+                                @endif
                             </td>
                             <td class="col-start-1 row-start-1 self-center text-base {{ $cellClass }}">
-                                <span class="mr-2 text-cancel-text lg:hidden">{{ $subject }}管理番号</span>{{ $record->id }}
+                                <span class="mr-2 {{ $labelClass }} lg:hidden">{{ $subject }}管理番号</span>{{ $record->id }}
                             </td>
                             <td class="col-start-1 row-start-2 text-base {{ $cellClass }}">
-                                <span class="mr-2 text-cancel-text lg:hidden">{{ $subject }}日</span>{{ $record->created_at?->format('Y/m/d') }}
+                                <span class="mr-2 {{ $labelClass }} lg:hidden">{{ $subject }}日</span>{{ $record->created_at?->format('Y/m/d') }}
                             </td>
                             <td class="col-start-1 row-start-3 min-w-0 text-base break-words {{ $cellClass }}">
-                                <span class="mr-2 text-cancel-text lg:hidden">{{ $subject }}者</span>{{ $record->user->full_name }}
+                                <span class="mr-2 {{ $labelClass }} lg:hidden">{{ $subject }}者</span>{{ $record->user->full_name }}
                             </td>
                             <td class="col-start-2 row-span-2 row-start-2 self-start {{ $cellClass }}">
                                 <x-admin-detail-button :label="$subject.$record->id.'の詳細を見る'" :event="$listType->detailEvent()" :id="$record->id" />

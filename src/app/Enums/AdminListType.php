@@ -61,6 +61,17 @@ enum AdminListType: string
     }
 
     /**
+     * 取消のルート名
+     */
+    public function cancelRoute(): string
+    {
+        return match ($this) {
+            self::Purchase => 'admin.purchase.cancel',
+            self::Reservation => 'admin.reservations.cancel',
+        };
+    }
+
+    /**
      * 「詳細」ボタンが送る Livewire のイベント名（詳細のモーダルの #[On(...)] と同じ名前）
      */
     public function detailEvent(): string

@@ -42,6 +42,7 @@ class MyPageReservationHistory extends Component
             'date' => $reservation->created_at?->format('Y/m/d'),
             'names' => [$reservation->item->display_name],
             'total' => $reservation->total_price,
+            'canceled' => $reservation->canceled_at !== null,
         ]);
 
         return view('livewire.my-page-reservation-history', [

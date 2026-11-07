@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\AdminListStatus;
 use App\Services\AdminListCriteria;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -21,7 +22,7 @@ class AdminListCriteriaTest extends TestCase
     {
         $criteria = AdminListCriteria::fromConditions(['shipped' => '', 'date' => '', 'name' => '']);
 
-        $this->assertNull($criteria->shipped);
+        $this->assertNull($criteria->status);
         $this->assertNull($criteria->from);
         $this->assertNull($criteria->to);
         $this->assertSame('', $criteria->name);
@@ -29,13 +30,36 @@ class AdminListCriteriaTest extends TestCase
     }
 
     /**
-     * 発送状況は '0' が未発送、'1' が発送済み
+     * 発送状況は '0' が未発送、'1' が発送済、'canceled' が取消済
      */
     #[Test]
-    public function 発送状況は真偽値になる(): void
+    public function 発送状況は列挙型になる(): void
     {
-        $this->assertFalse(AdminListCriteria::fromConditions(['shipped' => '0'])->shipped);
-        $this->assertTrue(AdminListCriteria::fromConditions(['shipped' => '1'])->shipped);
+        $this->assertSame(AdminListStatus::Unshipped, AdminListCriteria::fromConditions(['shipped' => '0'])->status);
+        $this->assertSame(AdminListStatus::Shipped, AdminListCriteria::fromConditions(['shipped' => '1'])->status);
+        $this->assertSame(AdminListStatus::Canceled, AdminListCriteria::fromConditions(['shipped' => 'canceled'])->status);
+    }
+
+    /**
+     * 決められた値でない発送状況は、絞り込みなしにせず例外になる
+     */
+    #[Test]
+    #[DataProvider('brokenStatuses')]
+    public function 壊れた発送状況は例外になる(string $status): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        AdminListCriteria::fromConditions(['shipped' => $status]);
+    }
+
+    /**
+     * 決められた値でない発送状況
+     *
+     * @return array<string, array{string}>
+     */
+    public static function brokenStatuses(): array
+    {
+        return ['2' => ['2'], '01' => ['01'], '大文字' => ['Canceled'], 'true' => ['true'], '空白' => [' ']];
     }
 
     /**

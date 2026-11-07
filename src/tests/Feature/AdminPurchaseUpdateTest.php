@@ -84,20 +84,38 @@ class AdminPurchaseUpdateTest extends TestCase
     }
 
     /**
-     * 存在しない注文はエラーになり、他の注文は変わらない
+     * 存在しない注文は、リクエストの検証ではなく更新の処理が判定し、404 と「注文が見つかりません。」を返す。他の注文は変わらない
      */
     #[Test]
-    public function 存在しない注文はエラーで他の注文は変わらない(): void
+    public function 存在しない注文は404で他の注文は変わらない(): void
     {
         $this->loginAsAdmin();
         $order = $this->makeOrder();
 
-        $this->postJson(route('admin.purchase.update'), ['id' => $order->id + 100, 'shipped' => true])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('id')
-            ->assertJsonPath('message', '注文が見つかりません。');
+        foreach ([$order->id + 100, 999999] as $id) {
+            $this->postJson(route('admin.purchase.update'), ['id' => $id, 'shipped' => true])
+                ->assertNotFound()
+                ->assertExactJson(['message' => '注文が見つかりません。']);
+        }
 
         $this->assertFalse($order->fresh()->shipped);
+    }
+
+    /**
+     * 画面を開いたあとに物理削除された注文（会員ごと削除）は、同じ 404 になる
+     */
+    #[Test]
+    public function 削除された注文は404になる(): void
+    {
+        $this->loginAsAdmin();
+        $user = $this->makeWithdrawnUser();
+        $order = $this->makeOrder($user, overrides: ['shipped' => true]);
+        $this->delete(route('admin.users.delete'), ['id' => $user->id]);
+        $this->assertDatabaseMissing('purchase_histories', ['id' => $order->id]);
+
+        $this->postJson(route('admin.purchase.update'), ['id' => $order->id, 'shipped' => false])
+            ->assertNotFound()
+            ->assertExactJson(['message' => '注文が見つかりません。']);
     }
 
     /**
@@ -113,6 +131,10 @@ class AdminPurchaseUpdateTest extends TestCase
         $this->postJson(route('admin.purchase.update'), ['id' => $order->id])->assertStatus(422)->assertJsonValidationErrors('shipped');
         $this->postJson(route('admin.purchase.update'), ['id' => $order->id, 'shipped' => 'abc'])->assertStatus(422)->assertJsonValidationErrors('shipped');
         $this->postJson(route('admin.purchase.update'), ['id' => 'abc', 'shipped' => true])->assertStatus(422)->assertJsonValidationErrors('id');
+        // IDの形が不正（0・負の数・小数・指数表記・空）は 422
+        foreach ([0, -1, 1.5, '1e3', ''] as $badId) {
+            $this->postJson(route('admin.purchase.update'), ['id' => $badId, 'shipped' => true])->assertStatus(422)->assertJsonValidationErrors('id');
+        }
         // fetch が付ける Accept: application/json のヘッダーでも、標準の422のJSONになる
         $this->post(route('admin.purchase.update'), ['id' => 0, 'shipped' => true], ['Accept' => 'application/json'])
             ->assertStatus(422)

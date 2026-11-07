@@ -98,20 +98,38 @@ class AdminReservationUpdateTest extends TestCase
     }
 
     /**
-     * 存在しない予約は422で、他の予約は変わらない
+     * 存在しない予約は、リクエストの検証ではなく更新の処理が判定し、404 と「予約が見つかりません。」を返す。他の予約は変わらない
      */
     #[Test]
-    public function 存在しない予約はエラーで他の予約は変わらない(): void
+    public function 存在しない予約は404で他の予約は変わらない(): void
     {
         $this->loginAsAdmin();
         $reservation = $this->makeAdminReservation();
 
-        $this->postJson(route('admin.reservations.update'), ['id' => $reservation->id + 100, 'shipped' => true])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('id')
-            ->assertJsonPath('message', '予約が見つかりません。');
+        foreach ([$reservation->id + 100, 999999] as $id) {
+            $this->postJson(route('admin.reservations.update'), ['id' => $id, 'shipped' => true])
+                ->assertNotFound()
+                ->assertExactJson(['message' => '予約が見つかりません。']);
+        }
 
         $this->assertFalse($reservation->fresh()->shipped);
+    }
+
+    /**
+     * 画面を開いたあとに物理削除された予約（会員ごと削除）は、同じ 404 になる
+     */
+    #[Test]
+    public function 削除された予約は404になる(): void
+    {
+        $this->loginAsAdmin();
+        $user = $this->makeWithdrawnUser();
+        $reservation = $this->makeAdminReservation($user, overrides: ['shipped' => true]);
+        $this->delete(route('admin.users.delete'), ['id' => $user->id]);
+        $this->assertDatabaseMissing('reservations', ['id' => $reservation->id]);
+
+        $this->postJson(route('admin.reservations.update'), ['id' => $reservation->id, 'shipped' => false])
+            ->assertNotFound()
+            ->assertExactJson(['message' => '予約が見つかりません。']);
     }
 
     /**
@@ -127,6 +145,10 @@ class AdminReservationUpdateTest extends TestCase
         $this->postJson(route('admin.reservations.update'), ['id' => $reservation->id])->assertStatus(422)->assertJsonValidationErrors('shipped');
         $this->postJson(route('admin.reservations.update'), ['id' => $reservation->id, 'shipped' => 'abc'])->assertStatus(422)->assertJsonValidationErrors('shipped');
         $this->postJson(route('admin.reservations.update'), ['id' => 'abc', 'shipped' => true])->assertStatus(422)->assertJsonValidationErrors('id');
+        // IDの形が不正（0・負の数・小数・指数表記・空）は 422
+        foreach ([0, -1, 1.5, '1e3', ''] as $badId) {
+            $this->postJson(route('admin.reservations.update'), ['id' => $badId, 'shipped' => true])->assertStatus(422)->assertJsonValidationErrors('id');
+        }
 
         $this->assertFalse($reservation->fresh()->shipped);
     }
