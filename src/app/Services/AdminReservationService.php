@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ShippedUpdateResult;
 use App\Exports\ReservationExport;
 use App\Models\Reservation;
 use App\Repositories\Interfaces\ReservationRepositoryInterface;
@@ -35,11 +36,9 @@ class AdminReservationService
     }
 
     /**
-     * 予約の発送済みかどうかを更新する（存在しない予約は、呼び出し側のバリデーションで弾く）
-     *
-     * @return bool 更新できたか（取消済みの予約は更新せず false）
+     * 予約の発送済みかどうかを更新する（存在しない予約・取消済みの予約は更新せず、結果で返す）
      */
-    public function updateShipped(int $id, bool $shipped): bool
+    public function updateShipped(int $id, bool $shipped): ShippedUpdateResult
     {
         return $this->reservationRepository->updateShipped($id, $shipped);
     }
@@ -57,7 +56,7 @@ class AdminReservationService
     /**
      * エクスポートで出力される予約の件数（発送状況が「取消済」のとき以外は、取消済みを含めない）
      *
-     * 発送状況が未発送・発送済・取消済のときは、一覧の件数と同じなので、追加で数えない。発送状況が空のときだけ（取消済みを除く件数が要る）数える。
+     * 追加で数えるかどうかは AdminListCriteria::exportNeedsOwnCount() が決める。
      *
      * @param  array{shipped?: string, date?: string, name?: string}  $conditions
      * @param  int  $listTotal  同じ検索条件の一覧の件数
@@ -66,7 +65,7 @@ class AdminReservationService
     {
         $criteria = AdminListCriteria::fromConditions($conditions);
 
-        return $criteria->status === null ? $this->reservationRepository->countForExport($criteria) : $listTotal;
+        return $criteria->exportNeedsOwnCount() ? $this->reservationRepository->countForExport($criteria) : $listTotal;
     }
 
     /**

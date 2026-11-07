@@ -44,6 +44,17 @@ final readonly class AdminListCriteria
     }
 
     /**
+     * エクスポートの件数を、一覧の件数とは別に数える必要があるか
+     *
+     * 発送状況が未発送・発送済・取消済のときは、エクスポートの対象と一覧の対象が同じなので、一覧の件数を使える。
+     * 発送状況が空のときだけ、一覧は取消済みも含み、エクスポートは含めないため、別に数える。
+     */
+    public function exportNeedsOwnCount(): bool
+    {
+        return $this->status === null;
+    }
+
+    /**
      * 検索欄の発送状況を enum にする（空は null）
      */
     private static function parseStatus(string $shipped): ?AdminListStatus

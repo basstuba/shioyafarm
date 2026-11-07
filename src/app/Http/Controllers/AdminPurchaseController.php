@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AdminListType;
+use App\Enums\ShippedUpdateResult;
 use App\Http\Requests\AdminPurchaseCancelRequest;
 use App\Http\Requests\AdminPurchaseUpdateRequest;
 use App\Http\Requests\PurchaseSearchRequest;
@@ -52,16 +53,17 @@ class AdminPurchaseController extends Controller
     /**
      * 発送済みかどうかの更新（チェックを押した瞬間に Alpine から送られる。JSON を返す）
      *
-     * 取消済みの注文は更新せず、409 を返す（一覧のチェックと行の色を戻す）。
+     * 取消済みの注文は更新せず 409、存在しない注文（検証のあとに物理削除されたときなど）は 404 を返す（一覧のチェックと行の色を戻す）。
      */
     public function update(AdminPurchaseUpdateRequest $request, AdminPurchaseService $service): JsonResponse
     {
         Log::debug('AdminPurchaseController@update start');
 
-        $updated = $service->updateShipped($request->integer('id'), $request->boolean('shipped'));
-        $response = $updated
-            ? response()->json(['id' => $request->integer('id'), 'shipped' => $request->boolean('shipped')])
-            : response()->json(['message' => '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。'], 409);
+        $response = match ($service->updateShipped($request->integer('id'), $request->boolean('shipped'))) {
+            ShippedUpdateResult::Updated => response()->json(['id' => $request->integer('id'), 'shipped' => $request->boolean('shipped')]),
+            ShippedUpdateResult::NotFound => response()->json(['message' => '注文が見つかりません。'], 404),
+            ShippedUpdateResult::Canceled => response()->json(['message' => OrderCancelResponder::SHIPPED_CONFLICT_MESSAGE], 409),
+        };
 
         Log::debug('AdminPurchaseController@update end');
 

@@ -48,6 +48,7 @@
                 this.message = '';
                 let expired = false;
                 let conflict = false;
+                let missing = false;
                 try {
                     const response = await fetch('{{ route($listType->updateRoute()) }}', {
                         method: 'POST',
@@ -61,10 +62,12 @@
                     expired = response.status === 401 || response.status === 419;
                     // 別の画面で取り消された（取消済みは発送済みにできない）
                     conflict = response.status === 409;
+                    // 別の画面で物理削除された（再試行しても直らない）
+                    missing = response.status === 404;
                 } catch (error) {
                     // 通信エラーも、保存できなかった扱いにする
                 }
-                this.message = expired ? 'ページの有効期限が切れました。ページを再読み込みしてください。' : conflict ? '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。' : '保存できませんでした。もう一度お試しください。';
+                this.message = expired ? 'ページの有効期限が切れました。ページを再読み込みしてください。' : conflict ? '{{ \App\Http\Responses\OrderCancelResponder::SHIPPED_CONFLICT_MESSAGE }}' : missing ? '{{ $subject }}が見つかりません。ページを再読み込みしてください。' : '保存できませんでした。もう一度お試しください。';
                 return false;
             },
         }"
