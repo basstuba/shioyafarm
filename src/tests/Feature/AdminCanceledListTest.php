@@ -15,7 +15,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
-use Mockery\MockInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -452,7 +451,7 @@ class AdminCanceledListTest extends TestCase
     }
 
     /**
-     * 検証のあとに物理削除された（存在しない）行への更新は、404 と「見つかりません」を返す。取消済みの409とは区別する
+     * 存在しない行・物理削除された行への更新は、リクエストを通して 404 と「見つかりません」を返す。取消済みの409とは区別する
      */
     #[Test]
     #[DataProvider('types')]
@@ -460,21 +459,19 @@ class AdminCanceledListTest extends TestCase
     {
         $this->loginAsAdmin();
         $target = $this->makeTarget($type);
-        // 検証（exists）を通ったあとに削除された状況を、Service を直接呼んで再現する
-        $target->delete();
+        $deleted = $this->makeTarget($type, ['shipped' => true]);
+        $deleted->delete();
         $service = $type === AdminListType::Purchase ? app(AdminPurchaseService::class) : app(AdminReservationService::class);
-        $this->assertSame(ShippedUpdateResult::NotFound, $service->updateShipped($target->id, true));
+        $this->assertSame(ShippedUpdateResult::NotFound, $service->updateShipped($deleted->id, true));
 
-        // 画面からの更新は検証で 422（存在しない ID）。コントローラーが 404 を返すのは、検証のあとに消えたときだけ
-        $this->postJson(route($type->updateRoute()), ['id' => $target->id, 'shipped' => true])->assertStatus(422);
-        $this->mock($type === AdminListType::Purchase ? AdminPurchaseService::class : AdminReservationService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('updateShipped')->once()->andReturn(ShippedUpdateResult::NotFound);
-        });
-        $other = $this->makeTarget($type);
-
-        $this->postJson(route($type->updateRoute()), ['id' => $other->id, 'shipped' => true])
-            ->assertNotFound()
-            ->assertExactJson(['message' => $type->subject().'が見つかりません。']);
+        foreach ([$deleted->id, 999999] as $id) {
+            $this->postJson(route($type->updateRoute()), ['id' => $id, 'shipped' => false])
+                ->assertNotFound()
+                ->assertExactJson(['message' => $type->subject().'が見つかりません。']);
+        }
+        // 値が不正なときは、存在しないIDでも 422
+        $this->postJson(route($type->updateRoute()), ['id' => 999999, 'shipped' => 'abc'])->assertStatus(422)->assertJsonValidationErrors('shipped');
+        $this->assertFalse($target->fresh()->shipped);
     }
 
     /**
