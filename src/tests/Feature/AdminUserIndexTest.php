@@ -165,6 +165,12 @@ class AdminUserIndexTest extends TestCase
         $this->assertSame(1, preg_match('#<colgroup>(.*?)</colgroup>#s', $html, $colgroup));
         $this->assertSame(5, preg_match_all('#<col class="lg:w-\[(\d+)%\]">#', $colgroup[1], $widths));
         $this->assertSame(100, array_sum($widths[1]));
+        // 状態12%・氏名32%・電話番号26%・詳細12%・メール送信18%
+        $this->assertSame(['12', '32', '26', '12', '18'], $widths[1]);
+        // 最後の列（メール送信）は、見出しも各行のセルもPCだけ右寄せにする（SPのカードは変えない）
+        $this->assertStringContainsString('lg:text-right"><span class="sr-only">メール送信</span>', $html);
+        $this->assertMatchesRegularExpression('#<td class="[^"]*\blg:text-right\b[^"]*">\s*<a\s[^>]*>メール送信</a>#u', $html);
+        $this->assertSame(1, substr_count($html, 'lg:text-right"><span'));
         // 表の最大幅は注文一覧と同じ960px
         $this->assertStringContainsString('max-w-[960px]', $html);
     }
