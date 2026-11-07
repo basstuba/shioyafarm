@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AdminListStatus;
 use App\Enums\AdminListType;
 use App\Exports\AdminOrderExport;
 use App\Http\Requests\ExportRequest;
@@ -30,7 +31,8 @@ class AdminExportController extends Controller
             AdminListType::Purchase => $purchaseService->purchaseExport($request->conditions()),
             AdminListType::Reservation => $reservationService->reservationExport($request->conditions()),
         };
-        $response = $this->download($export);
+        // 発送状況が「取消済」のときは、ファイル名で取消済みの一覧だとわかるようにする
+        $response = $this->download($export, $request->conditions()['shipped'] === AdminListStatus::Canceled->value);
 
         Log::debug('AdminExportController end');
 
@@ -42,9 +44,9 @@ class AdminExportController extends Controller
      *
      * ファイル名は日本語（filename*）で、ASCII 側（filename）は有効な英数字の名前にする。
      */
-    private function download(AdminOrderExport $export): BinaryFileResponse
+    private function download(AdminOrderExport $export, bool $canceled): BinaryFileResponse
     {
-        return Excel::download($export, $export::fileName())
-            ->setContentDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $export::fileName(), $export::asciiFileName());
+        return Excel::download($export, $export::fileName($canceled))
+            ->setContentDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $export::fileName($canceled), $export::asciiFileName($canceled));
     }
 }

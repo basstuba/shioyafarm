@@ -16,6 +16,9 @@ enum OrderCancelResult
     /** 取消済みにできた。銀行振込の入金済み・入金処理中・一部入金済みで、Stripe の支払いはそのまま（返金は農園が Stripe の管理画面で行う） */
     case CanceledAfterPayment;
 
+    /** 取消済みにできた。Stripe の支払いはすでに canceled だった（前回、Stripe の取消だけ成功して保存に失敗した再実行）。取り消したあとの PaymentIntent には一部入金の手がかりが残らないため、入金があったかは分からない */
+    case CanceledMaybePaid;
+
     /** 存在しない注文・予約のため、何も変えなかった */
     case NotFound;
 
@@ -33,6 +36,6 @@ enum OrderCancelResult
      */
     public function isCanceled(): bool
     {
-        return in_array($this, [self::Canceled, self::CanceledCard, self::CanceledAfterPayment], true);
+        return in_array($this, [self::Canceled, self::CanceledCard, self::CanceledAfterPayment, self::CanceledMaybePaid], true);
     }
 }

@@ -18,6 +18,9 @@ class OrderCancelResponder
     /** Stripe の呼び出しなどで取り消せなかったときの案内 */
     public const string FAILED_MESSAGE = '取り消せませんでした。時間をおいて、もう一度お試しください。';
 
+    /** 取消済みの注文・予約の発送済みの更新（409）の案内。コントローラーの JSON と、一覧の発送済みのチェックの案内で共通 */
+    public const string SHIPPED_CONFLICT_MESSAGE = '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。';
+
     public function __invoke(AdminListType $type, OrderCancelResult $result): RedirectResponse
     {
         $subject = $type->subject();
@@ -26,6 +29,7 @@ class OrderCancelResponder
         return match ($result) {
             OrderCancelResult::Canceled => $redirect->with('list_status', "{$subject}を取り消しました。"),
             OrderCancelResult::CanceledCard => $redirect->with('list_status', "{$subject}を取り消しました。クレジットカードの返金は、Stripeの管理画面で行ってください。"),
+            OrderCancelResult::CanceledMaybePaid => $redirect->with('list_status', "{$subject}を取り消しました。入金があった場合は、返金はStripeの管理画面で行ってください。"),
             OrderCancelResult::CanceledAfterPayment => $redirect->with('list_status', "{$subject}を取り消しました。入金済みのため、返金はStripeの管理画面で行ってください。"),
             OrderCancelResult::NotFound => $redirect->withErrors(['cancel' => "{$subject}が見つかりません。"]),
             OrderCancelResult::Shipped => $redirect->withErrors(['cancel' => '発送済みのため取り消せません。']),

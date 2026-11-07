@@ -219,7 +219,7 @@ class AdminOrderCancelTest extends TestCase
     }
 
     /**
-     * 一部入金済み（振込の残りの金額が PaymentIntent の金額より小さい）は、PaymentIntent を取り消したうえで、入金済みの案内を出す（AC-7）
+     * 一部入金済み（振込の残りが PaymentIntent の金額より小さい。実際の Stripe では amount_received は 0 のまま）は、PaymentIntent を取り消したうえで、入金済みの案内を出す（AC-7）
      */
     #[Test]
     #[DataProvider('types')]
@@ -228,7 +228,7 @@ class AdminOrderCancelTest extends TestCase
         $this->loginAsAdmin();
         $target = $this->makeBankTransferTarget($type, 'pi_partial');
         $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
-            // 金額 1270 のうち 500 円が入金済み（残り 770 円）
+            // 金額 1270 のうち 500 円が入金済み（振込の残り 770 円）。amount_received には反映されない
             $mock->shouldReceive('retrieveBankTransferIntent')->once()->with('pi_partial')
                 ->andReturn(new BankTransferIntentData('pi_partial', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 770)));
             $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_partial');
@@ -241,11 +241,11 @@ class AdminOrderCancelTest extends TestCase
     }
 
     /**
-     * 振込先の残りが PaymentIntent の金額と同じ（入金がない）ときは、これまでどおり取り消すだけで、入金済みの案内は出ない
+     * 振込の残りが PaymentIntent の金額と同じ（未入金）ときは、取り消すだけで、入金済みの案内は出ない
      */
     #[Test]
     #[DataProvider('types')]
-    public function 振込先の残りが金額と同じなら未入金として取り消す(AdminListType $type): void
+    public function 振込の残りが金額と同じなら未入金として取り消す(AdminListType $type): void
     {
         $this->loginAsAdmin();
         $target = $this->makeBankTransferTarget($type, 'pi_none');
@@ -256,6 +256,60 @@ class AdminOrderCancelTest extends TestCase
         });
 
         $this->cancel($type, $target->id)->assertSessionHas('list_status', $type->subject().'を取り消しました。');
+    }
+
+    /**
+     * 再実行：前回、Stripe の取消だけ成功して保存に失敗した（Failed）あと、再度取り消すと、status は canceled になっている。
+     * 取り消したあとの PaymentIntent には一部入金の手がかりが残らない（amount_received も 0）ため、入金があった場合の確認の案内を出す
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function 再実行ではcanceledなので入金があった場合の確認の案内を出す(AdminListType $type): void
+    {
+        $this->loginAsAdmin();
+        $target = $this->makeBankTransferTarget($type, 'pi_retry');
+        $calls = 0;
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock) use (&$calls): void {
+            // 1回目：requires_action で一部入金（振込の残り 770 円）→ Stripe を取り消す（保存に失敗）。2回目：canceled（手がかりなし）→ 取り消さない
+            $mock->shouldReceive('retrieveBankTransferIntent')->twice()->with('pi_retry')->andReturnUsing(function () use (&$calls): BankTransferIntentData {
+                return ++$calls === 1
+                    ? new BankTransferIntentData('pi_retry', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 770))
+                    : new BankTransferIntentData('pi_retry', 'canceled', 1270, null);
+            });
+            $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_retry');
+        });
+        $fail = true;
+        $target::saving(function () use (&$fail): void {
+            if ($fail) {
+                throw new QueryException('mysql', 'update `x` set `canceled_at` = ?', [1], new RuntimeException('SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction'));
+            }
+        });
+
+        $this->cancel($type, $target->id)->assertSessionHasErrors(['cancel' => '取り消せませんでした。時間をおいて、もう一度お試しください。']);
+        $this->assertNull($this->reload($target)->canceled_at);
+
+        $fail = false;
+        $this->cancel($type, $target->id)
+            ->assertSessionHas('list_status', $type->subject().'を取り消しました。入金があった場合は、返金はStripeの管理画面で行ってください。')
+            ->assertSessionHasNoErrors();
+        $this->assertNotNull($this->reload($target)->canceled_at);
+    }
+
+    /**
+     * 一覧にも、入金があった場合の確認の案内が緑の文字で出る
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function canceledの案内は一覧に緑の文字で出る(AdminListType $type): void
+    {
+        $this->loginAsAdmin();
+        $target = $this->makeBankTransferTarget($type, 'pi_maybe');
+        $this->mockIntent('pi_maybe', 'canceled', 0);
+        $message = $type->subject().'を取り消しました。入金があった場合は、返金はStripeの管理画面で行ってください。';
+
+        $html = $this->from(route($type->listRoute()))->followingRedirects()->post(route($type->cancelRoute()), ['id' => $target->id])->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('#</form>\s*<p class="mt-3 w-full text-center text-base text-accent-hover" role="status">'.preg_quote($message, '#').'</p>#su', $html);
     }
 
     /**
@@ -325,7 +379,7 @@ class AdminOrderCancelTest extends TestCase
         $target = $this->makeBankTransferTarget($type, 'pi_already');
         $this->mockIntent('pi_already', 'canceled', 0);
 
-        $this->cancel($type, $target->id)->assertSessionHas('list_status', $type->subject().'を取り消しました。');
+        $this->cancel($type, $target->id)->assertSessionHas('list_status', $type->subject().'を取り消しました。入金があった場合は、返金はStripeの管理画面で行ってください。');
 
         $this->assertNotNull($this->reload($target)->canceled_at);
     }

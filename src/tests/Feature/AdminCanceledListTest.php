@@ -3,14 +3,19 @@
 namespace Tests\Feature;
 
 use App\Enums\AdminListType;
+use App\Enums\ShippedUpdateResult;
+use App\Http\Responses\OrderCancelResponder;
 use App\Models\Purchase_history;
 use App\Models\Reservation;
 use App\Models\User;
+use App\Services\AdminListCriteria;
 use App\Services\AdminPurchaseService;
 use App\Services\AdminReservationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Mockery\MockInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -421,10 +426,10 @@ class AdminCanceledListTest extends TestCase
     }
 
     /**
-     * 発送済みの更新：存在しない行は false（Service の戻り値）、取消済みの行は更新しない
+     * 発送済みの更新の結果：更新できた／取消済み／存在しない（Service の戻り値）。取消済み・存在しない行は何も変えない
      */
     #[Test]
-    public function 発送済みの更新の戻り値は存在と取消で決まる(): void
+    public function 発送済みの更新の結果は存在と取消で決まる(): void
     {
         $purchases = app(AdminPurchaseService::class);
         $reservations = app(AdminReservationService::class);
@@ -433,61 +438,116 @@ class AdminCanceledListTest extends TestCase
         $reservation = $this->makeAdminReservation();
         $canceledReservation = $this->makeAdminReservation(overrides: ['canceled_at' => '2026-11-05 10:00:00']);
 
-        $this->assertTrue($purchases->updateShipped($order->id, true));
+        $this->assertSame(ShippedUpdateResult::Updated, $purchases->updateShipped($order->id, true));
         // 同じ値でも成功（MySQL は更新の件数が 0 になる）
-        $this->assertTrue($purchases->updateShipped($order->id, true));
-        $this->assertTrue($purchases->updateShipped($order->id, false));
-        $this->assertFalse($purchases->updateShipped($canceledOrder->id, true));
-        $this->assertFalse($purchases->updateShipped(999999, true));
-        $this->assertTrue($reservations->updateShipped($reservation->id, true));
-        $this->assertFalse($reservations->updateShipped($canceledReservation->id, true));
-        $this->assertFalse($reservations->updateShipped(999999, true));
+        $this->assertSame(ShippedUpdateResult::Updated, $purchases->updateShipped($order->id, true));
+        $this->assertSame(ShippedUpdateResult::Updated, $purchases->updateShipped($order->id, false));
+        $this->assertSame(ShippedUpdateResult::Canceled, $purchases->updateShipped($canceledOrder->id, true));
+        $this->assertSame(ShippedUpdateResult::NotFound, $purchases->updateShipped(999999, true));
+        $this->assertSame(ShippedUpdateResult::Updated, $reservations->updateShipped($reservation->id, true));
+        $this->assertSame(ShippedUpdateResult::Canceled, $reservations->updateShipped($canceledReservation->id, true));
+        $this->assertSame(ShippedUpdateResult::NotFound, $reservations->updateShipped(999999, true));
         $this->assertFalse(Purchase_history::findOrFail($canceledOrder->id)->shipped);
         $this->assertFalse(Reservation::findOrFail($canceledReservation->id)->shipped);
     }
 
     /**
-     * 出力件数は、発送状況が未発送・発送済・取消済のときは一覧の件数と同じで、追加の COUNT を投げない。空のときだけ数える
+     * 検証のあとに物理削除された（存在しない）行への更新は、404 と「見つかりません」を返す。取消済みの409とは区別する
      */
     #[Test]
     #[DataProvider('types')]
-    public function 出力件数は発送状況が空のときだけ追加で数える(AdminListType $type): void
+    public function 存在しない行への更新は404を返す(AdminListType $type): void
     {
         $this->loginAsAdmin();
-        $this->makeThree($type);
-        $counts = function (array $query) use ($type): int {
-            DB::flushQueryLog();
-            DB::enableQueryLog();
-            $this->get(route($type->searchRoute(), $query))->assertOk();
+        $target = $this->makeTarget($type);
+        // 検証（exists）を通ったあとに削除された状況を、Service を直接呼んで再現する
+        $target->delete();
+        $service = $type === AdminListType::Purchase ? app(AdminPurchaseService::class) : app(AdminReservationService::class);
+        $this->assertSame(ShippedUpdateResult::NotFound, $service->updateShipped($target->id, true));
 
-            return count(array_filter(array_column(DB::getQueryLog(), 'query'), fn (string $sql): bool => str_contains($sql, 'count(*)') && str_contains($sql, "from \"{$type->table()}\"")));
-        };
+        // 画面からの更新は検証で 422（存在しない ID）。コントローラーが 404 を返すのは、検証のあとに消えたときだけ
+        $this->postJson(route($type->updateRoute()), ['id' => $target->id, 'shipped' => true])->assertStatus(422);
+        $this->mock($type === AdminListType::Purchase ? AdminPurchaseService::class : AdminReservationService::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('updateShipped')->once()->andReturn(ShippedUpdateResult::NotFound);
+        });
+        $other = $this->makeTarget($type);
 
-        // 一覧のページ分けの COUNT が 1 回だけ
-        $this->assertSame(1, $counts(['shipped' => '0']));
-        $this->assertSame(1, $counts(['shipped' => '1']));
-        $this->assertSame(1, $counts(['shipped' => 'canceled']));
-        // 空：取消済みを除く件数を数えるため、もう 1 回
-        $this->assertSame(2, $counts(['shipped' => '']));
-        $this->assertSame(2, $counts([]));
+        $this->postJson(route($type->updateRoute()), ['id' => $other->id, 'shipped' => true])
+            ->assertNotFound()
+            ->assertExactJson(['message' => $type->subject().'が見つかりません。']);
     }
 
     /**
-     * 出力件数の値：発送状況が空のときは取消済みを除いた件数、それ以外は一覧の件数
+     * 取消済みの409の文言は 1 か所の定数にあり、コントローラーの JSON も一覧のスクリプトもそこから読む
      */
     #[Test]
     #[DataProvider('types')]
-    public function 出力件数の値(AdminListType $type): void
+    public function 取消済みの409の文言は定数から読む(AdminListType $type): void
     {
         $this->loginAsAdmin();
-        $this->makeThree($type);
-        $key = $type === AdminListType::Purchase ? 'purchases' : 'reservations';
-        $expected = ['' => 2, '0' => 1, '1' => 1, 'canceled' => 1];
+        $target = $this->makeTarget($type, ['canceled_at' => '2026-11-05 10:00:00']);
+        $message = OrderCancelResponder::SHIPPED_CONFLICT_MESSAGE;
 
-        foreach ($expected as $shipped => $count) {
-            $response = $this->get(route($type->searchRoute(), ['shipped' => (string) $shipped]))->assertOk();
-            $this->assertSame($count, $response->viewData('exportCount'), "shipped={$shipped}");
-            $this->assertSame($shipped === '' ? 3 : $count, $response->viewData($key)->total());
+        $this->postJson(route($type->updateRoute()), ['id' => $target->id, 'shipped' => true])->assertStatus(409)->assertExactJson(['message' => $message]);
+        $this->assertStringContainsString($message, $this->get(route($type->listRoute()))->getContent());
+        // 文言の直書きは定数の 1 か所だけ
+        foreach (['Http/Controllers/AdminPurchaseController.php', 'Http/Controllers/AdminReservationController.php', '../resources/views/admin/partials/order-list.blade.php'] as $path) {
+            $this->assertStringNotContainsString('取り消されているため', (string) file_get_contents(app_path($path)), $path);
+        }
+    }
+
+    /**
+     * 一覧のスクリプトは、404 のとき「見つかりません」の案内を出す
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function 一覧のスクリプトは404のとき見つかりませんの案内を出す(AdminListType $type): void
+    {
+        $this->loginAsAdmin();
+        $this->makeTarget($type);
+
+        $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
+
+        $this->assertStringContainsString('missing = response.status === 404;', $html);
+        $this->assertStringContainsString($type->subject().'が見つかりません。ページを再読み込みしてください。', $html);
+    }
+
+    /**
+     * 出力件数を別に数えるかは、発送状況が空のときだけ（AdminListCriteria に 1 つにまとめた規則）
+     */
+    #[Test]
+    public function 出力件数を別に数えるのは発送状況が空のときだけ(): void
+    {
+        $this->assertTrue(AdminListCriteria::fromConditions([])->exportNeedsOwnCount());
+        $this->assertTrue(AdminListCriteria::fromConditions(['shipped' => ''])->exportNeedsOwnCount());
+        foreach (['0', '1', 'canceled'] as $shipped) {
+            $this->assertFalse(AdminListCriteria::fromConditions(['shipped' => $shipped])->exportNeedsOwnCount(), $shipped);
+        }
+    }
+
+    /**
+     * 発送状況が「取消済」のエクスポートのファイル名は「〜一覧_取消済_YYYYMMDD.xlsx」。それ以外は今までどおり。列とシート名は変わらない（AC-15）
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function 取消済のエクスポートはファイル名に取消済が入る(AdminListType $type): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 11, 7, 0, 30, 0, 'Asia/Tokyo'));
+        $this->loginAsAdmin();
+        $this->makeThree($type);
+        $subject = $type->subject();
+
+        $canceled = $this->post(route('admin.export'), ['type' => $type->value, 'shipped' => 'canceled'])->assertOk();
+        $disposition = $canceled->headers->get('Content-Disposition');
+        $this->assertStringContainsString("filename*=utf-8''".rawurlencode("{$subject}一覧_取消済_20261107.xlsx"), $disposition);
+        $this->assertStringContainsString("filename={$type->value}_canceled_20261107.xlsx", $disposition);
+        $this->assertSame("{$subject}一覧", $this->sheet($canceled)->getTitle());
+
+        foreach ([[], ['shipped' => ''], ['shipped' => '0'], ['shipped' => '1']] as $conditions) {
+            $disposition = $this->post(route('admin.export'), ['type' => $type->value, ...$conditions])->assertOk()->headers->get('Content-Disposition');
+            $this->assertStringContainsString("filename*=utf-8''".rawurlencode("{$subject}一覧_20261107.xlsx"), $disposition);
+            $this->assertStringContainsString("filename={$type->value}_20261107.xlsx", $disposition);
+            $this->assertStringNotContainsString('取消済', rawurldecode($disposition));
         }
     }
 }

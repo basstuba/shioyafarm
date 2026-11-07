@@ -3,6 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Enums\OrderCancelResult;
+use App\Enums\ShippedUpdateResult;
 use App\Models\Reservation;
 use App\Services\AdminListCriteria;
 use Closure;
@@ -76,9 +77,9 @@ interface ReservationRepositoryInterface
     /**
      * 予約の発送済みかどうかを更新する（取消済みの予約は更新しない）
      *
-     * @return bool 更新できたか（存在しない予約・取消済みの予約は false）
+     * 行をロックして判定する（存在しない行は NotFound、取消済みの行は Canceled を返し、どちらも何も変えない）。
      */
-    public function updateShipped(int $id, bool $shipped): bool;
+    public function updateShipped(int $id, bool $shipped): ShippedUpdateResult;
 
     /**
      * 予約を取り消す（行をロックして、存在・発送済み・取消済みを判定する）

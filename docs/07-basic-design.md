@@ -71,7 +71,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/purchase` | GET | AdminPurchaseController | index | 必須 | 管理画面注文一覧ページ表示機能 |
 | `/admin/purchase/search` | GET | AdminPurchaseController | search | 必須 | 注文検索機能（発送状況 `shipped`＝0 未発送・1 発送済、注文日 `date`＝Y-m-d、注文者名 `name`。入力の誤りは `/admin/purchase` に戻してエラーを表示） |
 | `/admin/purchase/update` | POST | AdminPurchaseController | update | 必須 | 注文発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない注文は422） |
-| `/admin/purchase/cancel` | POST | AdminPurchaseController | cancel | 必須 | 注文取消機能（設計書にはなかった追加機能。`id` を受け取り、成功・失敗とも取消の前に見ていた検索条件・ページの一覧（直前のページが注文一覧・検索結果のとき。それ以外は `/admin/purchase`）に戻る。行をロックして、存在しない・発送済み・取消済みを判定し、取り消せるときだけ `canceled_at` を記録する。銀行振込で振込先の行があるときは Stripe の PaymentIntent の状態を確認し、未入金は取り消してから、入金済み（succeeded）は Stripe を変えずに、すでに canceled のときは成功扱いで、取消済みにする。取り消せない状態・Stripe のエラーは取消済みにしない。クレジットカード・代金引換は Stripe を呼ばない。成功の案内「注文を取り消しました。」（クレジットカードは「クレジットカードの返金は、Stripeの管理画面で行ってください。」つき、入金済み・入金処理中・一部入金済みの銀行振込は「入金済みのため、返金はStripeの管理画面で行ってください。」つき）は flash の `list_status` で検索欄の下に緑の文字、失敗の理由（発送済みのため取り消せません。／すでに取り消されています。／取り消せませんでした。時間をおいて、もう一度お試しください。／注文が見つかりません。）と419は `errors` の `cancel` で同じ場所に赤字。取消のメールは送らない） |
+| `/admin/purchase/cancel` | POST | AdminPurchaseController | cancel | 必須 | 注文取消機能（設計書にはなかった追加機能。`id` を受け取り、成功・失敗とも取消の前に見ていた検索条件・ページの一覧（直前のページが注文一覧・検索結果のとき。それ以外は `/admin/purchase`）に戻る。行をロックして、存在しない・発送済み・取消済みを判定し、取り消せるときだけ `canceled_at` を記録する。銀行振込で振込先の行があるときは Stripe の PaymentIntent の状態を確認し、未入金は取り消してから、入金済み（succeeded）は Stripe を変えずに、すでに canceled のとき（前回、Stripe の取消だけ成功して保存に失敗した再実行。取り消したあとは一部入金の手がかりが残らない）は成功扱いにして、「入金があった場合は、返金はStripeの管理画面で行ってください。」と案内する。一部入金の判定は、requires_action のときの振込の残り（next_action の amount_remaining）が PaymentIntent の金額より小さいか（amount_received には反映されない）で行う。取り消せない状態・Stripe のエラーは取消済みにしない。クレジットカード・代金引換は Stripe を呼ばない。成功の案内「注文を取り消しました。」（クレジットカードは「クレジットカードの返金は、Stripeの管理画面で行ってください。」つき、入金済み・入金処理中・一部入金済みの銀行振込は「入金済みのため、返金はStripeの管理画面で行ってください。」つき）は flash の `list_status` で検索欄の下に緑の文字、失敗の理由（発送済みのため取り消せません。／すでに取り消されています。／取り消せませんでした。時間をおいて、もう一度お試しください。／注文が見つかりません。）と419は `errors` の `cancel` で同じ場所に赤字。取消のメールは送らない） |
 | `/admin/reservations` | GET | AdminReservationController | index | 必須 | 管理画面予約一覧ページ表示機能 |
 | `/admin/reservations/search` | GET | AdminReservationController | search | 必須 | 予約検索機能（発送状況 `shipped`＝0 未発送・1 発送済、予約日 `date`＝Y-m-d、予約者名 `name`。入力の誤りは `/admin/reservations` に戻してエラーを表示） |
 | `/admin/reservations/update` | POST | AdminReservationController | update | 必須 | 予約発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない予約は422） |
@@ -297,8 +297,8 @@ user_idと合計金額はcontrollerで取得
 ### 取消に関する追記（発送状況・取消のリクエスト）
 
 - 発送状況（shipped）は、0 か 1 に加えて `canceled`（取消済）を受け付ける（ExportRequest・PurchaseSearchRequest・ReservationSearchRequest 共通。ほかの値はエラー「発送状況は「未発送」「発送済」「取消済」のどれかを選んでください。」）。「0」＝未発送で未取消、「1」＝発送済み、「canceled」＝取消済み、空＝全件（一覧では取消済みも表示）。
-- エクスポートは、発送状況が `canceled` のとき以外は取消済みを含めない。`canceled` のときは取消済みだけを出力する。列は変えない。
-- 発送済みの更新（`/admin/purchase/update`・`/admin/reservations/update`）は、取消済みの注文・予約を更新せず、409（`{"message": "取り消されているため、発送状況を変更できません。ページを再読み込みしてください。"}`）を返す。
+- エクスポートは、発送状況が `canceled` のとき以外は取消済みを含めない。`canceled` のときは取消済みだけを出力する。列は変えないファイル名は、`canceled` のときだけ `注文一覧_取消済_YYYYMMDD.xlsx`・`予約一覧_取消済_YYYYMMDD.xlsx`（ASCII 側は `purchase_canceled_YYYYMMDD.xlsx`・`reservation_canceled_YYYYMMDD.xlsx`）にする。シート名は変えない。
+- 発送済みの更新（`/admin/purchase/update`・`/admin/reservations/update`）は、取消済みの注文・予約を更新せず、409（`{"message": "取り消されているため、発送状況を変更できません。ページを再読み込みしてください。"}`）を返す。。検証のあとに物理削除されるなどで存在しない注文・予約は、404（`{"message": "注文が見つかりません。"}`。予約は「予約が見つかりません。」）を返す
 
 ### AdminPurchaseCancelRequest.php・AdminReservationCancelRequest.php（注文・予約の取消）
 

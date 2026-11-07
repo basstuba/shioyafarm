@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Enums\OrderCancelResult;
 use App\Enums\PaymentMethod;
+use App\Enums\ShippedUpdateResult;
 use App\Models\Purchase_history;
 use App\Repositories\Concerns\AppliesAdminSearch;
 use App\Repositories\Concerns\CancelsOrder;
@@ -130,23 +131,12 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     }
 
     /**
-     * 取消済みの注文は更新しない
-     *
-     * 行をロックして読み、存在して未取消のときだけ更新する（取消 cancel と同じロックのため、判定と更新の間に取消が入らない）。
+     * 取消済みの注文は更新しない（CancelsOrder）
      */
     #[Override]
-    public function updateShipped(int $id, bool $shipped): bool
+    public function updateShipped(int $id, bool $shipped): ShippedUpdateResult
     {
-        return DB::transaction(function () use ($id, $shipped): bool {
-            $order = Purchase_history::whereKey($id)->lockForUpdate()->first();
-            if ($order === null || $order->canceled_at !== null) {
-                return false;
-            }
-
-            $order->forceFill(['shipped' => $shipped])->save();
-
-            return true;
-        });
+        return $this->updateShippedLocked(Purchase_history::query(), $id, $shipped);
     }
 
     /**
