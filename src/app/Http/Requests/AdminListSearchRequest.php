@@ -37,8 +37,8 @@ abstract class AdminListSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 「0」「1」だけ（in:0,1 は緩い比較で「1.0」「01」も通ってしまい、サービスの判定とずれる）
-            'shipped' => ['nullable', 'regex:/\A[01]\z/'],
+            // 「0」「1」「canceled」だけ（in:0,1 は緩い比較で「1.0」「01」も通ってしまい、サービスの判定とずれる）
+            'shipped' => ['nullable', 'regex:/\A(0|1|canceled)\z/'],
             'date' => ['nullable', 'date_format:Y-m-d'],
             'name' => SearchName::RULES,
         ];
@@ -53,7 +53,7 @@ abstract class AdminListSearchRequest extends FormRequest
         $subject = $this->listType()->subject();
 
         return [
-            'shipped.regex' => '発送状況は「未発送」か「発送済」を選んでください。',
+            'shipped.regex' => '発送状況は「未発送」「発送済」「取消済」のどれかを選んでください。',
             'date.date_format' => "{$subject}日は日付で入力してください。",
             'name.string' => "{$subject}者名は文字で入力してください。",
             'name.regex' => "{$subject}者名は文字で入力してください。",

@@ -1,9 +1,10 @@
 {{--
     購入履歴・予約履歴の表（マイページ用。幅600px。親の列の幅に合わせる）
-    - $rows：['id', 'date', 'names'（商品名の配列）, 'total'] の配列のコレクション
+    - $rows：['id', 'date', 'names'（商品名の配列）, 'total', 'canceled'（取消済みか）] の配列のコレクション
     - $dateLabel：日付の列の見出し（注文日／予約日）
     - $emptyMessage：0件のときの文言
     列の幅は PC では 日付134・商品名192・合計金額157・詳細（残り117）px、SP では 22%・30%・26%・残り。SPでも4列のまま、セルの左右の余白を詰めて収める。
+    取消済みの行は、日付の下に「取消済」と出す（履歴には残す）。
     表が親より広くなる場合に備え、ページ全体が横スクロールしないよう overflow-x-auto で囲む。
 --}}
 @if ($rows->isEmpty())
@@ -28,7 +29,12 @@
             <tbody>
                 @foreach ($rows as $row)
                     <tr wire:key="{{ $keyPrefix }}-{{ $row['id'] }}" class="even:bg-cream-100">
-                        <td class="border-b border-primary-dark px-1 py-3.5 align-middle whitespace-nowrap md:pr-0 md:pl-5">{{ $row['date'] }}</td>
+                        <td class="border-b border-primary-dark px-1 py-3.5 align-middle whitespace-nowrap md:pr-0 md:pl-5">
+                            {{ $row['date'] }}
+                            @if ($row['canceled'])
+                                <span class="block font-bold text-muted">取消済</span>
+                            @endif
+                        </td>
                         <td class="border-b border-primary-dark px-1 py-3.5 align-middle break-words md:pr-0 md:pl-5">
                             @foreach ($row['names'] as $name)
                                 <p>{{ $name }}</p>

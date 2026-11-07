@@ -269,7 +269,7 @@ class AdminPurchaseSearchTest extends TestCase
         $this->loginAsAdmin();
         $this->makeOrder();
 
-        foreach (['name' => '注文者名は文字で入力してください。', 'date' => '注文日は日付で入力してください。', 'shipped' => '発送状況は「未発送」か「発送済」を選んでください。'] as $key => $message) {
+        foreach (['name' => '注文者名は文字で入力してください。', 'date' => '注文日は日付で入力してください。', 'shipped' => '発送状況は「未発送」「発送済」「取消済」のどれかを選んでください。'] as $key => $message) {
             $html = $this->followingRedirects()
                 ->get(route('admin.purchase.search', [$key => ['x']]))
                 ->assertOk()

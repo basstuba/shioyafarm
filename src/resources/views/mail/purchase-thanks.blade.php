@@ -24,5 +24,7 @@
 
 @include('mail.partials.bank-transfer')
 
+@include('mail.partials.cancel-guide', ['cancelGuide' => \App\Support\OrderCancelGuide::parts(\App\Enums\AdminListType::Purchase)])
+
 @include('mail.partials.closing', ['historyGuide' => 'ご注文の内容は、マイページの購入履歴でもご確認いただけます。'])
 </x-mail::message>

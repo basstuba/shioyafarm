@@ -68,6 +68,7 @@ erDiagram
         int total_price
         varchar payment_method
         boolean shipped
+        timestamp canceled_at
         timestamp created_at
         timestamp updated_at
     }
@@ -98,6 +99,7 @@ erDiagram
         int cod_fee
         int total_price
         boolean shipped
+        timestamp canceled_at
         timestamp created_at
         timestamp updated_at
     }

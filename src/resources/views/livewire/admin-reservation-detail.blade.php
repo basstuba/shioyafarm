@@ -5,6 +5,6 @@
 --}}
 <div>
     @if ($detail !== null)
-        @include('admin.partials.order-detail-modal', ['detail' => $detail, 'subject' => \App\Enums\AdminListType::Reservation->subject(), 'titleId' => 'admin-reservation-detail-title'])
+        @include('admin.partials.order-detail-modal', ['detail' => $detail, 'listType' => \App\Enums\AdminListType::Reservation, 'titleId' => 'admin-reservation-detail-title'])
     @endif
 </div>

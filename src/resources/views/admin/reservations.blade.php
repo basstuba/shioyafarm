@@ -6,11 +6,13 @@
     管理画面の予約一覧（本体は admin/partials/order-list。詳細モーダルは Livewire の AdminReservationDetail）。レイアウトは layouts/admin/app（サイドメニューあり）。
     - $reservations：予約のページネーター（予約者を Eager Load 済み）
     - $conditions：検索欄に戻す検索条件（shipped・date・name）
+    - $exportCount：エクスポートで出力される件数
 --}}
 @section('content')
     @include('admin.partials.order-list', [
         'records' => $reservations,
         'conditions' => $conditions,
+        'exportCount' => $exportCount,
         'listType' => \App\Enums\AdminListType::Reservation,
     ])
 

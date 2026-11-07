@@ -5,6 +5,6 @@
     @include('livewire.partials.pager', ['paginator' => $purchases, 'pageName' => \App\Livewire\MyPagePurchaseHistory::PAGE_NAME, 'topClass' => 'mt-[45px]'])
 
     @if ($detail !== null)
-        @include('livewire.partials.order-detail-modal', ['detail' => $detail, 'dateLabel' => '注文日', 'title' => '購入の詳細', 'titleId' => 'purchase-detail-title'])
+        @include('livewire.partials.order-detail-modal', ['detail' => $detail, 'dateLabel' => '注文日', 'title' => '購入の詳細', 'listType' => \App\Enums\AdminListType::Purchase, 'titleId' => 'purchase-detail-title'])
     @endif
 </div>
