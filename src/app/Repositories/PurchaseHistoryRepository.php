@@ -2,11 +2,14 @@
 
 namespace App\Repositories;
 
+use App\Enums\OrderCancelResult;
 use App\Enums\PaymentMethod;
 use App\Models\Purchase_history;
 use App\Repositories\Concerns\AppliesAdminSearch;
+use App\Repositories\Concerns\CancelsOrder;
 use App\Repositories\Interfaces\PurchaseHistoryRepositoryInterface;
 use App\Services\AdminListCriteria;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +22,7 @@ use Override;
 class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
 {
     use AppliesAdminSearch;
+    use CancelsOrder;
 
     /** エクスポートで一度に読み込む注文の件数 */
     private const int EXPORT_CHUNK_SIZE = 500;
@@ -108,9 +112,15 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     #[Override]
     public function lazyForExport(AdminListCriteria $criteria): LazyCollection
     {
-        return $this->searchQuery($criteria)
+        return $this->exportQuery($criteria)
             ->with(['user', 'purchaseHistoryItems.item'])
             ->lazyByIdDesc(self::EXPORT_CHUNK_SIZE);
+    }
+
+    #[Override]
+    public function countForExport(AdminListCriteria $criteria): int
+    {
+        return $this->exportQuery($criteria)->count();
     }
 
     #[Override]
@@ -119,10 +129,33 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
         return Purchase_history::with(['user', 'purchaseHistoryItems.item', 'purchaseBankTransfer'])->find($id);
     }
 
+    /**
+     * 取消済みの注文は更新しない
+     *
+     * 行をロックして読み、存在して未取消のときだけ更新する（取消 cancel と同じロックのため、判定と更新の間に取消が入らない）。
+     */
     #[Override]
-    public function updateShipped(int $id, bool $shipped): void
+    public function updateShipped(int $id, bool $shipped): bool
     {
-        Purchase_history::whereKey($id)->update(['shipped' => $shipped]);
+        return DB::transaction(function () use ($id, $shipped): bool {
+            $order = Purchase_history::whereKey($id)->lockForUpdate()->first();
+            if ($order === null || $order->canceled_at !== null) {
+                return false;
+            }
+
+            $order->forceFill(['shipped' => $shipped])->save();
+
+            return true;
+        });
+    }
+
+    /**
+     * 取消（CancelsOrder）。銀行振込の振込先を読み込んで渡す
+     */
+    #[Override]
+    public function cancel(int $id, Closure $beforeCancel): OrderCancelResult
+    {
+        return $this->cancelLocked(Purchase_history::with('purchaseBankTransfer'), $id, $beforeCancel, 'purchaseBankTransfer');
     }
 
     /**
@@ -133,5 +166,15 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     private function searchQuery(AdminListCriteria $criteria): Builder
     {
         return $this->applyAdminSearch(Purchase_history::query(), $criteria);
+    }
+
+    /**
+     * エクスポートの検索条件を適用したクエリ（取消済みは、発送状況が「取消済」のとき以外は含めない。AppliesAdminSearch）
+     *
+     * @return Builder<Purchase_history>
+     */
+    private function exportQuery(AdminListCriteria $criteria): Builder
+    {
+        return $this->applyExportSearch(Purchase_history::query(), $criteria);
     }
 }

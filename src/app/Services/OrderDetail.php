@@ -18,12 +18,15 @@ use Carbon\CarbonInterface;
 final readonly class OrderDetail
 {
     /**
-     * 銀行振込のときは $bankTransfer にお振込先を持つ（paid が true のときは顧客残高で支払い済み）。
+     * 銀行振込のときは $bankTransfer にお振込先を持つ（paid が true のときは顧客残高で支払い済み）。取消済みのときは持たない（振込先を出さない）。
      *
      * @param  list<array{name: string, price: int, quantity: int, subtotal: int}>  $lines  商品の明細
      * @param  int|null  $codFee  代引手数料（代金引換のときだけ）
      * @param  int|null  $orderId  注文管理番号・予約管理番号（購入履歴・予約のID。管理画面の詳細だけ）
      * @param  string|null  $ordererName  注文者・予約者の姓名（管理画面の詳細だけ。会員を Eager Load 済みのときだけ入る）
+     * @param  bool  $shipped  発送済みか
+     * @param  CarbonInterface|null  $canceledAt  取消日時（取り消されていないときは null）
+     * @param  PaymentMethod|null  $paymentMethod  支払方法（保存された値が決められた値でないときは null）
      */
     public function __construct(
         public ?CarbonInterface $orderedAt,
@@ -38,7 +41,26 @@ final readonly class OrderDetail
         public ?BankTransferInfo $bankTransfer,
         public ?int $orderId = null,
         public ?string $ordererName = null,
+        public bool $shipped = false,
+        public ?CarbonInterface $canceledAt = null,
+        public ?PaymentMethod $paymentMethod = null,
     ) {}
+
+    /**
+     * 取消済みか
+     */
+    public function isCanceled(): bool
+    {
+        return $this->canceledAt !== null;
+    }
+
+    /**
+     * お客様に取消の案内（お問い合わせフォームから連絡する）を出す注文・予約か（未発送で未取消のもの）
+     */
+    public function canRequestCancel(): bool
+    {
+        return ! $this->shipped && ! $this->isCanceled();
+    }
 
     /**
      * 購入履歴から作る（商品とその振込先を Eager Load 済みであること）
@@ -67,9 +89,12 @@ final readonly class OrderDetail
             deliveryAddress: $purchase->delivery_prefecture.$purchase->delivery_city,
             deliveryTell: $purchase->delivery_tell,
             paymentLabel: $method?->label() ?? $purchase->payment_method,
-            bankTransfer: $method?->usesBankTransfer() ? self::bankTransferInfo($purchase->purchaseBankTransfer) : null,
+            bankTransfer: $method?->usesBankTransfer() && $purchase->canceled_at === null ? self::bankTransferInfo($purchase->purchaseBankTransfer) : null,
             orderId: $purchase->id,
             ordererName: $purchase->relationLoaded('user') ? $purchase->user->full_name : null,
+            shipped: $purchase->shipped,
+            canceledAt: $purchase->canceled_at,
+            paymentMethod: $method,
         );
     }
 
@@ -95,9 +120,12 @@ final readonly class OrderDetail
             deliveryAddress: $reservation->delivery_prefecture.$reservation->delivery_city,
             deliveryTell: $reservation->delivery_tell,
             paymentLabel: $method?->label() ?? $reservation->payment_method,
-            bankTransfer: $method?->usesBankTransfer() ? self::bankTransferInfo($reservation->reservationBankTransfer) : null,
+            bankTransfer: $method?->usesBankTransfer() && $reservation->canceled_at === null ? self::bankTransferInfo($reservation->reservationBankTransfer) : null,
             orderId: $reservation->id,
             ordererName: $reservation->relationLoaded('user') ? $reservation->user->full_name : null,
+            shipped: $reservation->shipped,
+            canceledAt: $reservation->canceled_at,
+            paymentMethod: $method,
         );
     }
 

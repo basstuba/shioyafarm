@@ -5,6 +5,6 @@
     @include('livewire.partials.pager', ['paginator' => $reservations, 'pageName' => \App\Livewire\MyPageReservationHistory::PAGE_NAME, 'topClass' => 'mt-[45px]'])
 
     @if ($detail !== null)
-        @include('livewire.partials.order-detail-modal', ['detail' => $detail, 'dateLabel' => '予約日', 'title' => '予約の詳細', 'titleId' => 'reservation-detail-title'])
+        @include('livewire.partials.order-detail-modal', ['detail' => $detail, 'dateLabel' => '予約日', 'title' => '予約の詳細', 'listType' => \App\Enums\AdminListType::Reservation, 'titleId' => 'reservation-detail-title'])
     @endif
 </div>

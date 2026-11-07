@@ -218,7 +218,7 @@ class AdminReservationSearchTest extends TestCase
         $this->loginAsAdmin();
         $this->makeAdminReservation();
 
-        foreach (['name' => '予約者名は文字で入力してください。', 'date' => '予約日は日付で入力してください。', 'shipped' => '発送状況は「未発送」か「発送済」を選んでください。'] as $key => $message) {
+        foreach (['name' => '予約者名は文字で入力してください。', 'date' => '予約日は日付で入力してください。', 'shipped' => '発送状況は「未発送」「発送済」「取消済」のどれかを選んでください。'] as $key => $message) {
             $html = $this->followingRedirects()
                 ->get(route('admin.reservations.search', [$key => ['x']]))
                 ->assertOk()

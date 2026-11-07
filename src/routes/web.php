@@ -119,15 +119,17 @@ Route::prefix('admin')->group(function () {
         Route::get('/', [AdminHomeController::class, 'index'])->name('admin.home');
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
-        // 注文一覧（検索・発送済みの更新。詳細のモーダルは Livewire の AdminPurchaseDetail）
+        // 注文一覧（検索・発送済みの更新・取消。詳細のモーダルは Livewire の AdminPurchaseDetail。設計書にない追加ルート：cancel）
         Route::get('/purchase', [AdminPurchaseController::class, 'index'])->name('admin.purchase.index');
         Route::get('/purchase/search', [AdminPurchaseController::class, 'search'])->name('admin.purchase.search');
         Route::post('/purchase/update', [AdminPurchaseController::class, 'update'])->name('admin.purchase.update');
+        Route::post('/purchase/cancel', [AdminPurchaseController::class, 'cancel'])->name('admin.purchase.cancel');
 
-        // 予約一覧（検索・発送済みの更新。詳細のモーダルは Livewire の AdminReservationDetail）
+        // 予約一覧（検索・発送済みの更新・取消。詳細のモーダルは Livewire の AdminReservationDetail。設計書にない追加ルート：cancel）
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('admin.reservations.index');
         Route::get('/reservations/search', [AdminReservationController::class, 'search'])->name('admin.reservations.search');
         Route::post('/reservations/update', [AdminReservationController::class, 'update'])->name('admin.reservations.update');
+        Route::post('/reservations/cancel', [AdminReservationController::class, 'cancel'])->name('admin.reservations.cancel');
 
         // 会員一覧（検索・退会済みの会員の物理削除。詳細のモーダルは Livewire の AdminUserDetail。設計書にない追加ルート：delete）
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
