@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\AdminReservationController;
 use App\Models\Reservation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
@@ -309,10 +310,11 @@ class AdminReservationIndexTest extends TestCase
 
         $this->assertStringContainsString('<label class="flex h-11 cursor-pointer', $html);
         $this->assertMatchesRegularExpression('#<input\s+class="size-6 [^"]*accent-admin-gray[^"]*"\s+type="checkbox"\s+aria-label="予約'.$reservation->id.'を発送済みにする"#u', $html);
-        $this->assertStringContainsString("fetch('".route('admin.reservations.update')."'", $html);
+        // JS の文字列は @js で出力されるため、スラッシュと日本語はエスケープされる
+        $this->assertStringContainsString('fetch('.trim((string) Blade::render('@js($v)', ['v' => route('admin.reservations.update')])), $html);
         $this->assertStringNotContainsString(route('admin.purchase.update'), $html);
         $this->assertStringContainsString('save('.$reservation->id.', shipped)', $html);
-        $this->assertStringContainsString('保存できませんでした。もう一度お試しください。', $html);
+        $this->assertStringContainsString(trim((string) Blade::render('@js($v)', ['v' => '保存できませんでした。もう一度お試しください。'])), $html);
         $this->assertMatchesRegularExpression('#<p [^>]*role="status"[^>]*x-text="message"#u', $html);
     }
 

@@ -230,7 +230,7 @@ class AdminOrderCancelTest extends TestCase
         $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
             // 金額 1270 のうち 500 円が入金済み（振込の残り 770 円）。amount_received には反映されない
             $mock->shouldReceive('retrieveBankTransferIntent')->once()->with('pi_partial')
-                ->andReturn(new BankTransferIntentData('pi_partial', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 770)));
+                ->andReturn(new BankTransferIntentData('pi_partial', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 770), 770));
             $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_partial');
         });
 
@@ -238,6 +238,30 @@ class AdminOrderCancelTest extends TestCase
             ->assertSessionHas('list_status', $type->subject().'を取り消しました。入金済みのため、返金はStripeの管理画面で行ってください。');
 
         $this->assertNotNull($this->reload($target)->canceled_at);
+    }
+
+    /**
+     * 一部入金の判定は振込の残り（amountRemaining）だけで行う。全銀の振込先（instructions）を読めなくても判定できる
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function 振込先を読めなくても振込の残りだけで一部入金を判定できる(AdminListType $type): void
+    {
+        $this->loginAsAdmin();
+        $partial = $this->makeBankTransferTarget($type, 'pi_remaining_partial');
+        $none = $this->makeBankTransferTarget($type, 'pi_remaining_none');
+        $unknown = $this->makeBankTransferTarget($type, 'pi_remaining_unknown');
+        $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('retrieveBankTransferIntent')->with('pi_remaining_partial')->once()->andReturn(new BankTransferIntentData('pi_remaining_partial', 'requires_action', 1270, null, 770));
+            $mock->shouldReceive('retrieveBankTransferIntent')->with('pi_remaining_none')->once()->andReturn(new BankTransferIntentData('pi_remaining_none', 'requires_action', 1270, null, 1270));
+            $mock->shouldReceive('retrieveBankTransferIntent')->with('pi_remaining_unknown')->once()->andReturn(new BankTransferIntentData('pi_remaining_unknown', 'requires_action', 1270, null, null));
+            $mock->shouldReceive('cancelPaymentIntent')->times(3);
+        });
+
+        $this->cancel($type, $partial->id)->assertSessionHas('list_status', $type->subject().'を取り消しました。入金済みのため、返金はStripeの管理画面で行ってください。');
+        $this->cancel($type, $none->id)->assertSessionHas('list_status', $type->subject().'を取り消しました。');
+        // 振込の残りが分からないとき（next_action が無い）は、一部入金とは判定しない
+        $this->cancel($type, $unknown->id)->assertSessionHas('list_status', $type->subject().'を取り消しました。');
     }
 
     /**
@@ -251,7 +275,7 @@ class AdminOrderCancelTest extends TestCase
         $target = $this->makeBankTransferTarget($type, 'pi_none');
         $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
             $mock->shouldReceive('retrieveBankTransferIntent')->once()
-                ->andReturn(new BankTransferIntentData('pi_none', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 1270)));
+                ->andReturn(new BankTransferIntentData('pi_none', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 1270), 1270));
             $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_none');
         });
 
@@ -322,7 +346,7 @@ class AdminOrderCancelTest extends TestCase
         $target = $this->makeBankTransferTarget(AdminListType::Purchase, 'pi_partial_ng');
         $this->mock(PaymentGatewayInterface::class, function (MockInterface $mock): void {
             $mock->shouldReceive('retrieveBankTransferIntent')->once()
-                ->andReturn(new BankTransferIntentData('pi_partial_ng', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 770)));
+                ->andReturn(new BankTransferIntentData('pi_partial_ng', 'requires_action', 1270, new BankTransferInstructions('いろは銀行', '中央支店', 'futsu', '1234567', 'ストライプジャパン', 770), 770));
             $mock->shouldReceive('cancelPaymentIntent')->once()->andThrow(new PaymentGatewayException('失敗'));
         });
 

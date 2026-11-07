@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Log;
  * 取り消せるのは、未発送で未取消のもの。クレジットカード・代金引換は Stripe を呼ばない（カードの返金は、農園が Stripe の管理画面で行う。カードは CanceledCard で案内を変える）。
  * 銀行振込で振込先の行があるときは、Stripe の PaymentIntent の状態を確認する。
  * - 入金済み（succeeded）・入金処理中（processing）：Stripe は変えずに取消済みにする（返金は農園が Stripe の管理画面で行う。CanceledAfterPayment）
- * - それ以外：PaymentIntent を取り消す。振込の残り（instructions の amount）が PaymentIntent の金額より小さい（一部入金済み。amount_received には反映されない）ときは CanceledAfterPayment、そうでなければ Canceled
+ * - それ以外：PaymentIntent を取り消す。振込の残り（amountRemaining）が PaymentIntent の金額より小さい（一部入金済み。amount_received には反映されない）ときは CanceledAfterPayment、そうでなければ Canceled
  * - すでに取消済み（canceled）：成功扱いにする（前回、Stripe の取消だけ成功して保存に失敗したときの再試行）。取り消したあとは一部入金の手がかりが残らないため、入金があったか分からない CanceledMaybePaid にして、確認の案内を出す
  * - 取り消せない状態・Stripe の例外：取消済みにせず Failed を返す
  * 取消済みにするのは、行をロックしたまま Stripe を呼んだあと（リポジトリの cancel）。
@@ -95,7 +95,7 @@ class AdminOrderCancelService
             $this->paymentGateway->cancelPaymentIntent($paymentIntentId);
 
             // 一部入金済み（振込の残りが PaymentIntent の金額より小さい）：支払いは取り消したうえで、入金済みの案内を出す
-            if ($intent->instructions !== null && $intent->instructions->amount < $intent->amount) {
+            if ($intent->amountRemaining !== null && $intent->amountRemaining < $intent->amount) {
                 return OrderCancelResult::CanceledAfterPayment;
             }
 

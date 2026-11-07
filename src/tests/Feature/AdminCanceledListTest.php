@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\AdminListType;
 use App\Enums\ShippedUpdateResult;
-use App\Http\Responses\OrderCancelResponder;
+use App\Exports\PurchaseExport;
+use App\Exports\ReservationExport;
 use App\Models\Purchase_history;
 use App\Models\Reservation;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Services\AdminPurchaseService;
 use App\Services\AdminReservationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -300,7 +302,7 @@ class AdminCanceledListTest extends TestCase
         $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
 
         $this->assertStringContainsString('conflict = response.status === 409;', $html);
-        $this->assertStringContainsString('取り消されているため、発送状況を変更できません。ページを再読み込みしてください。', $html);
+        $this->assertStringContainsString(trim((string) Blade::render('@js($m)', ['m' => '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。'])), $html);
     }
 
     /**
@@ -475,22 +477,57 @@ class AdminCanceledListTest extends TestCase
     }
 
     /**
-     * 取消済みの409の文言は 1 か所の定数にあり、コントローラーの JSON も一覧のスクリプトもそこから読む
+     * 404・409 の文言は ShippedUpdateResult にあり、コントローラーの JSON も一覧のスクリプトもそこから読む（直書きは 1 か所だけ）
      */
     #[Test]
     #[DataProvider('types')]
-    public function 取消済みの409の文言は定数から読む(AdminListType $type): void
+    public function 更新の結果の文言は列挙型から読む(AdminListType $type): void
     {
         $this->loginAsAdmin();
         $target = $this->makeTarget($type, ['canceled_at' => '2026-11-05 10:00:00']);
-        $message = OrderCancelResponder::SHIPPED_CONFLICT_MESSAGE;
+        $subject = $type->subject();
+        $conflict = '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。';
 
-        $this->postJson(route($type->updateRoute()), ['id' => $target->id, 'shipped' => true])->assertStatus(409)->assertExactJson(['message' => $message]);
-        $this->assertStringContainsString($message, $this->get(route($type->listRoute()))->getContent());
-        // 文言の直書きは定数の 1 か所だけ
-        foreach (['Http/Controllers/AdminPurchaseController.php', 'Http/Controllers/AdminReservationController.php', '../resources/views/admin/partials/order-list.blade.php'] as $path) {
+        // JSON の本文
+        $this->assertNull(ShippedUpdateResult::Updated->message($type));
+        $this->assertSame("{$subject}が見つかりません。", ShippedUpdateResult::NotFound->message($type));
+        $this->assertSame($conflict, ShippedUpdateResult::Canceled->message($type));
+        // 一覧の案内
+        $this->assertNull(ShippedUpdateResult::Updated->listMessage($type));
+        $this->assertSame("{$subject}が見つかりません。ページを再読み込みしてください。", ShippedUpdateResult::NotFound->listMessage($type));
+        $this->assertSame($conflict, ShippedUpdateResult::Canceled->listMessage($type));
+
+        $this->postJson(route($type->updateRoute()), ['id' => $target->id, 'shipped' => true])->assertStatus(409)->assertExactJson(['message' => $conflict]);
+        $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
+        // 一覧のスクリプトには、@js で出力された文言が入る（コンソールで文字列として壊れないよう、日本語は \u エスケープ）
+        $this->assertStringContainsString(trim((string) Blade::render('@js($m)', ['m' => $conflict])), $html);
+        $this->assertStringContainsString(trim((string) Blade::render('@js($m)', ['m' => "{$subject}が見つかりません。ページを再読み込みしてください。"])), $html);
+        // 文言の直書きは列挙型の 1 か所だけ
+        foreach (['Http/Controllers/AdminPurchaseController.php', 'Http/Controllers/AdminReservationController.php', 'Http/Responses/OrderCancelResponder.php', '../resources/views/admin/partials/order-list.blade.php'] as $path) {
             $this->assertStringNotContainsString('取り消されているため', (string) file_get_contents(app_path($path)), $path);
+            $this->assertStringNotContainsString('が見つかりません。ページを再読み込み', (string) file_get_contents(app_path($path)), $path);
         }
+    }
+
+    /**
+     * 一覧の x-data の JS の文字列（URL・CSRFトークン・文言）は、すべて @js で出力される（{{ }} を JS の文字列に埋め込まない）
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function 一覧のx_dataは_jsで出力される(AdminListType $type): void
+    {
+        $this->loginAsAdmin();
+        $this->makeTarget($type);
+
+        $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
+        $source = (string) file_get_contents(resource_path('views/admin/partials/order-list.blade.php'));
+        $script = substr($source, (int) strpos($source, 'x-data="{'), (int) strpos($source, '}"', (int) strpos($source, 'x-data="{')) - (int) strpos($source, 'x-data="{'));
+
+        $this->assertStringNotContainsString("'{{", $script);
+        $this->assertStringContainsString('@js(', $script);
+        // 出力された HTML には、URL もトークンも、単一引用符の JS 文字列として入る
+        $this->assertStringContainsString("fetch('".str_replace('/', '\\/', route($type->updateRoute()))."'", $html);
+        $this->assertMatchesRegularExpression("#'X-CSRF-TOKEN': '[A-Za-z0-9]{40}'#", $html);
     }
 
     /**
@@ -506,7 +543,7 @@ class AdminCanceledListTest extends TestCase
         $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
 
         $this->assertStringContainsString('missing = response.status === 404;', $html);
-        $this->assertStringContainsString($type->subject().'が見つかりません。ページを再読み込みしてください。', $html);
+        $this->assertStringContainsString(trim((string) Blade::render('@js($m)', ['m' => $type->subject().'が見つかりません。ページを再読み込みしてください。'])), $html);
     }
 
     /**
@@ -546,5 +583,63 @@ class AdminCanceledListTest extends TestCase
             $this->assertStringContainsString("filename={$type->value}_20261107.xlsx", $disposition);
             $this->assertStringNotContainsString('取消済', rawurldecode($disposition));
         }
+    }
+
+    /**
+     * エクスポートのファイル名の日付は、日本語と ASCII で必ず揃う（日時を 1 回だけ取る。日付の変わり目で 2 回目の取得が翌日になってもずれない）
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function ファイル名の日付は1回の取得で揃う(AdminListType $type): void
+    {
+        $this->loginAsAdmin();
+        $this->makeThree($type);
+        $subject = $type->subject();
+        $first = Carbon::create(2026, 11, 7, 23, 59, 59, 'Asia/Tokyo');
+        $second = $first->copy()->addSecond();
+        $this->assertNotSame($first->format('Ymd'), $second->format('Ymd'));
+
+        // 日時を渡すと、その日時の日付が日本語・ASCII の両方に入る
+        $export = $type === AdminListType::Purchase ? PurchaseExport::class : ReservationExport::class;
+        $this->assertSame("{$subject}一覧_取消済_20261107.xlsx", $export::fileName(true, $first));
+        $this->assertSame("{$type->value}_canceled_20261107.xlsx", $export::asciiFileName(true, $first));
+        $this->assertSame("{$subject}一覧_20261108.xlsx", $export::fileName(false, $second));
+
+        // 応答では、日本語と ASCII のどちらも同じ日付。日時の取得は download() の中の 1 回だけ
+        $source = (string) file_get_contents(app_path('Http/Controllers/AdminExportController.php'));
+        $this->assertSame(1, substr_count($source, 'Date::now()'));
+        Carbon::setTestNow(Carbon::create(2026, 11, 7, 23, 59, 59, 'Asia/Tokyo'));
+        $disposition = $this->post(route('admin.export'), ['type' => $type->value])->assertOk()->headers->get('Content-Disposition');
+        $this->assertStringContainsString(rawurlencode("{$subject}一覧_20261107.xlsx"), $disposition);
+        $this->assertStringContainsString("filename={$type->value}_20261107.xlsx", $disposition);
+    }
+
+    /**
+     * 「取消済」の判定は検索条件（AdminListCriteria）で行い、エクスポートのコントローラーは文字列を比べない
+     */
+    #[Test]
+    public function エクスポートのコントローラーは発送状況の文字列を比べない(): void
+    {
+        $source = (string) file_get_contents(app_path('Http/Controllers/AdminExportController.php'));
+
+        $this->assertStringNotContainsString("['shipped']", $source);
+        $this->assertStringContainsString('AdminListCriteria::fromConditions', $source);
+    }
+
+    /**
+     * 「発送済」の検索では、取消済みを含めない（一覧の件数とエクスポートの件数が構造上同じになる）。取消済みで発送済みの（ありえない）データも出ない
+     */
+    #[Test]
+    #[DataProvider('types')]
+    public function 発送済の検索に取消済みは出ない(AdminListType $type): void
+    {
+        $shipped = $this->makeTarget($type, ['shipped' => true]);
+        $this->makeTarget($type, ['shipped' => true, 'canceled_at' => '2026-11-05 10:00:00']);
+        $this->makeTarget($type, ['canceled_at' => '2026-11-05 10:00:00']);
+
+        $this->assertSame([$shipped->id], $this->searchIds($type, ['shipped' => '1']));
+        $this->assertSame([$shipped->id], $this->exportedIds($type, ['shipped' => '1']));
+        $this->loginAsAdmin();
+        $this->assertSame(1, $this->get(route($type->searchRoute(), ['shipped' => '1']))->viewData('exportCount'));
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\AdminListType;
 use App\Models\Item;
 use App\Models\Purchase_history;
 use App\Models\Reservation;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Date;
 use Maatwebsite\Excel\Concerns\FromGenerator;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
@@ -39,19 +40,19 @@ abstract class AdminOrderExport extends DefaultValueBinder implements FromGenera
     abstract protected static function listType(): AdminListType;
 
     /**
-     * ファイル名（出力した日の日本時間。発送状況が「取消済」のときは、取消済みの一覧だとわかる名前にする）
+     * ファイル名（出力した日の日本時間。$at を渡すと、その日時の日付にする。発送状況が「取消済」のときは、取消済みの一覧だとわかる名前にする）
      */
-    public static function fileName(bool $canceled = false): string
+    public static function fileName(bool $canceled = false, ?CarbonInterface $at = null): string
     {
-        return static::listType()->subject().'一覧_'.($canceled ? '取消済_' : '').Date::now()->format('Ymd').'.xlsx';
+        return static::listType()->subject().'一覧_'.($canceled ? '取消済_' : '').($at ?? Date::now())->format('Ymd').'.xlsx';
     }
 
     /**
      * ダウンロードのファイル名の ASCII 側（日本語が使えない環境向けの代わりの名前。一覧の種類の値（purchase・reservation）を使う）
      */
-    public static function asciiFileName(bool $canceled = false): string
+    public static function asciiFileName(bool $canceled = false, ?CarbonInterface $at = null): string
     {
-        return static::listType()->value.'_'.($canceled ? 'canceled_' : '').Date::now()->format('Ymd').'.xlsx';
+        return static::listType()->value.'_'.($canceled ? 'canceled_' : '').($at ?? Date::now())->format('Ymd').'.xlsx';
     }
 
     #[Override]

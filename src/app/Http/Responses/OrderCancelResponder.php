@@ -18,9 +18,6 @@ class OrderCancelResponder
     /** Stripe の呼び出しなどで取り消せなかったときの案内 */
     public const string FAILED_MESSAGE = '取り消せませんでした。時間をおいて、もう一度お試しください。';
 
-    /** 取消済みの注文・予約の発送済みの更新（409）の案内。コントローラーの JSON と、一覧の発送済みのチェックの案内で共通 */
-    public const string SHIPPED_CONFLICT_MESSAGE = '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。';
-
     public function __invoke(AdminListType $type, OrderCancelResult $result): RedirectResponse
     {
         $subject = $type->subject();

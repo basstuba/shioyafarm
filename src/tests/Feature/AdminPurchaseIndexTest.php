@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\AdminPurchaseController;
 use App\Models\Purchase_history;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
@@ -300,7 +301,8 @@ class AdminPurchaseIndexTest extends TestCase
 
         $this->assertStringContainsString('<label class="flex h-11 cursor-pointer', $html);
         $this->assertMatchesRegularExpression('#<input\s+class="size-6 [^"]*accent-admin-gray[^"]*"\s+type="checkbox"\s+aria-label="注文'.$order->id.'を発送済みにする"#u', $html);
-        $this->assertStringContainsString("fetch('".route('admin.purchase.update')."'", $html);
+        // JS の文字列は @js で出力されるため、スラッシュと日本語はエスケープされる
+        $this->assertStringContainsString('fetch('.trim((string) Blade::render('@js($v)', ['v' => route('admin.purchase.update')])), $html);
         $this->assertStringContainsString('X-CSRF-TOKEN', $html);
         $this->assertStringContainsString('save('.$order->id.', shipped)', $html);
         // 保存中は disabled にしない（フォーカスが外れるため）。aria-busy を付け、保存中の操作は無視して二重送信しない
@@ -308,10 +310,10 @@ class AdminPurchaseIndexTest extends TestCase
         $this->assertStringContainsString('x-bind:aria-busy="saving"', $html);
         $this->assertStringContainsString('if (saving) { shipped = ! shipped; return }', $html);
         // 失敗の案内（role="status"）
-        $this->assertStringContainsString('保存できませんでした。もう一度お試しください。', $html);
+        $this->assertStringContainsString(trim((string) Blade::render('@js($v)', ['v' => '保存できませんでした。もう一度お試しください。'])), $html);
         // ログイン・ページの期限切れ（401・419）は、再試行しても直らないため別の案内
         $this->assertStringContainsString('expired = response.status === 401 || response.status === 419;', $html);
-        $this->assertStringContainsString('ページの有効期限が切れました。ページを再読み込みしてください。', $html);
+        $this->assertStringContainsString(trim((string) Blade::render('@js($v)', ['v' => 'ページの有効期限が切れました。ページを再読み込みしてください。'])), $html);
         $this->assertMatchesRegularExpression('#<p [^>]*role="status"[^>]*x-text="message"#u', $html);
     }
 

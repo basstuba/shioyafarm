@@ -50,9 +50,9 @@
                 let conflict = false;
                 let missing = false;
                 try {
-                    const response = await fetch('{{ route($listType->updateRoute()) }}', {
+                    const response = await fetch(@js(route($listType->updateRoute())), {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @js(csrf_token()) },
                         body: JSON.stringify({ id: id, shipped: shipped }),
                     });
                     if (response.ok) {
@@ -67,7 +67,7 @@
                 } catch (error) {
                     // 通信エラーも、保存できなかった扱いにする
                 }
-                this.message = expired ? 'ページの有効期限が切れました。ページを再読み込みしてください。' : conflict ? '{{ \App\Http\Responses\OrderCancelResponder::SHIPPED_CONFLICT_MESSAGE }}' : missing ? '{{ $subject }}が見つかりません。ページを再読み込みしてください。' : '保存できませんでした。もう一度お試しください。';
+                this.message = expired ? @js('ページの有効期限が切れました。ページを再読み込みしてください。') : conflict ? @js(\App\Enums\ShippedUpdateResult::Canceled->listMessage($listType)) : missing ? @js(\App\Enums\ShippedUpdateResult::NotFound->listMessage($listType)) : @js('保存できませんでした。もう一度お試しください。');
                 return false;
             },
         }"
