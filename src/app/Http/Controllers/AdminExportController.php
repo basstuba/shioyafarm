@@ -6,8 +6,10 @@ use App\Enums\AdminListStatus;
 use App\Enums\AdminListType;
 use App\Exports\AdminOrderExport;
 use App\Http\Requests\ExportRequest;
+use App\Services\AdminListCriteria;
 use App\Services\AdminPurchaseService;
 use App\Services\AdminReservationService;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -32,7 +34,7 @@ class AdminExportController extends Controller
             AdminListType::Reservation => $reservationService->reservationExport($request->conditions()),
         };
         // 発送状況が「取消済」のときは、ファイル名で取消済みの一覧だとわかるようにする
-        $response = $this->download($export, $request->conditions()['shipped'] === AdminListStatus::Canceled->value);
+        $response = $this->download($export, AdminListCriteria::fromConditions($request->conditions())->status === AdminListStatus::Canceled);
 
         Log::debug('AdminExportController end');
 
@@ -46,7 +48,10 @@ class AdminExportController extends Controller
      */
     private function download(AdminOrderExport $export, bool $canceled): BinaryFileResponse
     {
-        return Excel::download($export, $export::fileName($canceled))
-            ->setContentDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $export::fileName($canceled), $export::asciiFileName($canceled));
+        // 日時は1回だけ取り、日本語と ASCII のファイル名の日付を揃える（日付の変わり目をまたいでもずれない）
+        $now = Date::now();
+
+        return Excel::download($export, $export::fileName($canceled, $now))
+            ->setContentDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $export::fileName($canceled, $now), $export::asciiFileName($canceled, $now));
     }
 }

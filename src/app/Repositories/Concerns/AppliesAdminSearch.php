@@ -19,7 +19,7 @@ trait AppliesAdminSearch
     /**
      * 検索条件を適用したクエリを返す
      *
-     * 発送状況は、「未発送」＝未発送で未取消だけ、「発送済」＝発送済みだけ、「取消済」＝取消済みだけ。何も選ばないときは絞らない（取消済みも含む）。
+     * 発送状況は、「未発送」＝未発送で未取消だけ、「発送済」＝発送済みで未取消だけ、「取消済」＝取消済みだけ。何も選ばないときは絞らない（取消済みも含む）。
      * 名前は users の姓と名をつなげた文字列（スペースを除く）への部分一致（MatchesFullName）。
      * 退会済みの会員のものも対象にする（user が withTrashed のため）。
      *
@@ -32,7 +32,7 @@ trait AppliesAdminSearch
     {
         match ($criteria->status) {
             AdminListStatus::Unshipped => $query->where('shipped', false)->whereNull('canceled_at'),
-            AdminListStatus::Shipped => $query->where('shipped', true),
+            AdminListStatus::Shipped => $query->where('shipped', true)->whereNull('canceled_at'),
             AdminListStatus::Canceled => $query->whereNotNull('canceled_at'),
             null => $query,
         };

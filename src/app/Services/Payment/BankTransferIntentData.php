@@ -15,5 +15,7 @@ final readonly class BankTransferIntentData
         public int $amount,
         /** 振込先（next_action が display_bank_transfer_instructions でないときは null） */
         public ?BankTransferInstructions $instructions,
+        /** 振込の残りの金額（円。next_action.display_bank_transfer_instructions.amount_remaining。無ければ null。振込先を読めなくても取り出す。一部入金の判定に使う） */
+        public ?int $amountRemaining = null,
     ) {}
 }

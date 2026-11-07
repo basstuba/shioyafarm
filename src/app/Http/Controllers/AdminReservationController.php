@@ -59,10 +59,11 @@ class AdminReservationController extends Controller
     {
         Log::debug('AdminReservationController@update start');
 
-        $response = match ($service->updateShipped($request->integer('id'), $request->boolean('shipped'))) {
+        $result = $service->updateShipped($request->integer('id'), $request->boolean('shipped'));
+        $response = match ($result) {
             ShippedUpdateResult::Updated => response()->json(['id' => $request->integer('id'), 'shipped' => $request->boolean('shipped')]),
-            ShippedUpdateResult::NotFound => response()->json(['message' => '予約が見つかりません。'], 404),
-            ShippedUpdateResult::Canceled => response()->json(['message' => OrderCancelResponder::SHIPPED_CONFLICT_MESSAGE], 409),
+            ShippedUpdateResult::NotFound => response()->json(['message' => $result->message(AdminListType::Reservation)], 404),
+            ShippedUpdateResult::Canceled => response()->json(['message' => $result->message(AdminListType::Reservation)], 409),
         };
 
         Log::debug('AdminReservationController@update end');
