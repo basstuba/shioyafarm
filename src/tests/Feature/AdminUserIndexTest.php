@@ -296,7 +296,7 @@ class AdminUserIndexTest extends TestCase
         $html = $this->get(route('admin.users.index'))->assertOk()->getContent();
 
         foreach ([$member, $withdrawn] as $user) {
-            $this->assertMatchesRegularExpression('#<a\s[^>]*href="'.preg_quote(url('/admin/mail/user/'.$user->id), '#').'"[^>]*>メール送信</a>#u', $html);
+            $this->assertMatchesRegularExpression('#<a\s[^>]*href="'.preg_quote(route('admin.mail.user', ['user_id' => $user->id]), '#').'"[^>]*>メール送信</a>#u', $html);
         }
         $this->assertSame(2, substr_count($html, '>メール送信</a>'));
     }

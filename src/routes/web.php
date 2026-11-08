@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminInquiryController;
+use App\Http\Controllers\AdminMailController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
 use App\Http\Controllers\AdminReservationController;
@@ -141,6 +142,11 @@ Route::prefix('admin')->group(function () {
         Route::get('/inquiries', [AdminInquiryController::class, 'index'])->name('admin.inquiries.index');
         Route::get('/inquiries/search', [AdminInquiryController::class, 'search'])->name('admin.inquiries.search');
         Route::post('/inquiries/update', [AdminInquiryController::class, 'update'])->name('admin.inquiries.update');
+
+        // メール作成・送信（会員宛て・お問い合わせへの返信。宛先の種類とIDだけを送り、メールアドレスはサーバーで引き直す。送信後は来た一覧に戻る）
+        Route::get('/mail/user/{user_id}', [AdminMailController::class, 'createUserMail'])->whereNumber('user_id')->name('admin.mail.user');
+        Route::get('/mail/inquiry/{inquiry_id}', [AdminMailController::class, 'createInquiryMail'])->whereNumber('inquiry_id')->name('admin.mail.inquiry');
+        Route::post('/mail/send', [AdminMailController::class, 'send'])->name('admin.mail.send');
 
         // エクスポート（type で種類を指定する。注文一覧のほか、予約一覧でも使う）
         Route::post('/export', [AdminExportController::class, 'export'])->name('admin.export');

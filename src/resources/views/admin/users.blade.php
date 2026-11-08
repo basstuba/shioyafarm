@@ -8,7 +8,7 @@
     - $users：会員のページネーター（退会済みを含む）
     - $conditions：検索欄に戻す検索条件（status・name）
     PC（lg以上）は最大幅960pxの表（列の幅は割合。最後の「メール送信」の列は右寄せ）、SPはカード形式（同じ table 要素を、グリッドでカードの形にする）。
-    「メール送信」のリンク先 /admin/mail/user/{会員ID} は、メール機能のブランチで route() に置き換える（それまでは404）。
+    「メール送信」のリンク先は admin.mail.user（/admin/mail/user/{会員ID}。メール作成ページ。来た一覧の検索条件・ページに戻るため、リンクにクエリは付けない）。
 --}}
 @php
     $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
@@ -76,7 +76,7 @@
                                 <td class="col-start-2 row-span-2 row-start-2 self-start lg:text-right {{ $cellClass }}">
                                     <a
                                         class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ $focusClass }}"
-                                        href="{{ url('/admin/mail/user/'.$user->id) }}"
+                                        href="{{ route('admin.mail.user', ['user_id' => $user->id]) }}"
                                         aria-label="{{ $user->full_name }}にメール送信"
                                     >メール送信</a>
                                 </td>

@@ -9,7 +9,7 @@
     - $conditions：検索欄に戻す検索条件（addressed・date）
     PC（lg以上）は最大幅960pxの表（列の幅は割合。最後の「返信」の列は右寄せ）、SPはカード形式（同じ table 要素を、グリッドでカードの形にする）。
     対応済みのチェックは、注文一覧の発送済みのチェックと同じ形（押した瞬間に Alpine から保存し、保存できなかったときはチェックと行の色を戻して案内を出す。対応済みの行の地は admin-shipped）。お客様にメールは送らない。
-    「返信」のリンク先 /admin/mail/inquiry/{お問い合わせID} は、メール機能のブランチで route() に置き換える（それまでは404）。
+    「返信」のリンク先は admin.mail.inquiry（/admin/mail/inquiry/{お問い合わせID}。メール作成ページ。来た一覧の検索条件・ページに戻るため、リンクにクエリは付けない）。
 --}}
 @php
     $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
@@ -88,7 +88,7 @@
                                 <td class="col-start-2 row-start-3 self-start lg:text-right {{ $cellClass }}">
                                     <a
                                         class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ $focusClass }}"
-                                        href="{{ url('/admin/mail/inquiry/'.$inquiry->id) }}"
+                                        href="{{ route('admin.mail.inquiry', ['inquiry_id' => $inquiry->id]) }}"
                                         aria-label="{{ $inquiry->full_name }}に返信"
                                     >返信</a>
                                 </td>
