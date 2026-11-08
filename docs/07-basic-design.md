@@ -80,9 +80,9 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/notices/search` | GET | AdminNoticeController | search | 必須 | お知らせ検索機能 |
 | `/admin/notices/create` | GET | AdminNoticeController | create | 必須 | お知らせ作成ページ表示 |
 | `/admin/notices/store` | POST | AdminNoticeController | store | 必須 | お知らせ作成機能 |
-| `/admin/inquiries` | GET | AdminInquiryController | index | 必須 | 管理画面お問い合わせ一覧ページ表示 |
-| `/admin/inquiries/search` | GET | AdminInquiryController | search | 必須 | お問い合わせ検索機能 |
-| `/admin/inquiries/update` | POST | AdminInquiryController | update | 必須 | お問い合わせ対応チェック機能 |
+| `/admin/inquiries` | GET | AdminInquiryController | index | 必須 | 管理画面お問い合わせ一覧ページ表示（新しい順に1ページ10件。問い合わせ日時の降順、同時刻はIDの降順。範囲外のページ番号は最終ページ） |
+| `/admin/inquiries/search` | GET | AdminInquiryController | search | 必須 | お問い合わせ検索機能（対応状況 `addressed`＝`0` 非対応・`1` 対応済・空は絞らない、問い合わせ日 `date`＝Y-m-d・日本時間のその日。氏名の検索はない。入力の誤りは `/admin/inquiries` に戻してエラーを表示） |
+| `/admin/inquiries/update` | POST | AdminInquiryController | update | 必須 | お問い合わせ対応チェック機能（`id` と `addressed` を JSON で受け取り JSON（`{"id": 1, "addressed": true}`）を返す。存在しないお問い合わせは404（`{"message": "お問い合わせが見つかりません。"}`）、`addressed` などの不正な値は422。対応済みにしてもお客様にメールは送らない。詳細のモーダルは Livewire の AdminInquiryDetail） |
 | `/admin/items` | GET | AdminItemController | index | 必須 | 管理画面掲載商品一覧ページ表示 |
 | `/admin/items/create` | GET | AdminItemController | create | 必須 | 掲載商品登録ページ表示 |
 | `/admin/items/store` | POST | AdminItemController | store | 必須 | 掲載商品登録機能 |
@@ -307,6 +307,17 @@ user_idと合計金額はcontrollerで取得
 | フォーム | ルール |
 |---|---|
 | 注文／予約（id） | 入力必須、整数値 |
+
+### InquirySearchRequest.php（お問い合わせ検索）・AdminInquiryUpdateRequest.php（対応済みチェックの更新）
+
+入力の誤りは、お問い合わせ検索（InquirySearchRequest）は `/admin/inquiries`（全件の表示）に戻して、検索欄の近くにエラーを表示する。対応済みチェックの更新（AdminInquiryUpdateRequest）は fetch への JSON（422）で返す。
+
+| フォーム | ルール |
+|---|---|
+| 対応状況（addressed） | 必須ではない、`0`・`1` のみ |
+| 問い合わせ日（date） | 必須ではない、Y-m-d の日付 |
+| お問い合わせ（id）※更新 | 入力必須、整数値、1以上（存在するかは検証せず、更新の処理が404で返す） |
+| 対応済み（addressed）※更新 | 入力必須、真偽値 |
 
 ### UserSearchRequest.php（会員検索）・UserDeleteRequest.php（会員の物理削除）
 

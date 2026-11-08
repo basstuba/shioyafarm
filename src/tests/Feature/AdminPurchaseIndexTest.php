@@ -277,15 +277,15 @@ class AdminPurchaseIndexTest extends TestCase
         $html = $this->get(route('admin.purchase.index'))->assertOk()->getContent();
 
         // 新しい順なので、先に発送済みの行（shipped）、次に未発送の行
-        preg_match_all('#<tr\s+class="([^"]*)"\s+x-data="\{ shipped: (true|false), saving: false \}"#u', $html, $rows, PREG_SET_ORDER);
+        preg_match_all('#<tr\s+class="([^"]*)"\s+x-data="\{ checked: (true|false), saving: false \}"#u', $html, $rows, PREG_SET_ORDER);
         $this->assertCount(2, $rows);
         $this->assertSame('true', $rows[0][2]);
         $this->assertStringContainsString('bg-admin-shipped', $rows[0][1]);
         $this->assertStringNotContainsString('lg:even:bg-admin-bar', $rows[0][1]);
         $this->assertSame('false', $rows[1][2]);
         $this->assertStringContainsString('bg-white lg:even:bg-admin-bar', $rows[1][1]);
-        $this->assertMatchesRegularExpression('#aria-label="注文'.$shipped->id.'を発送済みにする"\s+checked#u', $html);
-        $this->assertDoesNotMatchRegularExpression('#aria-label="注文'.$unshipped->id.'を発送済みにする"\s+checked#u', $html);
+        $this->assertMatchesRegularExpression('#aria-label="注文'.$shipped->id.'の発送済み"\s+checked#u', $html);
+        $this->assertDoesNotMatchRegularExpression('#aria-label="注文'.$unshipped->id.'の発送済み"\s+checked#u', $html);
     }
 
     /**
@@ -300,19 +300,19 @@ class AdminPurchaseIndexTest extends TestCase
         $html = $this->get(route('admin.purchase.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString('<label class="flex h-11 cursor-pointer', $html);
-        $this->assertMatchesRegularExpression('#<input\s+class="size-6 [^"]*accent-admin-gray[^"]*"\s+type="checkbox"\s+aria-label="注文'.$order->id.'を発送済みにする"#u', $html);
+        $this->assertMatchesRegularExpression('#<input\s+class="size-6 [^"]*accent-admin-gray[^"]*"\s+type="checkbox"\s+aria-label="注文'.$order->id.'の発送済み"#u', $html);
         // JS の文字列は @js で出力されるため、スラッシュと日本語はエスケープされる
         $this->assertStringContainsString('fetch('.trim((string) Blade::render('@js($v)', ['v' => route('admin.purchase.update')])), $html);
         $this->assertStringContainsString('X-CSRF-TOKEN', $html);
-        $this->assertStringContainsString('save('.$order->id.', shipped)', $html);
+        $this->assertStringContainsString('save('.$order->id.', checked)', $html);
         // 保存中は disabled にしない（フォーカスが外れるため）。aria-busy を付け、保存中の操作は無視して二重送信しない
         $this->assertStringNotContainsString('x-bind:disabled="saving"', $html);
         $this->assertStringContainsString('x-bind:aria-busy="saving"', $html);
-        $this->assertStringContainsString('if (saving) { shipped = ! shipped; return }', $html);
+        $this->assertStringContainsString('if (saving) { checked = ! checked; return }', $html);
         // 失敗の案内（role="status"）
         $this->assertStringContainsString(trim((string) Blade::render('@js($v)', ['v' => '保存できませんでした。もう一度お試しください。'])), $html);
         // ログイン・ページの期限切れ（401・419）は、再試行しても直らないため別の案内
-        $this->assertStringContainsString('expired = response.status === 401 || response.status === 419;', $html);
+        $this->assertStringContainsString('response.status === 401 || response.status === 419', $html);
         $this->assertStringContainsString(trim((string) Blade::render('@js($v)', ['v' => 'ページの有効期限が切れました。ページを再読み込みしてください。'])), $html);
         $this->assertMatchesRegularExpression('#<p [^>]*role="status"[^>]*x-text="message"#u', $html);
     }

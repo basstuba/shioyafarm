@@ -7,17 +7,17 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 
 /**
- * 管理画面の一覧（注文・予約・会員）の詳細モーダル
+ * 管理画面の一覧（注文・予約・会員・お問い合わせ）の詳細モーダル
  *
  * 管理者としてログインしている場合だけ表示する（管理者の確認はここだけ）。詳細の取得（Service）は、各コンポーネントがメソッドインジェクションで受け取り、クロージャで渡す。
- * 詳細の型は問わない（注文・予約は OrderDetail、会員は UserDetail）。使うコンポーネントが `@use WithAdminDetailModal<OrderDetail>` のように型を指定する。
+ * 詳細の型は問わない（注文・予約は OrderDetail、会員は UserDetail、お問い合わせは InquiryDetail）。使うコンポーネントが `@use WithAdminDetailModal<OrderDetail>` のように型を指定する。
  * 閉じる操作は、ビューが $wire.showDetail = false で行う。
  *
  * @template TDetail of object
  */
 trait WithAdminDetailModal
 {
-    /** 詳細を開いているレコード（注文・予約・会員）のID（存在すると確認できたときだけ、openDetailFor が設定する） */
+    /** 詳細を開いているレコード（注文・予約・会員・お問い合わせ）のID（存在すると確認できたときだけ、openDetailFor が設定する） */
     #[Locked]
     public ?int $detailId = null;
 

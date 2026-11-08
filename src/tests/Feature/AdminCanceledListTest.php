@@ -125,7 +125,7 @@ class AdminCanceledListTest extends TestCase
     }
 
     /**
-     * 発送状況の選択欄に「取消済」が加わり、何も選ばないときの表示はPCが「発送状況」、SPが「すべて」（AC-13）
+     * 発送状況の選択欄に「取消済」が加わり、何も選ばないときの表示はPC・SPとも「発送状況」（切り替えの Alpine もない）
      */
     #[Test]
     #[DataProvider('types')]
@@ -135,7 +135,7 @@ class AdminCanceledListTest extends TestCase
 
         $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('#<option value="" x-text="wide \? \'発送状況\' : \'すべて\'" selected>発送状況</option>\s*<option value="0"[^>]*>未発送</option>\s*<option value="1"[^>]*>発送済</option>\s*<option value="canceled"[^>]*>取消済</option>#u', $html);
+        $this->assertMatchesRegularExpression('#<option value="" selected>発送状況</option>\s*<option value="0"[^>]*>未発送</option>\s*<option value="1"[^>]*>発送済</option>\s*<option value="canceled"[^>]*>取消済</option>#u', $html);
         $this->assertStringNotContainsString('発送済 / 未発送', $html);
     }
 
@@ -184,9 +184,9 @@ class AdminCanceledListTest extends TestCase
         // 取消済みの行にはチェックがなく、「取消済」が出る。ほかの行には出ない
         $this->assertSame(1, substr_count($html, '>取消済</span>'));
         $this->assertStringContainsString('<span class="flex h-11 items-center justify-end text-base lg:justify-center">取消済</span>', $html);
-        $this->assertStringNotContainsString("aria-label=\"{$subject}{$three['canceled']->id}を発送済みにする\"", $html);
-        $this->assertStringContainsString("aria-label=\"{$subject}{$three['unshipped']->id}を発送済みにする\"", $html);
-        $this->assertStringContainsString("aria-label=\"{$subject}{$three['shipped']->id}を発送済みにする\"", $html);
+        $this->assertStringNotContainsString("aria-label=\"{$subject}{$three['canceled']->id}の発送済み\"", $html);
+        $this->assertStringContainsString("aria-label=\"{$subject}{$three['unshipped']->id}の発送済み\"", $html);
+        $this->assertStringContainsString("aria-label=\"{$subject}{$three['shipped']->id}の発送済み\"", $html);
         // 詳細は開ける
         $this->assertStringContainsString("{$subject}{$three['canceled']->id}の詳細を見る", $html);
         // SP のカードのラベルも灰色（ふだんは濃い灰色）
@@ -301,7 +301,7 @@ class AdminCanceledListTest extends TestCase
 
         $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
 
-        $this->assertStringContainsString('conflict = response.status === 409;', $html);
+        $this->assertStringContainsString('response.status === 409', $html);
         $this->assertStringContainsString(trim((string) Blade::render('@js($m)', ['m' => '取り消されているため、発送状況を変更できません。ページを再読み込みしてください。'])), $html);
     }
 
@@ -520,7 +520,8 @@ class AdminCanceledListTest extends TestCase
         $this->makeTarget($type);
 
         $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
-        $source = (string) file_get_contents(resource_path('views/admin/partials/order-list.blade.php'));
+        // 即時保存の x-data は共通部品 <x-admin-instant-save> にある
+        $source = (string) file_get_contents(resource_path('views/components/admin-instant-save.blade.php'));
         $script = substr($source, (int) strpos($source, 'x-data="{'), (int) strpos($source, '}"', (int) strpos($source, 'x-data="{')) - (int) strpos($source, 'x-data="{'));
 
         $this->assertStringNotContainsString("'{{", $script);
@@ -542,7 +543,7 @@ class AdminCanceledListTest extends TestCase
 
         $html = $this->get(route($type->listRoute()))->assertOk()->getContent();
 
-        $this->assertStringContainsString('missing = response.status === 404;', $html);
+        $this->assertStringContainsString('response.status === 404', $html);
         $this->assertStringContainsString(trim((string) Blade::render('@js($m)', ['m' => $type->subject().'が見つかりません。ページを再読み込みしてください。'])), $html);
     }
 
