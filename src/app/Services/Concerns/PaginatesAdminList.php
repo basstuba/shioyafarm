@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
- * 管理画面の一覧（注文・予約）のページ分けで共通の処理
+ * 管理画面の一覧（注文・予約・会員・お問い合わせ）のページ分けで共通の処理
  */
 trait PaginatesAdminList
 {
