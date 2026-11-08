@@ -51,6 +51,44 @@ final class MailText
     }
 
     /**
+     * 複数行の入力値（管理者が入力したメール本文・お問い合わせの内容）を、改行を保ったまま無害化する
+     *
+     * 1行ずつ safe() にかけ、行の間を HTML版では <br>、テキスト版では改行にする（レイアウトが strip_tags で <br> を消す）。
+     * 改行コード（CRLF・CR）は LF にそろえ、先頭と末尾の空の行（改行だけ、または半角・全角スペース・タブだけの行）は取り除く。途中の空行と空白だけの行は残す。
+     * 内容のある行の行頭の半角の空白・タブ（全角スペースの字下げは Markdown に読まれないのでそのまま）は、Markdown に読まれる（4つ以上でコードブロックになり記号が消える）ため、&#160;（空白）にして保つ。
+     * 先頭・末尾の空白は、メール本文の項目（MailRequest::BODY）では TrimStrings の対象外のため取り除かれずに届き、1行目の字下げも保たれる。
+     * 戻り値は HtmlString なので、Blade の `{{ }}` で二重にエスケープされない。
+     */
+    public static function multiline(?string $value): HtmlString
+    {
+        $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $value ?? ''));
+
+        while ($lines !== [] && self::isBlankLine($lines[0])) {
+            array_shift($lines);
+        }
+        while ($lines !== [] && self::isBlankLine($lines[array_key_last($lines)])) {
+            array_pop($lines);
+        }
+
+        $escaped = array_map(function (string $line): string {
+            preg_match('/\A[ \t]*/', $line, $indent);
+            $rest = substr($line, strlen($indent[0]));
+
+            return str_repeat('&#160;', strlen($indent[0])).self::safe($rest);
+        }, $lines);
+
+        return new HtmlString(implode("<br>\n", $escaped));
+    }
+
+    /**
+     * 空の行（空・半角スペース・全角スペース・タブだけの行）か
+     */
+    private static function isBlankLine(string $line): bool
+    {
+        return preg_match('/\A[ \t\x{3000}]*\z/u', $line) === 1;
+    }
+
+    /**
      * 制御文字（0x00〜0x1F, 0x7F。改行・タブなど）を半角スペースにする（バイト単位。UTF-8の複数バイトの文字には影響しない）
      */
     private static function controlToSpace(string $value): string

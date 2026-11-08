@@ -20,11 +20,42 @@ final class AdminListUrl
      */
     public static function previousOrIndex(string $indexRoute, string $searchRoute): string
     {
-        $index = route($indexRoute, absolute: false);
-        $parts = parse_url(url()->previous($index));
+        return self::resolve(url()->previous(route($indexRoute, absolute: false)), $indexRoute, $searchRoute);
+    }
 
-        if (! is_array($parts) || ! in_array($parts['path'] ?? '', [$index, route($searchRoute, absolute: false)], true)) {
-            return $index;
+    /**
+     * 戻り先のURL（渡されたURLが一覧・検索結果のとき、検索条件とページ番号つきのパス＋クエリ。それ以外・不正な値は一覧のパス）
+     *
+     * メール作成ページの送信フォームのように、画面が持ち回った戻り先（利用者が書き換えられる値）を検証するときにも使う。
+     *
+     * @param  mixed  $url  直前のページのURL、または以前にこのメソッドが返した戻り先（文字列でないときは一覧）
+     * @param  string  $indexRoute  一覧のルート名
+     * @param  string  $searchRoute  検索のルート名
+     */
+    public static function resolve(mixed $url, string $indexRoute, string $searchRoute): string
+    {
+        return self::tryResolve($url, $indexRoute, $searchRoute) ?? route($indexRoute, absolute: false);
+    }
+
+    /**
+     * 渡されたURLが一覧・検索結果のときだけ、検索条件とページ番号つきのパス＋クエリを返す（それ以外・不正な値は null）
+     *
+     * パスが一覧・検索結果のものだけを採用し、スキームとホストは捨てるため、外部のURLへは移動させない。制御文字（改行など）を含む値は採用しない。
+     * 複数の候補（持ち回った戻り先・直前のページなど）から、最初に使えるものを選ぶときに使う。
+     *
+     * @param  string  $indexRoute  一覧のルート名
+     * @param  string  $searchRoute  検索のルート名
+     */
+    public static function tryResolve(mixed $url, string $indexRoute, string $searchRoute): ?string
+    {
+        if (! is_string($url) || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || ! in_array($parts['path'] ?? '', [route($indexRoute, absolute: false), route($searchRoute, absolute: false)], true)) {
+            return null;
         }
 
         return $parts['path'].(isset($parts['query']) ? '?'.$parts['query'] : '');

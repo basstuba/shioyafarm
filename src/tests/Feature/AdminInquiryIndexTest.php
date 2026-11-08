@@ -281,7 +281,7 @@ class AdminInquiryIndexTest extends TestCase
 
         foreach ([[$first, '山田 太郎'], [$second, '佐藤 花子']] as [$inquiry, $name]) {
             $this->assertMatchesRegularExpression(
-                '#<a\s[^>]*href="'.preg_quote(url('/admin/mail/inquiry/'.$inquiry->id), '#').'"\s+aria-label="'.preg_quote($name, '#').'に返信"[^>]*>返信</a>#u',
+                '#<a\s[^>]*href="'.preg_quote(route('admin.mail.inquiry', ['inquiry_id' => $inquiry->id]), '#').'"\s+aria-label="'.preg_quote($name, '#').'に返信"[^>]*>返信</a>#u',
                 $html,
             );
         }
