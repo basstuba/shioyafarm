@@ -25,7 +25,7 @@
         {{-- 検索（GET）。ラベルはPCでは読み上げ専用、SPでは表示する。入力の誤り・削除できなかった理由は、検索欄の近くに出す --}}
         <x-admin-search-form :action="route('admin.users.search')" label="会員の検索" :reset-href="route('admin.users.index')">
             <x-admin-search-field label="状態" for="status" width="lg:w-[200px]">
-                {{-- 何も選ばないときの表示は、PCは「会員 / 退会済」、SPは「すべて」 --}}
+                {{-- 何も選ばないときの表示は、PC・SPとも「会員 / 退会済」 --}}
                 <x-admin-search-select id="status" name="status" blank-label="会員 / 退会済" :blank-selected="$statusValue === ''">
                     <option value="{{ \App\Services\AdminUserCriteria::STATUS_MEMBER }}" @selected($statusValue === \App\Services\AdminUserCriteria::STATUS_MEMBER)>会員</option>
                     <option value="{{ \App\Services\AdminUserCriteria::STATUS_WITHDRAWN }}" @selected($statusValue === \App\Services\AdminUserCriteria::STATUS_WITHDRAWN)>退会済</option>

@@ -286,15 +286,15 @@ class AdminReservationIndexTest extends TestCase
 
         $html = $this->get(route('admin.reservations.index'))->assertOk()->getContent();
 
-        preg_match_all('#<tr\s+class="([^"]*)"\s+x-data="\{ shipped: (true|false), saving: false \}"#u', $html, $rows, PREG_SET_ORDER);
+        preg_match_all('#<tr\s+class="([^"]*)"\s+x-data="\{ checked: (true|false), saving: false \}"#u', $html, $rows, PREG_SET_ORDER);
         $this->assertCount(2, $rows);
         $this->assertSame('true', $rows[0][2]);
         $this->assertStringContainsString('bg-admin-shipped', $rows[0][1]);
         $this->assertStringNotContainsString('lg:even:bg-admin-bar', $rows[0][1]);
         $this->assertSame('false', $rows[1][2]);
         $this->assertStringContainsString('bg-white lg:even:bg-admin-bar', $rows[1][1]);
-        $this->assertMatchesRegularExpression('#aria-label="予約'.$shipped->id.'を発送済みにする"\s+checked#u', $html);
-        $this->assertDoesNotMatchRegularExpression('#aria-label="予約'.$unshipped->id.'を発送済みにする"\s+checked#u', $html);
+        $this->assertMatchesRegularExpression('#aria-label="予約'.$shipped->id.'の発送済み"\s+checked#u', $html);
+        $this->assertDoesNotMatchRegularExpression('#aria-label="予約'.$unshipped->id.'の発送済み"\s+checked#u', $html);
     }
 
     /**
@@ -309,11 +309,11 @@ class AdminReservationIndexTest extends TestCase
         $html = $this->get(route('admin.reservations.index'))->assertOk()->getContent();
 
         $this->assertStringContainsString('<label class="flex h-11 cursor-pointer', $html);
-        $this->assertMatchesRegularExpression('#<input\s+class="size-6 [^"]*accent-admin-gray[^"]*"\s+type="checkbox"\s+aria-label="予約'.$reservation->id.'を発送済みにする"#u', $html);
+        $this->assertMatchesRegularExpression('#<input\s+class="size-6 [^"]*accent-admin-gray[^"]*"\s+type="checkbox"\s+aria-label="予約'.$reservation->id.'の発送済み"#u', $html);
         // JS の文字列は @js で出力されるため、スラッシュと日本語はエスケープされる
         $this->assertStringContainsString('fetch('.trim((string) Blade::render('@js($v)', ['v' => route('admin.reservations.update')])), $html);
         $this->assertStringNotContainsString(route('admin.purchase.update'), $html);
-        $this->assertStringContainsString('save('.$reservation->id.', shipped)', $html);
+        $this->assertStringContainsString('save('.$reservation->id.', checked)', $html);
         $this->assertStringContainsString(trim((string) Blade::render('@js($v)', ['v' => '保存できませんでした。もう一度お試しください。'])), $html);
         $this->assertMatchesRegularExpression('#<p [^>]*role="status"[^>]*x-text="message"#u', $html);
     }

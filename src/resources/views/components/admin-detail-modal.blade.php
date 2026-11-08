@@ -1,7 +1,7 @@
 @props(['titleId', 'title', 'state' => '', 'close' => '$wire.showDetail = false', 'escape' => '$wire.showDetail = false'])
 
 {{--
-    管理画面の一覧（注文・予約・会員）の詳細モーダルの外枠（幅400px。SPは左右16pxの余白で横いっぱい）。Livewire のコンポーネントの中で使う（開閉は $wire.showDetail）。
+    管理画面の一覧（注文・予約・会員・お問い合わせ）の詳細モーダルの外枠（幅400px。SPは左右16pxの余白で横いっぱい）。Livewire のコンポーネントの中で使う（開閉は $wire.showDetail）。
     - titleId：見出しのid（aria-labelledby 用）、title：読み上げ用の見出し（sr-only）
     - state：外枠の x-data の中身（Alpine の状態を足すときだけ。例：{ confirming: false }）
     - close：背景・「閉じる」を押したときの式、escape：Esc を押したときの式（既定は詳細を閉じる）

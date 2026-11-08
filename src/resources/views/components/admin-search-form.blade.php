@@ -1,7 +1,7 @@
 @props(['action', 'label', 'resetHref'])
 
 {{--
-    管理画面の一覧（注文・予約・会員）の検索フォーム（GET）。検索欄の項目はスロットに <x-admin-search-field> で置く。
+    管理画面の一覧（注文・予約・会員・お問い合わせ）の検索フォーム（GET）。検索欄の項目はスロットに <x-admin-search-field> で置く。
     末尾に「検索」「リセット」のボタン（SPは2列、PCは項目と同じ行）を出す。
     フォームの下に、操作が成功した案内（flash の list_status。緑の文字・中央寄せ）と、入力の誤りなど $errors のメッセージの一覧（赤字・中央寄せ）を出す。
     - action：検索のURL、label：フォームの aria-label、resetHref：リセット（全件の一覧）のURL

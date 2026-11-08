@@ -1,7 +1,7 @@
 @props(['variant' => 'search', 'href' => null, 'disabled' => false])
 
 {{--
-    管理画面の一覧（注文・予約・会員）の検索欄まわりのボタン。href があれば <a>、なければ type="submit" の <button>（type は上書きできる。disabled が true なら押せない）。
+    管理画面の一覧（注文・予約・会員・お問い合わせ）の検索欄まわりのボタン。href があれば <a>、なければ type="submit" の <button>（type は上書きできる。disabled が true なら押せない）。
     - variant：search（緑の地の「検索」）／reset（灰色の地の「リセット」）／export（濃い灰色の地の「エクスポート」。幅200px、押せないときは薄くする）
     SPは高さ48px・全幅、PC（lg以上）は高さ40px・文字14px・幅は variant ごと。
 --}}
