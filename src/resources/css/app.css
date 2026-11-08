@@ -72,8 +72,10 @@
     --color-admin-head: #545454;
     --color-admin-dark: #424242;
     --color-admin-shipped: #d4d4d4;
-    /* 会員一覧の「メール送信」リンク（Figmaの #2857ff。白の上で約5.4:1） */
+    /* 会員一覧の「メール送信」・お問い合わせ一覧の「返信」リンクと、メール作成ページのタイトル・「送信する」ボタンの地（Figmaの #2857ff。白の上で約5.4:1） */
     --color-mail-link: #2857ff;
+    /* メール作成ページの「送信する」ボタンのホバー・フォーカスの地（mail-link より少し濃い青。白文字で約7.9:1） */
+    --color-mail-link-hover: #1a3fd1;
 
     --spacing-header: 70px;
 

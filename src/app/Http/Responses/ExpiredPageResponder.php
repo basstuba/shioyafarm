@@ -3,8 +3,11 @@
 namespace App\Http\Responses;
 
 use App\Enums\AdminListType;
+use App\Enums\MailRecipientType;
+use App\Http\Requests\MailRequest;
 use App\Support\AdminListUrl;
 use App\Support\AdminUserListUrl;
+use App\Support\MailTarget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,9 +17,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * CSRFトークンの不一致（TokenMismatchException。描画の前に 419 の HttpException になる）のとき、ログイン・ログアウトだけは、案内つきで元のページへ戻す
  *
  * 同じブラウザで別の窓のログイン・ログアウトをしたときや、時間が経ったときにトークンが古くなる。
- * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）だけで、
+ * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）・管理画面のメール送信（admin.mail.send）だけで、
  * それ以外のリクエスト（JSONを期待するリクエスト、Livewireの更新を含む）は null を返して従来どおり419のページにする。
- * 案内は flash の status に入れ、各ページがフォームの上に表示する（会員の物理削除と、注文・予約の取消は、実行できなかった知らせなので errors の delete・cancel に入れ、一覧の検索欄の下に赤字で出す）。
+ * 案内は flash の status に入れ、各ページがフォームの上に表示する（会員の物理削除と、注文・予約の取消は、実行できなかった知らせなので errors の delete・cancel に入れ、一覧の検索欄の下に赤字で出す。メール送信は errors の send に入れ、メール作成ページに入力を残して赤字で出す）。
  */
 class ExpiredPageResponder
 {
@@ -35,6 +38,9 @@ class ExpiredPageResponder
     /** 管理者のパスワード再設定のときの案内 */
     public const string ADMIN_PASSWORD_RESET_MESSAGE = 'ページの有効期限が切れました。もう一度お試しください。';
 
+    /** 管理画面のメール送信のときの案内（送信できなかった知らせなので、errors の send に入れる） */
+    public const string MAIL_SEND_MESSAGE = 'ページの有効期限が切れました。もう一度送信してください。';
+
     /**
      * 戻す応答を作る（対象でなければ null）
      */
@@ -52,6 +58,7 @@ class ExpiredPageResponder
             'admin.users.delete' => $this->backFromUserDelete(),
             'admin.purchase.cancel' => $this->backFromOrderCancel(AdminListType::Purchase),
             'admin.reservations.cancel' => $this->backFromOrderCancel(AdminListType::Reservation),
+            'admin.mail.send' => $this->backFromMailSend($request),
             'admin.password.email' => $this->backWithEmail($request, 'admin.password.request', self::ADMIN_PASSWORD_RESET_MESSAGE),
             'admin.password.update' => $this->backToAdminResetPassword($request),
             default => null,
@@ -104,6 +111,30 @@ class ExpiredPageResponder
         }
 
         return redirect(AdminListUrl::previousOrIndex($type->listRoute(), $type->searchRoute()))->withErrors(['cancel' => self::ORDER_CANCEL_MESSAGE]);
+    }
+
+    /**
+     * 管理者がまだログイン中なら、送信フォームの宛先（type・id）のメール作成ページへ入力（タイトル・本文・戻り先）を残して戻す（メールは送らない）。
+     * 宛先の種類・IDが不正なときは、種類だけ有効ならその種類の一覧へ、種類も不正なら会員一覧へ戻す。管理者がログインしていなければログインページへ戻す
+     */
+    private function backFromMailSend(Request $request): Response
+    {
+        if (! Auth::guard('admin')->check()) {
+            return redirect()->route('admin.login');
+        }
+
+        $target = MailTarget::fromInput($request->input('type'), $request->input('id'));
+
+        if ($target === null) {
+            // 宛先が不正でも、種類だけ有効ならその種類の一覧へ戻す。種類も不正なら会員一覧へ
+            $type = MailTarget::typeFromInput($request->input('type')) ?? MailRecipientType::User;
+
+            return redirect()->route($type->indexRoute())->withErrors(['send' => self::MAIL_SEND_MESSAGE]);
+        }
+
+        return redirect($target->createUrl($request->input('back')))
+            ->withInput($request->only([MailRequest::TITLE, MailRequest::BODY, 'back']))
+            ->withErrors(['send' => self::MAIL_SEND_MESSAGE]);
     }
 
     /**
