@@ -31,7 +31,7 @@ class PurchaseExport extends AdminOrderExport
     {
         foreach ($this->purchases as $purchase) {
             foreach ($purchase->purchaseHistoryItems as $line) {
-                yield $this->row($purchase, $line->item, $line->quantity);
+                yield $this->row($purchase, $line->item_name, $line->item_weight, $line->quantity);
             }
         }
     }

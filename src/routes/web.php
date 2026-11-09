@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminExportController;
 use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminInquiryController;
+use App\Http\Controllers\AdminItemController;
 use App\Http\Controllers\AdminMailController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
@@ -142,6 +143,10 @@ Route::prefix('admin')->group(function () {
         Route::get('/inquiries', [AdminInquiryController::class, 'index'])->name('admin.inquiries.index');
         Route::get('/inquiries/search', [AdminInquiryController::class, 'search'])->name('admin.inquiries.search');
         Route::post('/inquiries/update', [AdminInquiryController::class, 'update'])->name('admin.inquiries.update');
+
+        // 掲載商品一覧（全件表示・論理削除。詳細のモーダルは Livewire の AdminItemDetail。設計書にない追加ルート：delete。登録・修正は次のブランチ）
+        Route::get('/items', [AdminItemController::class, 'index'])->name('admin.items.index');
+        Route::delete('/items/delete', [AdminItemController::class, 'delete'])->name('admin.items.delete');
 
         // メール作成・送信（会員宛て・お問い合わせへの返信。宛先の種類とIDだけを送り、メールアドレスはサーバーで引き直す。送信後は来た一覧に戻る）
         Route::get('/mail/user/{user_id}', [AdminMailController::class, 'createUserMail'])->whereNumber('user_id')->name('admin.mail.user');

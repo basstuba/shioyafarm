@@ -447,7 +447,7 @@ class ThanksMailContentTest extends TestCase
     {
         $user = User::factory()->create(['last_name' => '<u>山田</u>', 'first_name' => '*太郎*', 'email' => 'taro@example.com']);
         $purchase = $this->makePurchase('card', [], $user);
-        Item::query()->where('name', 'じゃがいも')->update(['name' => '[じゃがいも](http://evil.example)']);
+        Purchase_history_item::query()->where('item_name', 'じゃがいも')->update(['item_name' => '[じゃがいも](http://evil.example)']);
         $mail = new PurchaseThanksMail($purchase->fresh());
 
         $mail->assertSeeInHtml('&lt;u&gt;山田&lt;/u&gt; *太郎* 様', false);
@@ -584,15 +584,6 @@ class ThanksMailContentTest extends TestCase
 
         (new PurchaseThanksMail($purchases->loadForThanksMail($transfer)))->render();
         $this->assertSame(1, $bankQueries());
-    }
-
-    /**
-     * 商品の表示名は「名前 容量kg」
-     */
-    #[Test]
-    public function 商品の表示名は名前に容量を付ける(): void
-    {
-        $this->assertSame('北の恵みセット 10kg', Item::factory()->make(['name' => '北の恵みセット', 'weight' => 10])->display_name);
     }
 
     /**

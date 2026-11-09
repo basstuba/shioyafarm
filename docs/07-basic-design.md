@@ -83,12 +83,12 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/inquiries` | GET | AdminInquiryController | index | 必須 | 管理画面お問い合わせ一覧ページ表示（新しい順に1ページ10件。問い合わせ日時の降順、同時刻はIDの降順。範囲外のページ番号は最終ページ） |
 | `/admin/inquiries/search` | GET | AdminInquiryController | search | 必須 | お問い合わせ検索機能（対応状況 `addressed`＝`0` 非対応・`1` 対応済・空は絞らない、問い合わせ日 `date`＝Y-m-d・日本時間のその日。氏名の検索はない。入力の誤りは `/admin/inquiries` に戻してエラーを表示） |
 | `/admin/inquiries/update` | POST | AdminInquiryController | update | 必須 | お問い合わせ対応チェック機能（`id` と `addressed` を JSON で受け取り JSON（`{"id": 1, "addressed": true}`）を返す。存在しないお問い合わせは404（`{"message": "お問い合わせが見つかりません。"}`）、`addressed` などの不正な値は422。対応済みにしてもお客様にメールは送らない。詳細のモーダルは Livewire の AdminInquiryDetail） |
-| `/admin/items` | GET | AdminItemController | index | 必須 | 管理画面掲載商品一覧ページ表示 |
+| `/admin/items` | GET | AdminItemController | index | 必須 | 管理画面掲載商品一覧ページ表示機能（削除していない商品を全件表示する。検索・ページ送りはない。並び順は商品名ごとにまとめ、まとまりは同じ商品名の最小IDの順、その中は重さの軽い順、同じ重さはID順。列は商品名・商品重量（kg）・商品金額（円・税込。3桁ごとにカンマ）・「詳細」・「修正」・「削除」。0件のときは「掲載中の商品はありません。」。「詳細」は Livewire の `AdminItemDetail` のモーダルで、商品名・商品重量・商品金額・商品画像・商品紹介文・おすすめ商品掲載（掲載 / 未掲載）・通常/予約限定・予約可能数を表示する。予約可能数は、通常の商品は「無」、予約限定で上限がなければ「上限なし」、上限があれば「200（残り150）」の形で、残りは公開側の予約ページと同じ数。「修正」のリンク先は `/admin/items/edit/{item_id}`） |
 | `/admin/items/create` | GET | AdminItemController | create | 必須 | 掲載商品登録ページ表示 |
 | `/admin/items/store` | POST | AdminItemController | store | 必須 | 掲載商品登録機能 |
-| `/admin/items/edit` | GET | AdminItemController | edit | 必須 | 掲載商品修正ページ表示 |
+| `/admin/items/edit` | GET | AdminItemController | edit | 必須 | 掲載商品修正ページ表示（次のブランチ feat/admin-item-form で `/admin/items/edit/{item_id}` にする。一覧の「修正」のリンクは先にこの形で作ってある） |
 | `/admin/items/update` | POST | AdminItemController | update | 必須 | 掲載商品修正機能 |
-| `/admin/items/delete` | DELETE | AdminItemController | delete | 必須 | 掲載商品削除機能 |
+| `/admin/items/delete` | DELETE | AdminItemController | delete | 必須 | 掲載商品削除機能（論理削除。`id` を受け取り、成功しても失敗しても `/admin/items` に戻る。成功の案内「商品を削除しました。」は表の上に緑の文字で表示する（flash の `list_status`）。削除済み・存在しない商品、`id` の形が正しくない場合は、何も変えずに「商品が見つかりません。」を赤字で表示する。削除した商品は公開側の商品一覧・トップのおすすめ・商品詳細・カート・購入・予約から消える。過去の注文・予約は、注文した時点の商品名・重さ（`item_name`・`item_weight`）を持っているため、表示は変わらない。元に戻す機能と物理削除は作らない。一覧の「削除」を押すと「{商品名} {重さ}kg を削除します。よろしいですか？」「公開ページとカートから消えます。過去の注文・予約の記録は残ります。」の確認を出す） |
 | `/admin/export` | POST | AdminExportController | export | 必須 | エクスポート機能（`type` で種類を指定する。`purchase`＝注文一覧、`reservation`＝予約一覧。不正な種類はエラー。検索条件 `shipped`・`date`・`name` は各一覧の検索と同じで、ページ番号は無視して全件を出力する。入力の誤りは、種類に応じて `/admin/purchase`・`/admin/reservations` に戻してエラーを表示する（種類が不正なときは `/admin/purchase`）。.xlsx・ファイル名 `注文一覧_YYYYMMDD.xlsx`・`予約一覧_YYYYMMDD.xlsx`。発送状況が `canceled` のときだけ `注文一覧_取消済_YYYYMMDD.xlsx`・`予約一覧_取消済_YYYYMMDD.xlsx`。`canceled` のとき以外は取消済みを含めない） |
 | `/admin/mail/user/{user_id}` | GET | AdminMailController | createUserMail | 必須 | メール作成ページ表示 |
 | `/admin/mail/inquiry/{inquiry_id}` | GET | AdminMailController | createInquiryMail | 必須 | メール作成ページ表示 |

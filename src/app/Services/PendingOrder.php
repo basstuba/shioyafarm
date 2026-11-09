@@ -19,7 +19,7 @@ final readonly class PendingOrder
     public string $orderId;
 
     /**
-     * @param  list<array{item_id: int, name: string, quantity: int, price: int, subtotal: int}>  $items
+     * @param  list<array{item_id: int, name: string, weight: int, quantity: int, price: int, subtotal: int}>  $items  商品の name・weight は注文した時点の値（保存するとき明細・予約の item_name・item_weight になる）
      */
     public function __construct(
         public int $userId,
@@ -166,6 +166,13 @@ final readonly class PendingOrder
 
         if ($source === null || $method === null || ! is_array($items) || $items === []) {
             return null;
+        }
+
+        // 商品の name・weight を持たない古い形式（商品名の保存を始める前にセッションへ入ったもの）は、使えない注文として捨てる
+        foreach ($items as $row) {
+            if (! is_array($row) || ! is_string($row['name'] ?? null) || ! is_int($row['weight'] ?? null)) {
+                return null;
+            }
         }
 
         foreach (['user_id', 'subtotal', 'shipping_fee', 'cod_fee', 'total_price'] as $key) {

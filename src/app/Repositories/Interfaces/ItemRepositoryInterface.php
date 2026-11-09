@@ -39,4 +39,9 @@ interface ItemRepositoryInterface
      * @return Collection<int, Item>
      */
     public function findByIds(array $ids): Collection;
+
+    /**
+     * 商品を論理削除する（削除済み・存在しない商品は何も変えず false）
+     */
+    public function softDelete(int $id): bool;
 }
