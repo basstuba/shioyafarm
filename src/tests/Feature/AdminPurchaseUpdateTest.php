@@ -41,7 +41,7 @@ class AdminPurchaseUpdateTest extends TestCase
             'cod_fee' => 0,
             'total_price' => 1270,
         ], [
-            ['item_id' => $item->id, 'quantity' => 1, 'price' => 330, 'subtotal' => 330],
+            ['item_id' => $item->id, 'item_name' => $item->name, 'item_weight' => $item->weight, 'quantity' => 1, 'price' => 330, 'subtotal' => 330],
         ]);
 
         $this->assertDatabaseHas('purchase_histories', ['id' => $created->id, 'shipped' => 0]);

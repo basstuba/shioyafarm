@@ -36,7 +36,7 @@ class PurchaseRequest extends FormRequest
         return [
             'source' => ['required', 'string', Rule::in(PurchaseSource::values())],
             'items' => 'required|array|min:1',
-            'items.*.item_id' => ['required', 'integer', 'distinct', Rule::exists('items', 'id')->where('is_reserved_only', 0)],
+            'items.*.item_id' => ['required', 'integer', 'distinct', Rule::exists('items', 'id')->whereNull('deleted_at')->where('is_reserved_only', 0)],
             'items.*.quantity' => CartRequest::quantityRules(),
             ...self::checkoutRules(PaymentMethod::values()),
         ];

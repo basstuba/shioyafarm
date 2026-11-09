@@ -45,7 +45,7 @@ class CheckoutResponderTest extends TestCase
             '北海道',
             '札幌市中央区1-1-1',
             PaymentMethod::Card,
-            [['item_id' => $itemId, 'name' => '北の恵みセット 10kg', 'quantity' => 1, 'price' => 1450, 'subtotal' => 1450]],
+            [['item_id' => $itemId, 'name' => '北の恵みセット', 'weight' => 10, 'quantity' => 1, 'price' => 1450, 'subtotal' => 1450]],
             1450,
             1530,
             0,

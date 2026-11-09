@@ -95,7 +95,7 @@ trait ReservationTestHelpers
             '北海道',
             '札幌市中央区1-1-1',
             $method,
-            [['item_id' => $item->id, 'name' => $item->name.' '.$item->weight.'kg', 'quantity' => 1, 'price' => 1450, 'subtotal' => 1450]],
+            [['item_id' => $item->id, 'name' => $item->name, 'weight' => $item->weight, 'quantity' => 1, 'price' => 1450, 'subtotal' => 1450]],
             1450,
             1530,
             0,

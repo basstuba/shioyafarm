@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * 商品
+ * 商品（論理削除。削除した商品は公開側・管理画面の一覧から消えるが、過去の注文・予約の記録は残る）
  */
 class Item extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -24,16 +25,6 @@ class Item extends Model
         'is_reserved_only',
         'reservation_limit',
     ];
-
-    /**
-     * 注文・メールに表示する商品名（「じゃがいも 2kg」のように、名前に容量を付ける）
-     *
-     * @return Attribute<non-falsy-string, never>
-     */
-    protected function displayName(): Attribute
-    {
-        return Attribute::get(fn (): string => $this->name.' '.$this->weight.'kg');
-    }
 
     /**
      * この商品の予約

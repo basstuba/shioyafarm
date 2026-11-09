@@ -57,6 +57,8 @@ erDiagram
         bigint id PK
         bigint user_id FK
         bigint item_id FK
+        varchar item_name
+        int item_weight
         varchar delivery_name
         varchar delivery_prefecture
         varchar delivery_city
@@ -122,6 +124,8 @@ erDiagram
         bigint id PK
         bigint purchase_history_id FK
         bigint item_id FK
+        varchar item_name
+        int item_weight
         int quantity
         int price
         int subtotal
@@ -141,6 +145,7 @@ erDiagram
         int reservation_limit
         timestamp created_at
         timestamp updated_at
+        timestamp deleted_at
     }
 
     admins {

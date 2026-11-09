@@ -33,7 +33,7 @@ class ReservationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_id' => ['required', 'integer', Rule::exists('items', 'id')->where('is_reserved_only', 1)],
+            'item_id' => ['required', 'integer', Rule::exists('items', 'id')->whereNull('deleted_at')->where('is_reserved_only', 1)],
             'quantity' => CartRequest::quantityRules(),
             ...PurchaseRequest::checkoutRules(PaymentMethod::reservationValues()),
         ];

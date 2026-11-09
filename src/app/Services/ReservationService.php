@@ -193,7 +193,8 @@ class ReservationService extends CheckoutService
             $method,
             [[
                 'item_id' => $item->id,
-                'name' => $item->display_name,
+                'name' => $item->name,
+                'weight' => $item->weight,
                 'quantity' => $quantity,
                 'price' => $item->price,
                 'subtotal' => $summary->subtotal,
@@ -219,6 +220,8 @@ class ReservationService extends CheckoutService
             [
                 'user_id' => $order->userId,
                 'item_id' => $item['item_id'],
+                'item_name' => $item['name'],
+                'item_weight' => $item['weight'],
                 'delivery_name' => $order->deliveryName,
                 'delivery_prefecture' => $order->deliveryPrefecture,
                 'delivery_city' => $order->deliveryCity,

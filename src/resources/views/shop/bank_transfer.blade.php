@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@use('App\Support\ItemLabel')
 
 @section('page-title', '振込先のご案内 | Shioya Farm')
 
@@ -50,7 +51,7 @@
                     <ul class="mt-6 flex flex-col gap-4 md:gap-[17px]">
                         @foreach ($order->items as $item)
                             <li class="flex items-center justify-between gap-4 rounded-[10px] bg-white p-4 shadow-button md:px-6">
-                                <span class="min-w-0 text-xl break-words">{{ $item['name'] }} × {{ $item['quantity'] }}個</span>
+                                <span class="min-w-0 text-xl break-words">{{ ItemLabel::of($item['name'], $item['weight']) }} × {{ $item['quantity'] }}個</span>
                                 <span class="shrink-0 text-base">{{ number_format($item['subtotal']) }}円</span>
                             </li>
                         @endforeach

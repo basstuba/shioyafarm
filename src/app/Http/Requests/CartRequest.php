@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Services\CartService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CartRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ class CartRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'item_id' => 'required|exists:items,id',
+            'item_id' => ['required', Rule::exists('items', 'id')->whereNull('deleted_at')],
             'quantity' => self::quantityRules(),
         ];
     }

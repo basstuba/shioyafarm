@@ -13,6 +13,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ReservationFactory extends Factory
 {
     /**
+     * 予約した時点の商品名・重さは、指定がなければ商品の今の値にする（削除済みの商品も引く。商品の取得は1回）
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Reservation $model): void {
+            if ($model->getAttribute('item_name') === null || $model->getAttribute('item_weight') === null) {
+                $item = Item::withTrashed()->findOrFail($model->item_id);
+                $model->setAttribute('item_name', $model->getAttribute('item_name') ?? $item->name);
+                $model->setAttribute('item_weight', $model->getAttribute('item_weight') ?? $item->weight);
+            }
+        });
+    }
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>

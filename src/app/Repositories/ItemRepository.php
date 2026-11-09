@@ -57,4 +57,14 @@ class ItemRepository implements ItemRepositoryInterface
     {
         return Item::whereIn('id', $ids)->orderBy('id')->get();
     }
+
+    /**
+     * 商品を論理削除する（削除済み・存在しない商品は何も変えず false）
+     */
+    #[Override]
+    public function softDelete(int $id): bool
+    {
+        // 論理削除のスコープで、削除していない行だけが対象になる（deleted_at の更新が1行も起きなければ false）
+        return Item::query()->whereKey($id)->delete() > 0;
+    }
 }
