@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentGatewayInterface;
+use App\Support\ItemLabel;
 use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Model;
@@ -731,7 +732,7 @@ abstract class CheckoutService
     private function toStripeLineItems(PendingOrder $order): array
     {
         $lineItems = array_map(fn (array $item): array => [
-            'name' => $item['name'],
+            'name' => ItemLabel::of($item['name'], $item['weight']),
             'unit_amount' => $item['price'],
             'quantity' => $item['quantity'],
         ], $order->items);

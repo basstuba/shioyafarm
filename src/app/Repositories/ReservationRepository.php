@@ -40,7 +40,7 @@ class ReservationRepository implements ReservationRepositoryInterface
     /**
      * 予約（銀行振込のときは振込先も）をトランザクションで作成
      *
-     * @param  array{user_id: int, item_id: int, delivery_name: string, delivery_prefecture: string, delivery_city: string, delivery_tell: string, quantity: int, price: int, subtotal: int, payment_method: string, shipping_fee: int, total_price: int}  $reservation
+     * @param  array{user_id: int, item_id: int, item_name: string, item_weight: int, delivery_name: string, delivery_prefecture: string, delivery_city: string, delivery_tell: string, quantity: int, price: int, subtotal: int, payment_method: string, shipping_fee: int, total_price: int}  $reservation
      * @param  array{stripe_payment_intent_id: string, bank_name: string|null, branch_name: string|null, account_type: string|null, account_number: string|null, account_holder_name: string|null, amount: int}|null  $bankTransfer
      */
     #[Override]
@@ -57,14 +57,14 @@ class ReservationRepository implements ReservationRepositoryInterface
     }
 
     /**
-     * 会員の予約を新しい順にページ分けして取得（予約した商品を Eager Load する）
+     * 会員の予約を新しい順にページ分けして取得
      *
      * @return LengthAwarePaginator<int, Reservation>
      */
     #[Override]
     public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator
     {
-        return Reservation::with('item')
+        return Reservation::query()
             ->where('user_id', $userId)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -77,7 +77,7 @@ class ReservationRepository implements ReservationRepositoryInterface
     #[Override]
     public function findDetailByUserId(int $userId, int $id): ?Reservation
     {
-        return Reservation::with(['item', 'reservationBankTransfer'])
+        return Reservation::with('reservationBankTransfer')
             ->where('user_id', $userId)
             ->where('id', $id)
             ->first();
@@ -91,7 +91,7 @@ class ReservationRepository implements ReservationRepositoryInterface
     #[Override]
     public function loadForThanksMail(Reservation $reservation): Reservation
     {
-        $reservation->loadMissing(['user', 'item']);
+        $reservation->loadMissing('user');
         // 振込先は銀行振込のときだけ読む
         if (PaymentMethod::from($reservation->payment_method)->usesBankTransfer()) {
             $reservation->loadMissing('reservationBankTransfer');
@@ -121,7 +121,7 @@ class ReservationRepository implements ReservationRepositoryInterface
     public function lazyForExport(AdminListCriteria $criteria): LazyCollection
     {
         return $this->exportQuery($criteria)
-            ->with(['user', 'item'])
+            ->with('user')
             ->lazyByIdDesc(self::EXPORT_CHUNK_SIZE);
     }
 
@@ -134,7 +134,7 @@ class ReservationRepository implements ReservationRepositoryInterface
     #[Override]
     public function findDetailForAdmin(int $id): ?Reservation
     {
-        return Reservation::with(['user', 'item', 'reservationBankTransfer'])->find($id);
+        return Reservation::with(['user', 'reservationBankTransfer'])->find($id);
     }
 
     /**

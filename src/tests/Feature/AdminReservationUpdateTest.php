@@ -36,6 +36,8 @@ class AdminReservationUpdateTest extends TestCase
         $created = app(ReservationRepositoryInterface::class)->createWithBankTransfer([
             'user_id' => $user->id,
             'item_id' => $item->id,
+            'item_name' => $item->name,
+            'item_weight' => $item->weight,
             'delivery_name' => '山田 太郎',
             'delivery_prefecture' => '北海道',
             'delivery_city' => '札幌市',

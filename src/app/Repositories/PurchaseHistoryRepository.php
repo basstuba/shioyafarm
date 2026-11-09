@@ -32,7 +32,7 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
      * 購入履歴・購入明細（銀行振込のときは振込先も）をトランザクションで作成
      *
      * @param  array{user_id: int, delivery_name: string, delivery_prefecture: string, delivery_city: string, delivery_tell: string, payment_method: string, shipping_fee: int, cod_fee: int, total_price: int}  $history
-     * @param  list<array{item_id: int, quantity: int, price: int, subtotal: int}>  $items
+     * @param  list<array{item_id: int, item_name: string, item_weight: int, quantity: int, price: int, subtotal: int}>  $items
      * @param  array{stripe_payment_intent_id: string, bank_name: string|null, branch_name: string|null, account_type: string|null, account_number: string|null, account_holder_name: string|null, amount: int}|null  $bankTransfer
      */
     #[Override]
@@ -50,14 +50,14 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     }
 
     /**
-     * 会員の購入履歴を新しい順にページ分けして取得（購入商品を Eager Load する）
+     * 会員の購入履歴を新しい順にページ分けして取得（購入商品の明細を Eager Load する）
      *
      * @return LengthAwarePaginator<int, Purchase_history>
      */
     #[Override]
     public function paginateByUserId(int $userId, int $perPage, string $pageName): LengthAwarePaginator
     {
-        return Purchase_history::with('purchaseHistoryItems.item')
+        return Purchase_history::with('purchaseHistoryItems')
             ->where('user_id', $userId)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -70,7 +70,7 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     #[Override]
     public function findDetailByUserId(int $userId, int $id): ?Purchase_history
     {
-        return Purchase_history::with(['purchaseHistoryItems.item', 'purchaseBankTransfer'])
+        return Purchase_history::with(['purchaseHistoryItems', 'purchaseBankTransfer'])
             ->where('user_id', $userId)
             ->where('id', $id)
             ->first();
@@ -84,7 +84,7 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     #[Override]
     public function loadForThanksMail(Purchase_history $purchase): Purchase_history
     {
-        $purchase->loadMissing(['user', 'purchaseHistoryItems.item']);
+        $purchase->loadMissing(['user', 'purchaseHistoryItems']);
         // 振込先は銀行振込のときだけ読む
         if (PaymentMethod::from($purchase->payment_method)->usesBankTransfer()) {
             $purchase->loadMissing('purchaseBankTransfer');
@@ -114,7 +114,7 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     public function lazyForExport(AdminListCriteria $criteria): LazyCollection
     {
         return $this->exportQuery($criteria)
-            ->with(['user', 'purchaseHistoryItems.item'])
+            ->with(['user', 'purchaseHistoryItems'])
             ->lazyByIdDesc(self::EXPORT_CHUNK_SIZE);
     }
 
@@ -127,7 +127,7 @@ class PurchaseHistoryRepository implements PurchaseHistoryRepositoryInterface
     #[Override]
     public function findDetailForAdmin(int $id): ?Purchase_history
     {
-        return Purchase_history::with(['user', 'purchaseHistoryItems.item', 'purchaseBankTransfer'])->find($id);
+        return Purchase_history::with(['user', 'purchaseHistoryItems', 'purchaseBankTransfer'])->find($id);
     }
 
     /**

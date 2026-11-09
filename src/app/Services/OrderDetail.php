@@ -63,7 +63,7 @@ final readonly class OrderDetail
     }
 
     /**
-     * 購入履歴から作る（商品とその振込先を Eager Load 済みであること）
+     * 購入履歴から作る（明細とその振込先を Eager Load 済みであること。商品名・重さは注文した時点の値）
      */
     public static function fromPurchase(Purchase_history $purchase): self
     {
@@ -71,7 +71,7 @@ final readonly class OrderDetail
 
         $lines = $purchase->purchaseHistoryItems
             ->map(fn (Purchase_history_item $line): array => [
-                'name' => $line->item->display_name,
+                'name' => $line->itemLabel(),
                 'price' => $line->price,
                 'quantity' => $line->quantity,
                 'subtotal' => $line->subtotal,
@@ -99,7 +99,7 @@ final readonly class OrderDetail
     }
 
     /**
-     * 予約から作る（商品とその振込先を Eager Load 済みであること）
+     * 予約から作る（振込先を Eager Load 済みであること。商品名・重さは予約した時点の値）
      */
     public static function fromReservation(Reservation $reservation): self
     {
@@ -108,7 +108,7 @@ final readonly class OrderDetail
         return new self(
             orderedAt: $reservation->created_at,
             lines: [[
-                'name' => $reservation->item->display_name,
+                'name' => $reservation->itemLabel(),
                 'price' => $reservation->price,
                 'quantity' => $reservation->quantity,
                 'subtotal' => $reservation->subtotal,

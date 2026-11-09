@@ -63,6 +63,9 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | reservation_limit | integer | | | | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+| deleted_at | timestamp | | | | |
+
+`deleted_at` は論理削除の日時（NULL 可。削除していない商品は NULL）。管理画面の掲載商品一覧の「削除」で記録する（設計書にはなかった追加カラム。モデルは `SoftDeletes`）。削除した商品は、公開側（商品一覧・トップのおすすめ・商品詳細・カート・購入・予約）と管理画面の一覧に出ない。元に戻す機能と物理削除は作らない。購入明細・予約の外部キーの cascade は、論理削除では働かないため残す。
 
 ## notices（お知らせ内容データ）
 
@@ -96,6 +99,8 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | id | bigint unsigned | ○ | | | |
 | user_id | bigint unsigned | | | ○ | users(id) |
 | item_id | bigint unsigned | | | ○ | items(id) |
+| item_name | varchar(255) | | | ○ | |
+| item_weight | integer | | | ○ | |
 | delivery_name | varchar(255) | | | ○ | |
 | delivery_prefecture | varchar(255) | | | ○ | |
 | delivery_city | varchar(255) | | | ○ | |
@@ -110,6 +115,8 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | canceled_at | timestamp | | | | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+
+`item_name`・`item_weight` は予約した時点の商品名と重さ（設計書にはなかった追加カラム）。マイページ・管理画面の詳細・エクスポート・サンクスメールの表示に使う。商品を修正・削除しても、過去の予約の表示は変わらない。既存の予約は、商品の今の値で埋めてから NOT NULL にした。
 
 `shipped` は発送済みかどうか（既定値 false）。管理画面の予約一覧のチェックで切り替える（設計書にはなかった追加カラム）。管理者だけが見て、マイページ・メールには出さない。日時は持たない。
 
@@ -145,11 +152,15 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | id | bigint unsigned | ○ | | | |
 | purchase_history_id | bigint unsigned | | | ○ | purchase_histories(id) |
 | item_id | bigint unsigned | | | ○ | items(id) |
+| item_name | varchar(255) | | | ○ | |
+| item_weight | integer | | | ○ | |
 | quantity | integer | | | ○ | |
 | price | integer | | | ○ | |
 | subtotal | integer | | | ○ | |
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
+
+`item_name`・`item_weight` は注文した時点の商品名と重さ（設計書にはなかった追加カラム）。マイページ・管理画面の詳細・エクスポート・サンクスメールの表示に使う。商品を修正・削除しても、過去の注文の表示は変わらない。既存の明細は、商品の今の値で埋めてから NOT NULL にした。
 
 ## purchase_bank_transfers（銀行振込の振込先データ）
 

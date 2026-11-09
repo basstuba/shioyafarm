@@ -42,7 +42,7 @@ class AdminNav
                     ['label' => '会員一覧', 'url' => route('admin.users.index'), 'active' => ['admin/users', 'admin/users/*']],
                     ['label' => 'お問い合わせ一覧', 'url' => route('admin.inquiries.index'), 'active' => ['admin/inquiries', 'admin/inquiries/*']],
                     ['label' => 'お知らせ一覧', 'url' => url('/admin/notices'), 'active' => ['admin/notices']],
-                    ['label' => '掲載商品一覧', 'url' => url('/admin/items'), 'active' => ['admin/items']],
+                    ['label' => '掲載商品一覧', 'url' => route('admin.items.index'), 'active' => ['admin/items']],
                 ],
             ],
             [

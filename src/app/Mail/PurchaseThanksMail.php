@@ -13,7 +13,7 @@ use Override;
  * 購入のサンクスメール
  *
  * 購入履歴を保存した直後に、会員登録のメールアドレスへ送る。金額は保存済みの値を使う。
- * 表示に使う会員・商品・振込先は、作る側（PurchaseService）が Eager Load しておく（商品の数だけ問い合わせない）。
+ * 表示に使う会員・明細・振込先は、作る側（PurchaseService）が Eager Load しておく。商品名・重さは注文した時点の値（item_name・item_weight）。
  */
 class PurchaseThanksMail extends ThanksMail
 {
@@ -42,7 +42,7 @@ class PurchaseThanksMail extends ThanksMail
             with: $this->orderData($purchase, $this->paymentMethod->usesBankTransfer() ? $purchase->purchaseBankTransfer : null) + [
                 // 商品ごとの行（「じゃがいも 2kg × 2　　¥660」）。HTML版は1つの段落の中で <br> 区切り
                 'itemLines' => $this->joinLines($purchase->purchaseHistoryItems
-                    ->map(fn (Purchase_history_item $line): string => MailText::safe($line->item->display_name).' × '.$line->quantity.'　　'.MailText::yen($line->subtotal))
+                    ->map(fn (Purchase_history_item $line): string => MailText::safe($line->itemLabel()).' × '.$line->quantity.'　　'.MailText::yen($line->subtotal))
                     ->all()),
                 'subtotal' => MailText::yen($subtotal),
                 // 代引手数料の行は代金引換のときだけ出す

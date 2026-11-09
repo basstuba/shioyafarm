@@ -42,7 +42,7 @@ class MyPagePurchaseHistory extends Component
             'id' => $purchase->id,
             'date' => $purchase->created_at?->format('Y/m/d'),
             'names' => $purchase->purchaseHistoryItems
-                ->map(fn (Purchase_history_item $line): string => $line->item->display_name)
+                ->map(fn (Purchase_history_item $line): string => $line->itemLabel())
                 ->all(),
             'total' => $purchase->total_price,
             'canceled' => $purchase->canceled_at !== null,

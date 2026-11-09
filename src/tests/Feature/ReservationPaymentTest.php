@@ -134,7 +134,7 @@ class ReservationPaymentTest extends TestCase
         $this->assertSame(1530, $pending['shipping_fee']);
         $this->assertSame(0, $pending['cod_fee']);
         $this->assertSame(2980, $pending['total_price']);
-        $this->assertSame([['item_id' => $item->id, 'name' => '北の恵みセット 10kg', 'quantity' => 1, 'price' => 1450, 'subtotal' => 1450]], $pending['items']);
+        $this->assertSame([['item_id' => $item->id, 'name' => '北の恵みセット', 'weight' => 10, 'quantity' => 1, 'price' => 1450, 'subtotal' => 1450]], $pending['items']);
         $this->assertNull(session('pending_order'));
 
         // ここでは予約データを保存しない
