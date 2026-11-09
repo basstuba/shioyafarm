@@ -28,7 +28,7 @@ class PendingOrderTest extends TestCase
             '北海道',
             '札幌市1-1',
             PaymentMethod::Card,
-            [['item_id' => 7, 'name' => '人参 2kg', 'quantity' => 1, 'price' => 418, 'subtotal' => 418]],
+            [['item_id' => 7, 'name' => '人参', 'weight' => 2, 'quantity' => 1, 'price' => 418, 'subtotal' => 418]],
             418,
             940,
             0,

@@ -257,7 +257,8 @@ class PurchaseService extends CheckoutService
             $method,
             $lines->map(fn (CartLine $line): array => [
                 'item_id' => $line->item->id,
-                'name' => $line->item->display_name,
+                'name' => $line->item->name,
+                'weight' => $line->item->weight,
                 'quantity' => $line->quantity,
                 'price' => $line->item->price,
                 'subtotal' => $line->amount,
@@ -291,6 +292,8 @@ class PurchaseService extends CheckoutService
             ],
             array_map(fn (array $item): array => [
                 'item_id' => $item['item_id'],
+                'item_name' => $item['name'],
+                'item_weight' => $item['weight'],
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
                 'subtotal' => $item['subtotal'],

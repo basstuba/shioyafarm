@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ItemLabel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,8 @@ class Reservation extends Model
     protected $fillable = [
         'user_id',
         'item_id',
+        'item_name',
+        'item_weight',
         'delivery_name',
         'delivery_prefecture',
         'delivery_city',
@@ -44,6 +47,14 @@ class Reservation extends Model
     }
 
     /**
+     * 予約した時点の商品名と重さ（「じゃがいも 2kg」）
+     */
+    public function itemLabel(): string
+    {
+        return ItemLabel::of($this->item_name, $this->item_weight);
+    }
+
+    /**
      * 予約した会員（退会済みの会員を含む）
      *
      * @return BelongsTo<User, $this>
@@ -54,13 +65,13 @@ class Reservation extends Model
     }
 
     /**
-     * 予約した商品
+     * 予約した商品（論理削除済みを含む。表示には予約した時点の item_name・item_weight を使う）
      *
      * @return BelongsTo<Item, $this>
      */
     public function item(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Item::class)->withTrashed();
     }
 
     /**

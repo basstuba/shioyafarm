@@ -67,9 +67,9 @@ class PurchaseSuccessTest extends TestCase
             '札幌市中央区1-1-1',
             $method,
             [
-                ['item_id' => $items['potato']->id, 'name' => 'じゃがいも 2kg', 'quantity' => 2, 'price' => 330, 'subtotal' => 660],
-                ['item_id' => $items['onion']->id, 'name' => '玉ねぎ 5kg', 'quantity' => 1, 'price' => 795, 'subtotal' => 795],
-                ['item_id' => $items['carrot']->id, 'name' => '人参 2kg', 'quantity' => 1, 'price' => 418, 'subtotal' => 418],
+                ['item_id' => $items['potato']->id, 'name' => 'じゃがいも', 'weight' => 2, 'quantity' => 2, 'price' => 330, 'subtotal' => 660],
+                ['item_id' => $items['onion']->id, 'name' => '玉ねぎ', 'weight' => 5, 'quantity' => 1, 'price' => 795, 'subtotal' => 795],
+                ['item_id' => $items['carrot']->id, 'name' => '人参', 'weight' => 2, 'quantity' => 1, 'price' => 418, 'subtotal' => 418],
             ],
             1873,
             1850,

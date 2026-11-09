@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Enums\AdminListType;
-use App\Models\Item;
 use App\Models\Purchase_history;
 use App\Models\Reservation;
 use Carbon\CarbonInterface;
@@ -105,18 +104,18 @@ abstract class AdminOrderExport extends DefaultValueBinder implements FromGenera
     }
 
     /**
-     * 注文・予約の1商品分の行（会員を Eager Load 済みであること）
+     * 注文・予約の1商品分の行（会員を Eager Load 済みであること。商品名・重さは注文した時点の値）
      *
      * @return list<int|string>
      */
-    protected function row(Purchase_history|Reservation $order, Item $item, int $quantity): array
+    protected function row(Purchase_history|Reservation $order, string $itemName, int $itemWeight, int $quantity): array
     {
         return [
             $order->id,
             $order->user->full_name,
             $order->created_at?->format('Y/m/d') ?? '',
-            $item->name,
-            $item->weight.'kg',
+            $itemName,
+            $itemWeight.'kg',
             $quantity,
             $order->delivery_name,
             $order->delivery_prefecture.$order->delivery_city,

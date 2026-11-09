@@ -16,7 +16,7 @@ use Override;
 class ReservationExport extends AdminOrderExport
 {
     /**
-     * @param  LazyCollection<int, Reservation>  $reservations  予約者・商品を Eager Load した、新しい順の予約
+     * @param  LazyCollection<int, Reservation>  $reservations  予約者を Eager Load した、新しい順の予約
      */
     public function __construct(private readonly LazyCollection $reservations) {}
 
@@ -27,7 +27,7 @@ class ReservationExport extends AdminOrderExport
     public function generator(): Generator
     {
         foreach ($this->reservations as $reservation) {
-            yield $this->row($reservation, $reservation->item, $reservation->quantity);
+            yield $this->row($reservation, $reservation->item_name, $reservation->item_weight, $reservation->quantity);
         }
     }
 

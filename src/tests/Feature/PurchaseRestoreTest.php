@@ -57,7 +57,7 @@ class PurchaseRestoreTest extends TestCase
             '沖縄県',
             '那覇市1-1',
             $method,
-            [['item_id' => $this->carrot->id, 'name' => '人参 2kg', 'quantity' => 3, 'price' => 418, 'subtotal' => 1254]],
+            [['item_id' => $this->carrot->id, 'name' => '人参', 'weight' => 2, 'quantity' => 3, 'price' => 418, 'subtotal' => 1254]],
             1254,
             2950,
             0,

@@ -40,7 +40,7 @@ class MyPageReservationHistory extends Component
         $rows = $reservations->getCollection()->map(fn (Reservation $reservation): array => [
             'id' => $reservation->id,
             'date' => $reservation->created_at?->format('Y/m/d'),
-            'names' => [$reservation->item->display_name],
+            'names' => [$reservation->itemLabel()],
             'total' => $reservation->total_price,
             'canceled' => $reservation->canceled_at !== null,
         ]);
