@@ -8,9 +8,9 @@
     会員一覧（admin/users）などと同じ作りの表。商品は少ないため、検索欄・ページ送りはなく、全件を表示する。
     - $items：掲載中の商品（削除済みを除く。商品名ごとにまとめ、その中は重さの軽い順）
     PC（lg以上）は最大幅960pxの表（列の幅は割合）、SPはカード形式（同じ table 要素を、グリッドでカードの形にする）。
-    「修正」のリンク先は /admin/items/edit/{商品ID}（修正ページは次のブランチ feat/admin-item-form で作る。それまでは404。作ったら route() にする）。
+    「修正」のリンク先は route('admin.items.edit', 商品ID)（/admin/items/edit/{商品ID}）。
     「削除」は確認のモーダルを開き（1行目は「{商品名} {重さ}kg を削除します。よろしいですか？」。商品名は Alpine の x-text で入れるため、HTMLの記号は文字のまま出る）、確認の「削除する」で DELETE /admin/items/delete へ送る（ページを移る）。確認の状態は Alpine（Livewire 同梱）が持ち、確認の中は x-trap でフォーカスを閉じ込める。
-    削除に成功したら一覧に戻り、表の上に緑の文字（flash の list_status）。削除済み・存在しない商品は、赤字（$errors）で案内する。
+    削除・登録・修正に成功したら一覧に戻り、表の上に緑の文字（flash の list_status）。削除・修正する商品が削除済み・存在しないときは、赤字（$errors）で案内する。
 --}}
 @php
     $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
@@ -82,7 +82,7 @@
                                 <td class="mt-2 {{ $cellClass }} lg:mt-0">
                                     <a
                                         class="{{ $actionClass }} text-mail-link"
-                                        href="{{ url('/admin/items/edit/'.$item->id) }}"
+                                        href="{{ route('admin.items.edit', $item->id) }}"
                                         aria-label="{{ $label }}を修正"
                                     >修正</a>
                                 </td>

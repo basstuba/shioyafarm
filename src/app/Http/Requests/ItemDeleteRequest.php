@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Item;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Override;
@@ -14,9 +15,6 @@ use Override;
  */
 class ItemDeleteRequest extends FormRequest
 {
-    /** 削除する商品が見つからないとき（入力の誤り・削除済み・存在しない商品）の案内 */
-    public const string NOT_FOUND_MESSAGE = '商品が見つかりません。';
-
     public function authorize(): bool
     {
         return true;
@@ -44,7 +42,7 @@ class ItemDeleteRequest extends FormRequest
     #[Override]
     public function messages(): array
     {
-        $message = self::NOT_FOUND_MESSAGE;
+        $message = Item::NOT_FOUND_MESSAGE;
 
         return [
             'id.required' => $message,

@@ -6,7 +6,7 @@ namespace App\Support;
  * 管理画面のメニューのリンク
  *
  * サイドメニュー（layouts/admin/sidebar）と、管理画面トップのカード（admin/index）で共有する。
- * 未実装の画面は url() で書いてある（画面ができるまでは404）。画面を実装したら route() に置き換える。
+ * 未実装の画面（お知らせ）は url() で書いてある（画面ができるまでは404）。画面を実装したら route() に置き換える。
  */
 class AdminNav
 {
@@ -42,7 +42,7 @@ class AdminNav
                     ['label' => '会員一覧', 'url' => route('admin.users.index'), 'active' => ['admin/users', 'admin/users/*']],
                     ['label' => 'お問い合わせ一覧', 'url' => route('admin.inquiries.index'), 'active' => ['admin/inquiries', 'admin/inquiries/*']],
                     ['label' => 'お知らせ一覧', 'url' => url('/admin/notices'), 'active' => ['admin/notices']],
-                    ['label' => '掲載商品一覧', 'url' => route('admin.items.index'), 'active' => ['admin/items']],
+                    ['label' => '掲載商品一覧', 'url' => route('admin.items.index'), 'active' => ['admin/items', 'admin/items/edit/*']],
                 ],
             ],
             [
@@ -51,7 +51,7 @@ class AdminNav
                 'linkClass' => 'decoration-primary-text',
                 'links' => [
                     ['label' => 'お知らせ作成', 'url' => url('/admin/notices/create'), 'active' => ['admin/notices/create']],
-                    ['label' => '掲載商品登録', 'url' => url('/admin/items/create'), 'active' => ['admin/items/create']],
+                    ['label' => '掲載商品登録', 'url' => route('admin.items.create'), 'active' => ['admin/items/create']],
                 ],
             ],
         ];

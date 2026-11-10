@@ -187,7 +187,7 @@ class AdminItemIndexTest extends TestCase
     }
 
     /**
-     * 「修正」のリンク先は /admin/items/edit/{商品ID}（修正ページは次のブランチで作る）
+     * 「修正」のリンク先は /admin/items/edit/{商品ID}（ルート名 admin.items.edit。押すと修正ページが開く）
      */
     #[Test]
     public function 修正のリンク先は商品idつきのパスになる(): void
@@ -197,8 +197,7 @@ class AdminItemIndexTest extends TestCase
 
         $this->get(route('admin.items.index'))
             ->assertSee('href="'.url('/admin/items/edit/'.$item->id).'"', false);
-        // 修正ページはまだなく、押すと404になる
-        $this->get(url('/admin/items/edit/'.$item->id))->assertNotFound();
+        $this->get(url('/admin/items/edit/'.$item->id))->assertOk();
     }
 
     /**

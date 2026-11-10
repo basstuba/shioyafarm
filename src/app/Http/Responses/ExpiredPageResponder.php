@@ -17,9 +17,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * CSRFトークンの不一致（TokenMismatchException。描画の前に 419 の HttpException になる）のとき、ログイン・ログアウトだけは、案内つきで元のページへ戻す
  *
  * 同じブラウザで別の窓のログイン・ログアウトをしたときや、時間が経ったときにトークンが古くなる。
- * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）・管理画面のメール送信（admin.mail.send）だけで、
+ * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）・管理画面のメール送信（admin.mail.send）・掲載商品の登録と修正（admin.items.store・admin.items.update）だけで、
  * それ以外のリクエスト（JSONを期待するリクエスト、Livewireの更新を含む）は null を返して従来どおり419のページにする。
- * 案内は flash の status に入れ、各ページがフォームの上に表示する（会員の物理削除と、注文・予約の取消は、実行できなかった知らせなので errors の delete・cancel に入れ、一覧の検索欄の下に赤字で出す。メール送信は errors の send に入れ、メール作成ページに入力を残して赤字で出す）。
+ * 案内は flash の status に入れ、各ページがフォームの上に表示する（会員の物理削除と、注文・予約の取消は、実行できなかった知らせなので errors の delete・cancel に入れ、一覧の検索欄の下に赤字で出す。メール送信は errors の send に入れ、メール作成ページに入力を残して赤字で出す。掲載商品の登録・修正は errors の form に入れ、登録・修正ページに画像以外の入力を残してボタンの上に赤字で出す）。
  */
 class ExpiredPageResponder
 {
@@ -41,6 +41,12 @@ class ExpiredPageResponder
     /** 管理画面のメール送信のときの案内（送信できなかった知らせなので、errors の send に入れる） */
     public const string MAIL_SEND_MESSAGE = 'ページの有効期限が切れました。もう一度送信してください。';
 
+    /** 掲載商品の登録のときの案内（登録できなかった知らせなので、errors の form に入れる） */
+    public const string ITEM_STORE_MESSAGE = 'ページの有効期限が切れました。もう一度登録してください。';
+
+    /** 掲載商品の修正のときの案内（修正できなかった知らせなので、errors の form に入れる。修正する商品が決まらないときは一覧の errors の item に入れる） */
+    public const string ITEM_UPDATE_MESSAGE = 'ページの有効期限が切れました。もう一度修正してください。';
+
     /**
      * 戻す応答を作る（対象でなければ null）
      */
@@ -59,6 +65,8 @@ class ExpiredPageResponder
             'admin.purchase.cancel' => $this->backFromOrderCancel(AdminListType::Purchase),
             'admin.reservations.cancel' => $this->backFromOrderCancel(AdminListType::Reservation),
             'admin.mail.send' => $this->backFromMailSend($request),
+            'admin.items.store' => $this->backFromItemStore($request),
+            'admin.items.update' => $this->backFromItemUpdate($request),
             'admin.password.email' => $this->backWithEmail($request, 'admin.password.request', self::ADMIN_PASSWORD_RESET_MESSAGE),
             'admin.password.update' => $this->backToAdminResetPassword($request),
             default => null,
@@ -135,6 +143,40 @@ class ExpiredPageResponder
         return redirect($target->createUrl($request->input('back')))
             ->withInput($request->only([MailRequest::TITLE, MailRequest::BODY, 'back']))
             ->withErrors(['send' => self::MAIL_SEND_MESSAGE]);
+    }
+
+    /**
+     * 管理者がまだログイン中なら、掲載商品の登録ページへ画像以外の入力を残して戻す（登録はしない）。ログインしていなければログインページへ
+     */
+    private function backFromItemStore(Request $request): Response
+    {
+        if (! Auth::guard('admin')->check()) {
+            return redirect()->route('admin.login');
+        }
+
+        return redirect()->route('admin.items.create')
+            ->withInput($request->except(['_token', 'image']))
+            ->withErrors(['form' => self::ITEM_STORE_MESSAGE]);
+    }
+
+    /**
+     * 管理者がまだログイン中なら、送信フォームの商品（id）の修正ページへ画像以外の入力を残して戻す（更新はしない）。
+     * 商品のIDが正しくないときは一覧へ戻す。管理者がログインしていなければログインページへ
+     */
+    private function backFromItemUpdate(Request $request): Response
+    {
+        if (! Auth::guard('admin')->check()) {
+            return redirect()->route('admin.login');
+        }
+
+        $id = $request->input('id');
+        if (! is_string($id) || ! ctype_digit($id) || (int) $id < 1) {
+            return redirect()->route('admin.items.index')->withErrors(['item' => self::ITEM_UPDATE_MESSAGE]);
+        }
+
+        return redirect()->route('admin.items.edit', ['item_id' => $id])
+            ->withInput($request->except(['_token', 'image']))
+            ->withErrors(['form' => self::ITEM_UPDATE_MESSAGE]);
     }
 
     /**

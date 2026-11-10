@@ -12,11 +12,12 @@ RUN apt-get update \
     libzip-dev \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
+    libwebp-dev \
     libpng-dev \
     unzip \
     libmagickwand-dev --no-install-recommends \
-    && docker-php-ext-install pdo_mysql zip bcmath \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql zip bcmath exif \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) gd \
     && pecl install imagick \
     && docker-php-ext-enable imagick \
