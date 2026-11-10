@@ -144,8 +144,12 @@ Route::prefix('admin')->group(function () {
         Route::get('/inquiries/search', [AdminInquiryController::class, 'search'])->name('admin.inquiries.search');
         Route::post('/inquiries/update', [AdminInquiryController::class, 'update'])->name('admin.inquiries.update');
 
-        // 掲載商品一覧（全件表示・論理削除。詳細のモーダルは Livewire の AdminItemDetail。設計書にない追加ルート：delete。登録・修正は次のブランチ）
+        // 掲載商品（一覧は全件表示。詳細のモーダルは Livewire の AdminItemDetail。登録・修正・論理削除。設計書にない追加ルート：delete）
         Route::get('/items', [AdminItemController::class, 'index'])->name('admin.items.index');
+        Route::get('/items/create', [AdminItemController::class, 'create'])->name('admin.items.create');
+        Route::post('/items/store', [AdminItemController::class, 'store'])->name('admin.items.store');
+        Route::get('/items/edit/{item_id}', [AdminItemController::class, 'edit'])->whereNumber('item_id')->name('admin.items.edit');
+        Route::post('/items/update', [AdminItemController::class, 'update'])->name('admin.items.update');
         Route::delete('/items/delete', [AdminItemController::class, 'delete'])->name('admin.items.delete');
 
         // メール作成・送信（会員宛て・お問い合わせへの返信。宛先の種類とIDだけを送り、メールアドレスはサーバーで引き直す。送信後は来た一覧に戻る）
