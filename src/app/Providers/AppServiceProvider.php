@@ -6,6 +6,8 @@ use App\Services\OrderTokenStore;
 use App\Services\Payment\PaymentGatewayInterface;
 use App\Services\Payment\StripePaymentGateway;
 use App\Services\PendingOrderStore;
+use App\Services\ProductImage\GdProductImageStorage;
+use App\Services\ProductImage\ProductImageStorageInterface;
 use App\Services\ReservationService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Session\Session;
@@ -35,6 +37,9 @@ class AppServiceProvider extends ServiceProvider
                 (int) config('services.stripe.connect_timeout'),
             );
         });
+
+        // 商品画像の保存（テストではこのバインドをモックに差し替えられる）
+        $this->app->bind(ProductImageStorageInterface::class, GdProductImageStorage::class);
 
         // 予約の保存待ちの注文・注文トークンは、購入と別のキーに持つ（購入の保存待ちの注文と干渉しないようにする）
         $this->app->when(ReservationService::class)->needs(PendingOrderStore::class)->give(
