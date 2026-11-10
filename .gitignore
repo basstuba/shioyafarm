@@ -10,3 +10,6 @@ docker/mysql/data/*
 # MySQL のバックアップ（ダンプ）
 docker/mysql/backup/
 docker/mysql/data_*/
+
+# UAT 用のテストファイル（2MB超の画像・gif・pdf など。UAT のたびに作る）
+docs/uat/admin/test-files/

@@ -15,6 +15,9 @@ class Item extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /** 管理画面で、対象の商品が見つからないとき（入力の誤り・削除済み・存在しない商品）の案内 */
+    public const string NOT_FOUND_MESSAGE = '商品が見つかりません。';
+
     protected $fillable = [
         'name',
         'weight',

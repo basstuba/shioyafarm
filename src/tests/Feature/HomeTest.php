@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Item;
 use App\Models\Notice;
+use App\Repositories\Interfaces\ItemRepositoryInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -61,7 +63,7 @@ class HomeTest extends TestCase
     }
 
     /**
-     * おすすめ商品はおすすめのものだけをID順に3件表示する
+     * おすすめ商品はおすすめのものだけを最大3件表示する（どの3件かはランダム）
      */
     #[Test]
     public function おすすめ商品は3件表示される(): void
@@ -75,10 +77,39 @@ class HomeTest extends TestCase
         $response = $this->get(route('top.index'));
 
         $response->assertViewHas('recommendItems', function ($items) use ($recommendItems) {
-            return $items->pluck('id')->all() === $recommendItems->take(3)->pluck('id')->all();
+            return $items->count() === 3
+                && $items->pluck('id')->unique()->count() === 3
+                && $items->pluck('id')->diff($recommendItems->pluck('id'))->isEmpty();
         });
         $response->assertDontSee('おすすめでない商品');
-        $response->assertDontSee('おすすめ商品4');
+    }
+
+    /**
+     * おすすめ商品が3件に満たないときは、あるだけ表示する
+     */
+    #[Test]
+    public function おすすめ商品が3件に満たないときはあるだけ表示する(): void
+    {
+        Item::factory()->create(['name' => 'おすすめでない商品', 'recommend' => false]);
+        $recommendItems = Item::factory()->count(2)->create(['recommend' => true]);
+
+        $this->get(route('top.index'))
+            ->assertViewHas('recommendItems', fn ($items) => $items->count() === 2 && $items->pluck('id')->diff($recommendItems->pluck('id'))->isEmpty());
+    }
+
+    /**
+     * おすすめ商品はランダムな順で取得する（ID順の固定ではない）
+     */
+    #[Test]
+    public function おすすめ商品はランダムな順で取得する(): void
+    {
+        Item::factory()->count(4)->create(['recommend' => true]);
+        DB::enableQueryLog();
+
+        app(ItemRepositoryInterface::class)->getRecommendItems(3);
+
+        $sql = strtolower(collect(DB::getQueryLog())->pluck('query')->implode(' '));
+        $this->assertStringContainsString('rand', $sql);
     }
 
     /**
