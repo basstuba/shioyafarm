@@ -25,7 +25,7 @@ class HomeService
     ) {}
 
     /**
-     * 最新のお知らせを取得
+     * 最新のお知らせを取得（作成日の新しい順）
      *
      * @return Collection<int, Notice>
      */

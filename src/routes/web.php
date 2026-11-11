@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminInquiryController;
 use App\Http\Controllers\AdminItemController;
 use App\Http\Controllers\AdminMailController;
+use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
 use App\Http\Controllers\AdminReservationController;
@@ -151,6 +152,15 @@ Route::prefix('admin')->group(function () {
         Route::get('/items/edit/{item_id}', [AdminItemController::class, 'edit'])->whereNumber('item_id')->name('admin.items.edit');
         Route::post('/items/update', [AdminItemController::class, 'update'])->name('admin.items.update');
         Route::delete('/items/delete', [AdminItemController::class, 'delete'])->name('admin.items.delete');
+
+        // お知らせ（一覧・検索・作成。詳細のモーダルは Livewire の AdminNoticeDetail。設計書にない追加ルート：edit・update・delete。削除は物理削除）
+        Route::get('/notices', [AdminNoticeController::class, 'index'])->name('admin.notices.index');
+        Route::get('/notices/search', [AdminNoticeController::class, 'search'])->name('admin.notices.search');
+        Route::get('/notices/create', [AdminNoticeController::class, 'create'])->name('admin.notices.create');
+        Route::post('/notices/store', [AdminNoticeController::class, 'store'])->name('admin.notices.store');
+        Route::get('/notices/edit/{notice_id}', [AdminNoticeController::class, 'edit'])->whereNumber('notice_id')->name('admin.notices.edit');
+        Route::post('/notices/update', [AdminNoticeController::class, 'update'])->name('admin.notices.update');
+        Route::delete('/notices/delete', [AdminNoticeController::class, 'delete'])->name('admin.notices.delete');
 
         // メール作成・送信（会員宛て・お問い合わせへの返信。宛先の種類とIDだけを送り、メールアドレスはサーバーで引き直す。送信後は来た一覧に戻る）
         Route::get('/mail/user/{user_id}', [AdminMailController::class, 'createUserMail'])->whereNumber('user_id')->name('admin.mail.user');
