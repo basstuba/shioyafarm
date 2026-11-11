@@ -13,10 +13,8 @@
 --}}
 @php
     $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
-    // 検索欄に戻す値。配列など文字列でない入力は戻さない（TypeError にしない）。不正な日付は type=date の欄に戻さない（コンソール警告になる）
-    $restore = fn (string $key): string => \App\Support\OldInput::scalar($key, $conditions[$key]);
-    $dateValue = $errors->has('date') ? '' : $restore('date');
-    $addressedValue = $restore('addressed');
+    $dateValue = \App\Support\SearchCondition::restoreDate($conditions, $errors->has('date'));
+    $addressedValue = \App\Support\SearchCondition::restore($conditions, 'addressed');
     $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
 @endphp
 
