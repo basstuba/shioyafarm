@@ -4,7 +4,7 @@
 
 {{--
     管理画面のトップページ。レイアウトは layouts/admin/top（サイドメニューなし）。
-    リンクは、サイドメニューと共通の App\Support\AdminNav。未実装の画面は url() で書いてある（画面ができるまでは404）ため、各画面のブランチで AdminNav の route() に置き換える。
+    リンクは、サイドメニューと共通の App\Support\AdminNav。
 --}}
 @php
     $cards = \App\Support\AdminNav::groups();

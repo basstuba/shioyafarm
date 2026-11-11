@@ -6,7 +6,7 @@ namespace App\Support;
  * 管理画面のメニューのリンク
  *
  * サイドメニュー（layouts/admin/sidebar）と、管理画面トップのカード（admin/index）で共有する。
- * 未実装の画面（お知らせ）は url() で書いてある（画面ができるまでは404）。画面を実装したら route() に置き換える。
+ * リンクは route() で書く。active は、そのリンクを表示中とみなすパス（お知らせ一覧は検索・修正ページでも、お知らせ作成は作成ページだけ）。
  */
 class AdminNav
 {
@@ -41,7 +41,7 @@ class AdminNav
                     ['label' => '予約一覧', 'url' => route('admin.reservations.index'), 'active' => ['admin/reservations', 'admin/reservations/*']],
                     ['label' => '会員一覧', 'url' => route('admin.users.index'), 'active' => ['admin/users', 'admin/users/*']],
                     ['label' => 'お問い合わせ一覧', 'url' => route('admin.inquiries.index'), 'active' => ['admin/inquiries', 'admin/inquiries/*']],
-                    ['label' => 'お知らせ一覧', 'url' => url('/admin/notices'), 'active' => ['admin/notices']],
+                    ['label' => 'お知らせ一覧', 'url' => route('admin.notices.index'), 'active' => ['admin/notices', 'admin/notices/search', 'admin/notices/edit/*']],
                     ['label' => '掲載商品一覧', 'url' => route('admin.items.index'), 'active' => ['admin/items', 'admin/items/edit/*']],
                 ],
             ],
@@ -50,7 +50,7 @@ class AdminNav
                 'titleClass' => 'text-primary-text',
                 'linkClass' => 'decoration-primary-text',
                 'links' => [
-                    ['label' => 'お知らせ作成', 'url' => url('/admin/notices/create'), 'active' => ['admin/notices/create']],
+                    ['label' => 'お知らせ作成', 'url' => route('admin.notices.create'), 'active' => ['admin/notices/create']],
                     ['label' => '掲載商品登録', 'url' => route('admin.items.create'), 'active' => ['admin/items/create']],
                 ],
             ],
