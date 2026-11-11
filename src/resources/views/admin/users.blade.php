@@ -12,9 +12,7 @@
 --}}
 @php
     $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
-    // 検索欄に戻す値。配列など文字列でない入力は戻さない（TypeError にしない）
-    $restore = fn (string $key): string => \App\Support\OldInput::scalar($key, $conditions[$key]);
-    $statusValue = $restore('status');
+    $statusValue = \App\Support\SearchCondition::restore($conditions, 'status');
     $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
 @endphp
 
@@ -32,7 +30,7 @@
                 </x-admin-search-select>
             </x-admin-search-field>
             <x-admin-search-field label="氏名" for="name" width="lg:w-[300px]">
-                <x-admin-search-input id="name" name="name" type="text" maxlength="100" :value="$restore('name')" placeholder="氏名を入力してください" autocomplete="off" />
+                <x-admin-search-input id="name" name="name" type="text" maxlength="100" :value="\App\Support\SearchCondition::restore($conditions, 'name')" placeholder="氏名を入力してください" autocomplete="off" />
             </x-admin-search-field>
         </x-admin-search-form>
 
