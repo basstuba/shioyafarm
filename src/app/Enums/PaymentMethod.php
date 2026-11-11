@@ -63,4 +63,18 @@ enum PaymentMethod: string
     {
         return $this === self::CustomerBalance;
     }
+
+    /**
+     * 管理画面の注文・予約の取消の確認に出す、返金の案内（出さないときは null）
+     *
+     * 返金はStripeの管理画面で行う。代金引換はStripeを通さないため案内しない。
+     */
+    public function refundNote(): ?string
+    {
+        return match ($this) {
+            self::Card => '返金はStripeの管理画面で行ってください。',
+            self::CustomerBalance => '入金済みの場合、返金はStripeの管理画面で行ってください。',
+            self::Cod => null,
+        };
+    }
 }

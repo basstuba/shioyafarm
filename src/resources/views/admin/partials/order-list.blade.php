@@ -11,10 +11,8 @@
 --}}
 @php
     $subject = $listType->subject();
-    // 検索欄に戻す値。配列など文字列でない入力は戻さない（TypeError にしない）。不正な日付は type=date の欄に戻さない（コンソール警告になる）
-    $restore = fn (string $key): string => \App\Support\OldInput::scalar($key, $conditions[$key]);
-    $dateValue = $errors->has('date') ? '' : $restore('date');
-    $shippedValue = $restore('shipped');
+    $dateValue = \App\Support\SearchCondition::restoreDate($conditions, $errors->has('date'));
+    $shippedValue = \App\Support\SearchCondition::restore($conditions, 'shipped');
     $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
 @endphp
 
@@ -35,7 +33,7 @@
             <x-admin-search-input id="date" name="date" type="date" :value="$dateValue" />
         </x-admin-search-field>
         <x-admin-search-field :label="$subject.'者名'" for="name" width="lg:w-[300px]">
-            <x-admin-search-input id="name" name="name" type="text" maxlength="100" :value="$restore('name')" :placeholder="$subject.'者名を入力してください'" autocomplete="off" />
+            <x-admin-search-input id="name" name="name" type="text" maxlength="100" :value="\App\Support\SearchCondition::restore($conditions, 'name')" :placeholder="$subject.'者名を入力してください'" autocomplete="off" />
         </x-admin-search-field>
     </x-admin-search-form>
 

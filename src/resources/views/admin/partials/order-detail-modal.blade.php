@@ -14,11 +14,7 @@
 @php
     $subject = $listType->subject();
     $cancelable = $detail->canRequestCancel();
-    $refundNote = match ($detail->paymentMethod) {
-        \App\Enums\PaymentMethod::Card => '返金はStripeの管理画面で行ってください。',
-        \App\Enums\PaymentMethod::CustomerBalance => '入金済みの場合、返金はStripeの管理画面で行ってください。',
-        default => null,
-    };
+    $refundNote = $detail->paymentMethod?->refundNote();
 @endphp
 <x-admin-detail-modal
     :title-id="$titleId"
