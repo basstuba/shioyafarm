@@ -5,6 +5,7 @@ namespace App\View\Components;
 use App\Http\Requests\ItemStoreRequest;
 use App\Models\Item;
 use App\Support\OldInput;
+use App\View\Components\Concerns\AdminFormStyle;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use Override;
@@ -15,10 +16,12 @@ use Override;
  * - mode は create（登録。ラジオは最初すべて未選択。橙の「登録する」）／edit（修正。今の値を選択済みで開く。青の「修正する」）。これ以外の値は create と同じ
  * - item は修正する商品（登録は null）
  * - 入力欄の初期値は、old() の値（入力エラー・419で戻ったときに残す。画像は残らない）を優先し、なければ修正する商品の今の値（登録は空・未選択）にする。old() の整形は OldInput
- * - Alpine の x-data（プレビュー・ドロップ・二重送信防止など）は Blade に書く。ここは x-data に渡す初期値と、クラスの組み立てだけを持つ
+ * - Alpine の x-data（プレビュー・ドロップ・二重送信防止など）は Blade に書く。ここは x-data に渡す初期値と、クラスの組み立て（お知らせのフォームと共通のものは AdminFormStyle）だけを持つ
  */
 class AdminItemForm extends Component
 {
+    use AdminFormStyle;
+
     /** 商品名の初期値 */
     public readonly string $name;
 
@@ -76,6 +79,7 @@ class AdminItemForm extends Component
     /**
      * 修正かどうか
      */
+    #[Override]
     public function isEdit(): bool
     {
         return $this->mode === 'edit';
@@ -95,48 +99,6 @@ class AdminItemForm extends Component
     public function submitLabel(): string
     {
         return $this->isEdit() ? '修正する' : '登録する';
-    }
-
-    /**
-     * 項目名のラベルのクラス
-     */
-    public function labelClass(): string
-    {
-        return 'text-base font-bold text-ink';
-    }
-
-    /**
-     * 文字の入力欄（input・textarea）に共通のクラス（大きさと枠の色は含まない）
-     */
-    public function inputClass(): string
-    {
-        return 'rounded-[10px] border bg-white px-4 text-base text-ink placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:bg-admin-bar';
-    }
-
-    /**
-     * 枠線の色のクラス（検証エラーのある項目は赤、ないときは灰色）
-     */
-    public function borderClass(bool $hasError): string
-    {
-        return $hasError ? 'border-danger' : 'border-line-strong';
-    }
-
-    /**
-     * エラー文のクラス
-     */
-    public function errorClass(): string
-    {
-        return 'text-base text-danger';
-    }
-
-    /**
-     * 送信ボタンの色のクラス（登録は橙の地・ink の文字、修正は青の地・白文字。ホバー・フォーカスで濃くなる）
-     */
-    public function submitClass(): string
-    {
-        return $this->isEdit()
-            ? 'bg-mail-link text-white hover:bg-mail-link-hover focus-visible:bg-mail-link-hover'
-            : 'bg-primary text-ink hover:bg-primary-dark focus-visible:bg-primary-dark';
     }
 
     #[Override]

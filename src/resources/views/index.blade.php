@@ -49,8 +49,8 @@
                         <article class="flex flex-col gap-2 md:gap-6">
                             <div class="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between md:gap-6">
                                 <h3 class="text-lg md:text-2xl">{{ $notice->title }}</h3>
-                                <time class="shrink-0 text-sm md:text-base" datetime="{{ $notice->updated_at->toDateString() }}">
-                                    {{ $notice->updated_at->format('Y-m-d') }}
+                                <time class="shrink-0 text-sm md:text-base" datetime="{{ $notice->created_at?->toDateString() }}">
+                                    {{ $notice->created_at?->format('Y-m-d') }}
                                 </time>
                             </div>
                             <p class="text-sm leading-relaxed whitespace-pre-line md:text-base">{{ $notice->text }}</p>

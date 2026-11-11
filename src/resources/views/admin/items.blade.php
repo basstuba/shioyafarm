@@ -100,30 +100,8 @@
                     </tbody>
                 </table>
 
-                {{-- 削除の確認。一覧の上に重ねる（会員一覧の削除の確認と同じ形）。最初のフォーカスは autofocus の「キャンセル」、閉じたら開く前にフォーカスのあった「削除」へ戻る。送信中の「削除する」は押せなくするが、確認を開くときに解除する --}}
-                <div
-                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4"
-                    x-show="confirming"
-                    x-cloak
-                    x-trap="confirming"
-                    x-on:click.self="confirming = false"
-                    role="alertdialog"
-                    aria-modal="true"
-                    aria-labelledby="admin-item-delete-title"
-                    aria-describedby="admin-item-delete-note"
-                >
-                    <form class="relative max-h-full w-full max-w-[400px] overflow-y-auto rounded-[30px] bg-white px-6 py-8 text-center text-ink shadow-panel" action="{{ route('admin.items.delete') }}" method="POST" x-on:submit="deleting = true">
-                        @csrf
-                        @method('DELETE')
-                        <input type="hidden" name="id" x-bind:value="deleteId">
-                        <p id="admin-item-delete-title" class="text-base font-bold break-words" x-text="deleteLabel + ' を削除します。よろしいですか？'"></p>
-                        <p id="admin-item-delete-note" class="mt-3 text-base">公開ページとカートから消えます。過去の注文・予約の記録は残ります。</p>
-                        <div class="mt-6 flex flex-wrap justify-center gap-4">
-                            <x-admin-small-button type="submit" x-bind:disabled="deleting" class="disabled:cursor-wait disabled:opacity-40">削除する</x-admin-small-button>
-                            <x-admin-small-button variant="cancel" autofocus x-on:click="confirming = false">キャンセル</x-admin-small-button>
-                        </div>
-                    </form>
-                </div>
+                {{-- 削除の確認（部品 <x-admin-delete-confirm>。状態は上の x-data を使う。「削除」を押すと開く） --}}
+                <x-admin-delete-confirm :action="route('admin.items.delete')" id-prefix="admin-item-delete" note="公開ページとカートから消えます。過去の注文・予約の記録は残ります。" title-after=" を削除します。よろしいですか？" />
             @endif
         </div>
     </div>

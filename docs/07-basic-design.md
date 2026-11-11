@@ -6,7 +6,7 @@
 
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
-| `/` | GET | HomeController | index | | トップページ表示（おすすめ商品は、おすすめ「はい」の商品からランダムに最大3件） |
+| `/` | GET | HomeController | index | | トップページ表示（おすすめ商品は、おすすめ「はい」の商品からランダムに最大3件。お知らせは作成日の新しい順に最大5件で、同じ日時は新しく作った順、日付も作成日を表示する） |
 | `/items` | GET | ItemController | index | | 商品一覧ページ表示 |
 | `/items/{item}` | GET | ItemController | show | | 商品詳細ページ表示 |
 | `/inquiry` | GET | InquiryController | create | | お問い合わせフォームページ表示 |
@@ -76,10 +76,13 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/reservations/search` | GET | AdminReservationController | search | 必須 | 予約検索機能（発送状況 `shipped`＝0 未発送（未取消のみ）・1 発送済・canceled 取消済、予約日 `date`＝Y-m-d、予約者名 `name`。入力の誤りは `/admin/reservations` に戻してエラーを表示） |
 | `/admin/reservations/update` | POST | AdminReservationController | update | 必須 | 予約発送済みチェック機能（設計書にはなかった追加機能。`id` と `shipped` を JSON で受け取り JSON を返す。存在しない予約は404） |
 | `/admin/reservations/cancel` | POST | AdminReservationController | cancel | 必須 | 予約取消機能（設計書にはなかった追加機能。`id` を受け取る。処理・戻り先・案内は注文取消（`/admin/purchase/cancel`）と同じで、戻り先は `/admin/reservations` の一覧・検索結果、語は「予約」。取り消した予約の数量は予約可能数の残りに戻る） |
-| `/admin/notices` | GET | AdminNoticeController | index | 必須 | 管理画面お知らせ一覧ページ表示 |
-| `/admin/notices/search` | GET | AdminNoticeController | search | 必須 | お知らせ検索機能 |
+| `/admin/notices` | GET | AdminNoticeController | index | 必須 | 管理画面お知らせ一覧ページ表示（作成日の新しい順に1ページ10件。作成日時の降順、同時刻はIDの降順。範囲外のページ番号は最終ページ。列は作成日（YYYY/MM/DD・日本時間）・タイトル・「詳細」・「修正」・「削除」。詳細のモーダルは Livewire の `AdminNoticeDetail`） |
+| `/admin/notices/search` | GET | AdminNoticeController | search | 必須 | お知らせ検索機能（作成日 `date`＝Y-m-d・日本時間のその日。検索は作成日だけ。入力の誤りは `/admin/notices` に戻してエラーを表示） |
 | `/admin/notices/create` | GET | AdminNoticeController | create | 必須 | お知らせ作成ページ表示 |
-| `/admin/notices/store` | POST | AdminNoticeController | store | 必須 | お知らせ作成機能 |
+| `/admin/notices/store` | POST | AdminNoticeController | store | 必須 | お知らせ作成機能（`title`・`text` を受け取る。成功すると `/admin/notices` に戻り、表の上に緑の文字で「お知らせを作成しました。」（flash の `list_status`）。入力の誤りは作成ページに戻して項目ごとに赤字で案内し、入力を残す。ブラウザが送る改行（CRLF）は LF にそろえて保存し、文字数も LF で数える。ページの有効期限切れ（419）のときは作成ページに戻し、「ページの有効期限が切れました。もう一度作成してください。」を赤字で出して入力を残す） |
+| `/admin/notices/edit/{notice_id}` | GET | AdminNoticeController | edit | 必須 | お知らせ修正ページ表示（設計書にはなかった追加機能。`{notice_id}` は数字だけを受け付け、数字以外は404。存在しないお知らせは `/admin/notices` に戻り、「お知らせが見つかりません。」を赤字で表示する。入力欄には今の値が入る。サイドメニューは「お知らせ一覧」が選択中。一覧の「修正」のリンク先） |
+| `/admin/notices/update` | POST | AdminNoticeController | update | 必須 | お知らせ修正機能（設計書にはなかった追加機能。お知らせのIDは hidden の `id` で送る。ほかの項目と検証は作成と同じ。成功すると `/admin/notices` に戻り、緑の文字で「お知らせを修正しました。」。入力の誤りは修正ページに戻して赤字で案内し、入力を残す。存在しないお知らせ、`id` の形が正しくない場合は、何も変えずに `/admin/notices` に戻り、「お知らせが見つかりません。」を赤字で表示する。作成日（`created_at`）は変わらないため、一覧・公開サイトのトップの順番と日付は変わらない。419のときは修正ページに戻し、「もう一度修正してください。」を赤字で出して入力を残す） |
+| `/admin/notices/delete` | DELETE | AdminNoticeController | delete | 必須 | お知らせ削除機能（設計書にはなかった追加機能。物理削除。`id` を受け取り、成功しても失敗しても `/admin/notices` に戻る。成功の案内「お知らせを削除しました。」は検索欄の下に緑の文字で表示する（flash の `list_status`）。存在しないお知らせ、`id` の形が正しくない場合は、何も変えずに「お知らせが見つかりません。」を赤字で表示する。お知らせを参照するテーブルはない。削除したお知らせは公開サイトのトップからも消える。一覧の「削除」を押すと「「{タイトル}」を削除します。よろしいですか？」「公開サイトのトップからも消えます。」の確認を出す。419のときは一覧に戻り、「ページの有効期限が切れました。もう一度削除してください。」を赤字で出す） |
 | `/admin/inquiries` | GET | AdminInquiryController | index | 必須 | 管理画面お問い合わせ一覧ページ表示（新しい順に1ページ10件。問い合わせ日時の降順、同時刻はIDの降順。範囲外のページ番号は最終ページ） |
 | `/admin/inquiries/search` | GET | AdminInquiryController | search | 必須 | お問い合わせ検索機能（対応状況 `addressed`＝`0` 非対応・`1` 対応済・空は絞らない、問い合わせ日 `date`＝Y-m-d・日本時間のその日。氏名の検索はない。入力の誤りは `/admin/inquiries` に戻してエラーを表示） |
 | `/admin/inquiries/update` | POST | AdminInquiryController | update | 必須 | お問い合わせ対応チェック機能（`id` と `addressed` を JSON で受け取り JSON（`{"id": 1, "addressed": true}`）を返す。存在しないお問い合わせは404（`{"message": "お問い合わせが見つかりません。"}`）、`addressed` などの不正な値は422。対応済みにしてもお客様にメールは送らない。詳細のモーダルは Livewire の AdminInquiryDetail） |
@@ -152,6 +155,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 - 管理画面予約一覧ページ
 - 管理画面お知らせ一覧ページ
 - 管理画面お知らせ作成ページ
+- 管理画面お知らせ修正ページ（追加）
 - 管理画面お問い合わせ一覧ページ
 - 管理画面掲載商品一覧ページ
 - 管理画面掲載商品登録ページ
@@ -270,7 +274,9 @@ user_idと合計金額はcontrollerで取得
 | フォーム | ルール |
 |---|---|
 | お知らせタイトル | 入力必須、文字列、255文字以下 |
-| お知らせ内容 | 入力必須、文字列 |
+| お知らせ内容 | 入力必須、文字列、2000文字以下（2000文字の上限は設計書にない追加の決まり） |
+
+お知らせの修正（`NoticeUpdateRequest`。設計書にない追加）は、同じ項目に、お知らせのID（必須・1以上の整数。正しくないときは存在しないお知らせと同じ扱い）を加えたもの。削除（`NoticeDeleteRequest`）はお知らせのIDだけ、検索（`NoticeSearchRequest`）は作成日（Y-m-d）だけ。
 
 ### ItemRequest.php（掲載商品登録・修正）
 
