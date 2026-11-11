@@ -30,7 +30,7 @@ class HomeTest extends TestCase
     }
 
     /**
-     * お知らせは更新日の新しい順に最新5件だけ表示される
+     * お知らせは作成日の新しい順に最新5件だけ表示される（更新日は順番に関係しない）
      */
     #[Test]
     public function お知らせは新しい順に5件表示される(): void
@@ -38,7 +38,9 @@ class HomeTest extends TestCase
         foreach (range(1, 6) as $day) {
             Notice::factory()->create([
                 'title' => "お知らせ{$day}",
-                'updated_at' => now()->subDays($day),
+                'created_at' => now()->subDays($day),
+                // 更新日は作成日と逆の順（更新日の順で並べると、期待の並びにならない）
+                'updated_at' => now()->subDays(10 - $day),
             ]);
         }
 
@@ -49,6 +51,58 @@ class HomeTest extends TestCase
         });
         $response->assertSeeInOrder(['お知らせ1', 'お知らせ5']);
         $response->assertDontSee('お知らせ6');
+    }
+
+    /**
+     * 作成日が同じ日時のお知らせは、新しく作った順（IDの大きい順）に並ぶ
+     */
+    #[Test]
+    public function 作成日が同じお知らせはid降順に並ぶ(): void
+    {
+        $at = now()->subDay();
+        $first = Notice::factory()->create(['title' => '先に作った', 'created_at' => $at]);
+        $second = Notice::factory()->create(['title' => '後に作った', 'created_at' => $at]);
+
+        $response = $this->get(route('top.index'));
+
+        $response->assertViewHas('notices', fn ($notices) => $notices->pluck('id')->all() === [$second->id, $first->id]);
+    }
+
+    /**
+     * 作成日が空（null）のお知らせがあっても、500にならずにトップが表示され、日付は空になる
+     */
+    #[Test]
+    public function 作成日が空のお知らせがあってもトップが表示される(): void
+    {
+        $notice = Notice::factory()->create(['title' => '作成日のないお知らせ']);
+        DB::table('notices')->where('id', $notice->id)->update(['created_at' => null]);
+
+        $this->get(route('top.index'))
+            ->assertOk()
+            ->assertSee('作成日のないお知らせ')
+            ->assertSee('datetime=""', false);
+    }
+
+    /**
+     * お知らせの日付は作成日（YYYY-MM-DD。datetime 属性も）で、修正して更新日が変わっても、日付も順番も変わらない
+     */
+    #[Test]
+    public function お知らせの日付は作成日で修正しても変わらない(): void
+    {
+        $old = Notice::factory()->create(['title' => '古いお知らせ', 'created_at' => '2026-10-01 09:00:00', 'updated_at' => '2026-10-01 09:00:00']);
+        Notice::factory()->create(['title' => '新しいお知らせ', 'created_at' => '2026-11-01 09:00:00', 'updated_at' => '2026-11-01 09:00:00']);
+
+        $this->travelTo('2026-11-10 12:00:00');
+        $old->update(['title' => '古いお知らせ（修正）']);
+        $this->assertSame('2026-11-10', $old->fresh()->updated_at->format('Y-m-d'));
+
+        $response = $this->get(route('top.index'));
+
+        $response->assertViewHas('notices', fn ($notices) => $notices->pluck('title')->all() === ['新しいお知らせ', '古いお知らせ（修正）']);
+        $response->assertSee('<time class="shrink-0 text-sm md:text-base" datetime="2026-10-01">', false);
+        $response->assertSee('2026-10-01');
+        $response->assertSee('2026-11-01');
+        $response->assertDontSee('2026-11-10');
     }
 
     /**

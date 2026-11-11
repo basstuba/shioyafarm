@@ -53,8 +53,10 @@ class AdminLayoutTest extends TestCase
             'お知らせ作成' => url('/admin/notices/create'),
             '掲載商品登録' => url('/admin/items/create'),
         ], $links);
-        // 注文一覧は route() で書く
+        // 注文一覧・お知らせは route() で書く
         $this->assertSame(route('admin.purchase.index'), $links['注文一覧']);
+        $this->assertSame(route('admin.notices.index'), $links['お知らせ一覧']);
+        $this->assertSame(route('admin.notices.create'), $links['お知らせ作成']);
         $this->assertSame(route('admin.users.index'), $links['会員一覧']);
         $this->assertSame(route('admin.inquiries.index'), $links['お問い合わせ一覧']);
     }
