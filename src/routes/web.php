@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
 use App\Http\Controllers\AdminReservationController;
+use App\Http\Controllers\AdminTwoFactorController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
@@ -109,6 +110,11 @@ Route::prefix('admin')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'create'])->name('admin.login');
         Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:admin-login')->name('admin.login.store');
+
+        // 二段階認証（パスワードを通った管理者がメールの確認コードを入力する。通っていないときはコントローラーが /admin/login へ戻す）
+        Route::get('/two-factor', [AdminTwoFactorController::class, 'create'])->name('admin.two-factor');
+        Route::post('/two-factor', [AdminTwoFactorController::class, 'store'])->middleware('throttle:admin-two-factor')->name('admin.two-factor.store');
+        Route::post('/two-factor/resend', [AdminTwoFactorController::class, 'resend'])->middleware('throttle:admin-two-factor')->name('admin.two-factor.resend');
 
         // パスワード再設定（会員の再設定とは別の仕組み。送信は IP アドレスあたり1分5回まで。会員のものと同じ password-reset の上限で、ルートごとに数える）
         Route::get('/forgot-password', [AdminPasswordResetController::class, 'create'])->name('admin.password.request');

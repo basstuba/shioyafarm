@@ -13,11 +13,21 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * 管理者のログイン・ログアウトと、会員のログインとの分離のテスト
+ * 管理者のログイン・ログアウトと、会員のログインとの分離のテスト（二段階認証はオフの設定で確かめる）
  */
 class AdminLoginTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * 二段階認証はオフにする（パスワードだけでログインする今までの振る舞いを確かめるため。オンの流れは AdminTwoFactorTest）
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['auth.admin_two_factor.enabled' => false]);
+    }
 
     /**
      * テスト用の管理者を作成する
