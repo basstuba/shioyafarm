@@ -122,6 +122,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | 管理者の二段階認証（メールのワンタイムコード）
+    |--------------------------------------------------------------------------
+    |
+    | enabled：オン・オフ（.env の ADMIN_TWO_FACTOR_ENABLED。既定はオン。ポートフォリオの公開デモはオフにする）
+    | expire：コードの有効期限（分）
+    | max_attempts：コードを間違えられる回数（この回数目の失敗でコードを無効にする）
+    | resend_seconds：前回の送信からコードを再送できるまでの秒数
+    | miss_limit・miss_window_seconds：同じ管理者の確認コードの間違いを、ログインし直しても（別の端末・IPからでも）合わせて、この秒数のあいだに何回まで許すか。上限に達したら、その時間が過ぎるまでログインできない
+    |
+    */
+
+    'admin_two_factor' => [
+        // オフになるのは false・0・off・no のときだけ（大文字小文字・前後の空白は問わない）。未設定・空・null・不正な値などはすべて安全側のオンにする。
+        // .env に null と書くと env() は PHP の null を返し、false と書くと PHP の false を返す
+        'enabled' => ! in_array(
+            strtolower(trim(is_string($twoFactorEnv = env('ADMIN_TWO_FACTOR_ENABLED', true)) ? $twoFactorEnv : ($twoFactorEnv === false ? 'false' : 'on'))),
+            ['false', '0', 'off', 'no'],
+            true,
+        ),
+        'expire' => 10,
+        'max_attempts' => 5,
+        'resend_seconds' => 60,
+        'miss_limit' => 20,
+        'miss_window_seconds' => 3600,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |

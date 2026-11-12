@@ -7,6 +7,7 @@ use App\Actions\Fortify\PasswordValidationRules;
 use App\Enums\AdminPasswordResetResult;
 use App\Models\Admin;
 use App\Repositories\Interfaces\AdminRepositoryInterface;
+use App\Repositories\Interfaces\AdminTwoFactorCodeRepositoryInterface;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Support\Facades\Password;
@@ -24,6 +25,8 @@ class AdminPasswordResetService
 
     public function __construct(
         private readonly AdminRepositoryInterface $adminRepository,
+        private readonly AdminTwoFactorCodeRepositoryInterface $twoFactorCodeRepository,
+        private readonly AdminTwoFactorMissStore $twoFactorMissStore,
     ) {}
 
     /**
@@ -63,6 +66,11 @@ class AdminPasswordResetService
                 )->validate();
 
                 $this->adminRepository->updatePassword($admin, $password);
+
+                // パスワードが変わったので、送ってあった確認コード（二段階認証）は使えなくする（入力待ちのセッションも、パスワードの変更で解ける）。
+                // 確認コードの間違いの回数も戻す（間違いが続いて止められていても、新しいパスワードでログインし直せる）
+                $this->twoFactorCodeRepository->deleteByAdmin($admin);
+                $this->twoFactorMissStore->clear($admin);
 
                 // 会員の再設定（Fortify の CompletePasswordReset）に揃える。remember_token は管理者にはない
                 event(new PasswordReset($admin));
