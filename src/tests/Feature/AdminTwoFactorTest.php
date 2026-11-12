@@ -1172,7 +1172,10 @@ class AdminTwoFactorTest extends TestCase
     #[Test]
     public function 環境変数が空や不正な値ならオンでありオフにできるのは決まった値だけ(): void
     {
-        $original = $_ENV['ADMIN_TWO_FACTOR_ENABLED'] ?? null;
+        // 元の状態は $_SERVER・$_ENV・putenv で別々に保存する（CI では .env.example 由来の値が $_SERVER に入っている）
+        $originalServer = $_SERVER['ADMIN_TWO_FACTOR_ENABLED'] ?? null;
+        $originalEnv = $_ENV['ADMIN_TWO_FACTOR_ENABLED'] ?? null;
+        $originalPutenv = getenv('ADMIN_TWO_FACTOR_ENABLED');
 
         try {
             foreach ([null, '', 'maybe', 'abc', 'true', '1', 'on', 'yes', 'null', '(null)', 'NULL', 'TRUE', 'empty', '(empty)', 'offf'] as $value) {
@@ -1182,25 +1185,45 @@ class AdminTwoFactorTest extends TestCase
                 $this->assertFalse($this->evaluateEnabledConfig($value), 'オフになるはずの値: '.$value);
             }
         } finally {
-            if ($original === null) {
-                unset($_ENV['ADMIN_TWO_FACTOR_ENABLED']);
-                putenv('ADMIN_TWO_FACTOR_ENABLED');
-            } else {
-                $_ENV['ADMIN_TWO_FACTOR_ENABLED'] = $original;
-                putenv('ADMIN_TWO_FACTOR_ENABLED='.$original);
-            }
+            $this->restoreEnabledEnv($originalServer, $originalEnv, $originalPutenv);
         }
     }
 
     /**
-     * 環境変数を指定の値にして、config/auth.php の admin_two_factor.enabled を評価し直す（null なら環境変数を未設定にする）
+     * $_SERVER・$_ENV・putenv の3つを、保存しておいた元の状態に戻す（未設定だったものは未設定に戻す）
+     */
+    private function restoreEnabledEnv(mixed $server, mixed $env, string|false $putenv): void
+    {
+        if ($server === null) {
+            unset($_SERVER['ADMIN_TWO_FACTOR_ENABLED']);
+        } else {
+            $_SERVER['ADMIN_TWO_FACTOR_ENABLED'] = $server;
+        }
+
+        if ($env === null) {
+            unset($_ENV['ADMIN_TWO_FACTOR_ENABLED']);
+        } else {
+            $_ENV['ADMIN_TWO_FACTOR_ENABLED'] = $env;
+        }
+
+        if ($putenv === false) {
+            putenv('ADMIN_TWO_FACTOR_ENABLED');
+        } else {
+            putenv('ADMIN_TWO_FACTOR_ENABLED='.$putenv);
+        }
+    }
+
+    /**
+     * 環境変数を指定の値にして、config/auth.php の admin_two_factor.enabled を評価し直す（null なら環境変数を未設定にする）。
+     * env() は $_SERVER を先に読むため、$_ENV・putenv に加えて $_SERVER も書き換える。
      */
     private function evaluateEnabledConfig(?string $value): bool
     {
         if ($value === null) {
-            unset($_ENV['ADMIN_TWO_FACTOR_ENABLED']);
+            unset($_SERVER['ADMIN_TWO_FACTOR_ENABLED'], $_ENV['ADMIN_TWO_FACTOR_ENABLED']);
             putenv('ADMIN_TWO_FACTOR_ENABLED');
         } else {
+            $_SERVER['ADMIN_TWO_FACTOR_ENABLED'] = $value;
             $_ENV['ADMIN_TWO_FACTOR_ENABLED'] = $value;
             putenv('ADMIN_TWO_FACTOR_ENABLED='.$value);
         }
