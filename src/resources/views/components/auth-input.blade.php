@@ -1,4 +1,4 @@
-@props(['name', 'label', 'type' => 'text', 'placeholder' => '', 'autocomplete' => 'off', 'value' => null, 'srLabel' => false, 'labelClass' => 'text-base font-medium', 'describedby' => null, 'variant' => 'default'])
+@props(['name', 'label', 'type' => 'text', 'placeholder' => '', 'autocomplete' => 'off', 'value' => null, 'srLabel' => false, 'labelClass' => 'text-base font-medium', 'describedby' => null, 'variant' => 'default', 'inputmode' => null, 'maxlength' => null])
 
 {{--
     認証ページ（ログイン・会員登録）の入力欄。ラベル・input・エラーメッセージをまとめて表示する。
@@ -9,6 +9,7 @@
     初期のHTMLは type="password" のままで、Alpine が起動するまでボタンは隠す（x-cloak。[x-cloak] のCSSは @livewireStyles が出すので、使うレイアウトで読み込むこと）。
     ボタンの名前は「表示」「非表示」だけにする（ラベル名を含めると、ラベルで入力欄を探す操作がボタンにも当たるため）。
     variant は default（公開側。橙系の枠線・フォーカス枠・「表示」の文字色）／neutral（管理画面。グレーの枠線・ink のフォーカス枠・muted の「表示」の文字色。管理画面の入力欄で使い回す）。これ以外の値は default と同じ。ラベル・プレースホルダーの色は共通。
+    inputmode・maxlength は input に付ける（確認コードのように、数字のキーボードを出したい・桁数を決めたい欄用。省略すると出力しない）。
     class などの属性は外側の div に付く。
     エラーは $errors から name で拾う。パスワードは再表示しない（type が password のときは value を出さない）。
     old() の値は、配列など文字列にできないもの（改変した送信）のときは表示しない。
@@ -57,6 +58,8 @@
             @if (! $isPassword) value="{{ $oldValue }}" @endif
             placeholder="{{ $placeholder }}"
             autocomplete="{{ $autocomplete }}"
+            @if ($inputmode !== null) inputmode="{{ $inputmode }}" @endif
+            @if ($maxlength !== null) maxlength="{{ $maxlength }}" @endif
             @if ($errors->has($name)) aria-invalid="true" @endif
             @if ($describedIds !== '') aria-describedby="{{ $describedIds }}" @endif
         />

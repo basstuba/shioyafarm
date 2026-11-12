@@ -5,6 +5,7 @@ namespace App\Http\Responses;
 use App\Enums\AdminListType;
 use App\Enums\MailRecipientType;
 use App\Http\Requests\MailRequest;
+use App\Services\AdminTwoFactorStore;
 use App\Support\AdminListUrl;
 use App\Support\AdminUserListUrl;
 use App\Support\MailTarget;
@@ -17,7 +18,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * CSRFトークンの不一致（TokenMismatchException。描画の前に 419 の HttpException になる）のとき、ログイン・ログアウトだけは、案内つきで元のページへ戻す
  *
  * 同じブラウザで別の窓のログイン・ログアウトをしたときや、時間が経ったときにトークンが古くなる。
- * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）・管理画面のメール送信（admin.mail.send）・掲載商品の登録と修正（admin.items.store・admin.items.update）・お知らせの作成・修正・削除（admin.notices.store・admin.notices.update・admin.notices.delete）だけで、
+ * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者の確認コードの送信と再送（admin.two-factor.store・admin.two-factor.resend。入力待ちが残っていれば、それぞれの案内つきで確認コードの入力ページへ、なければログインページへ戻す）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）・管理画面のメール送信（admin.mail.send）・掲載商品の登録と修正（admin.items.store・admin.items.update）・お知らせの作成・修正・削除（admin.notices.store・admin.notices.update・admin.notices.delete）だけで、
  * それ以外のリクエスト（JSONを期待するリクエスト、Livewireの更新を含む）は null を返して従来どおり419のページにする。
  * 案内は flash の status に入れ、各ページがフォームの上に表示する（会員の物理削除と、注文・予約の取消は、実行できなかった知らせなので errors の delete・cancel に入れ、一覧の検索欄の下に赤字で出す。メール送信は errors の send に入れ、メール作成ページに入力を残して赤字で出す。掲載商品の登録・修正は errors の form に入れ、登録・修正ページに画像以外の入力を残してボタンの上に赤字で出す。お知らせの作成・修正も errors の form に入れ、作成・修正ページに入力を残してボタンの上に赤字で出す。お知らせの削除は errors の delete に入れ、削除の前に見ていたお知らせ一覧（検索条件・ページ）の検索欄の下に赤字で出す）。
  */
@@ -34,6 +35,12 @@ class ExpiredPageResponder
 
     /** 注文・予約の取消のときの案内（実行できなかった知らせなので、errors の cancel に入れる） */
     public const string ORDER_CANCEL_MESSAGE = 'ページの有効期限が切れました。もう一度取り消してください。';
+
+    /** 管理者の確認コードの送信のとき、入力待ちが残っているときの案内（コードは置き換えず、届いているコードをそのまま使える） */
+    public const string TWO_FACTOR_MESSAGE = 'ページの有効期限が切れました。もう一度入力してください。';
+
+    /** 管理者の確認コードの再送のとき、入力待ちが残っているときの案内（再送はされていないので、再送を押し直してもらう） */
+    public const string TWO_FACTOR_RESEND_MESSAGE = 'ページの有効期限が切れました。もう一度「コードを再送する」を押してください。';
 
     /** 管理者のパスワード再設定のときの案内 */
     public const string ADMIN_PASSWORD_RESET_MESSAGE = 'ページの有効期限が切れました。もう一度お試しください。';
@@ -69,6 +76,8 @@ class ExpiredPageResponder
         return match ($request->route()?->getName()) {
             'login.store' => $this->backWithEmail($request, 'login', self::LOGIN_MESSAGE),
             'admin.login.store' => $this->backWithEmail($request, 'admin.login', self::LOGIN_MESSAGE),
+            'admin.two-factor.store' => $this->backFromTwoFactor($request, self::TWO_FACTOR_MESSAGE),
+            'admin.two-factor.resend' => $this->backFromTwoFactor($request, self::TWO_FACTOR_RESEND_MESSAGE),
             'admin.logout' => $this->backFromLogout(),
             'admin.users.delete' => $this->backFromUserDelete(),
             'admin.purchase.cancel' => $this->backFromOrderCancel(AdminListType::Purchase),
@@ -95,6 +104,19 @@ class ExpiredPageResponder
         return redirect()->route($route)
             ->withInput(['email' => is_string($email) ? $email : ''])
             ->with('status', $message);
+    }
+
+    /**
+     * 確認コードの入力待ちが残っていれば確認コードの入力ページへ（コードは送り直さず、メールも送らない）、残っていなければログインページへ戻す
+     */
+    private function backFromTwoFactor(Request $request, string $message): Response
+    {
+        // 入力待ちがあるかどうかだけ見る（DBの確認やセッションの書き換えはしない。戻り先の確認コードのページが、改めて確かめる）
+        if ((new AdminTwoFactorStore($request->session()))->get() !== null) {
+            return redirect()->route('admin.two-factor')->with('status', $message);
+        }
+
+        return redirect()->route('admin.login')->with('status', self::LOGIN_MESSAGE);
     }
 
     /**

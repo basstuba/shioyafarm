@@ -19,4 +19,13 @@ class AdminRepository implements AdminRepositoryInterface
     {
         $admin->forceFill(['password' => $password])->save();
     }
+
+    /**
+     * IDから管理者を取得（無ければ null）
+     */
+    #[Override]
+    public function find(int $id): ?Admin
+    {
+        return Admin::query()->find($id);
+    }
 }

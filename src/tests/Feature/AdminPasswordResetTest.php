@@ -46,6 +46,8 @@ class AdminPasswordResetTest extends TestCase
         parent::setUp();
 
         config(['mail.from.address' => 'shioyafarm@example.com', 'mail.from.name' => 'しおや農園']);
+        // 再設定後のログインは、パスワードだけで入れる設定で確かめる（二段階認証がオンのときの流れは AdminTwoFactorTest）
+        config(['auth.admin_two_factor.enabled' => false]);
     }
 
     /**
