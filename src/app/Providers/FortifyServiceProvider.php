@@ -9,6 +9,7 @@ use App\Http\Controllers\RegisteredUserController;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\PasswordResetLinkRequest;
 use App\Http\Responses\FailedPasswordResetLinkRequestResponse;
+use App\Services\AdminTwoFactorStore;
 use App\Services\AreaService;
 use App\Support\IntendedUrl;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -99,6 +100,29 @@ class FortifyServiceProvider extends ServiceProvider
 
                 // メールアドレスの入力欄と、新しいパスワードの入力欄の近くに出す（再設定ページの email は無効リンクの案内になるため使わない）
                 throw ValidationException::withMessages([$request->routeIs('password.update', 'admin.password.update') ? 'password' : 'email' => [$message]]);
+            });
+        });
+
+        // 管理者の確認コードの送信・再送（二段階認証）は、ルートごとに、入力待ちの管理者（なければIPアドレス）あたり1分10回まで。
+        // コードの失敗回数の上限（5回）とは別に、再送・形式エラーを含めた連打を抑える。
+        // 上限に達したとき、入力待ちの管理者がいれば確認コードの入力欄の近くに日本語のメッセージを出す。
+        // 入力待ちがなければ（確認コードのページはすぐログインページへ移すので）、ログインページへ戻して同じ案内を出す。JSONを期待するリクエストは429で返す。
+        RateLimiter::for('admin-two-factor', function (Request $request) {
+            $pending = (new AdminTwoFactorStore($request->session()))->get();
+            $adminId = $pending !== null ? 'admin-'.$pending['id'] : 'ip-'.$request->ip();
+
+            return Limit::perMinute(10)->by($request->route()?->getName().'|'.$adminId)->response(function (Request $request, array $headers) use ($pending) {
+                $message = trans('admin_two_factor.rate_limited', ['seconds' => $headers['Retry-After']]);
+
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                if ($pending === null) {
+                    return redirect()->route('admin.login')->with('status', $message);
+                }
+
+                throw ValidationException::withMessages(['code' => [$message]])->redirectTo(route('admin.two-factor'));
             });
         });
 

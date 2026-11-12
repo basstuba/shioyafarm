@@ -24,6 +24,7 @@ erDiagram
     purchase_histories ||--o{ purchase_history_items : "contains"
     purchase_histories ||--o| purchase_bank_transfers : "has"
     reservations ||--o| reservation_bank_transfers : "has"
+    admins ||--o| admin_two_factor_codes : "has"
 
     users {
         bigint id PK
@@ -161,6 +162,17 @@ erDiagram
         varchar email PK
         varchar token
         timestamp created_at
+    }
+
+    admin_two_factor_codes {
+        bigint id PK
+        bigint admin_id FK
+        varchar code
+        tinyint attempts
+        timestamp expires_at
+        timestamp sent_at
+        timestamp created_at
+        timestamp updated_at
     }
 
     notices {
