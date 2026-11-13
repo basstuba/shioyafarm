@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminHomeController;
 use App\Http\Controllers\AdminInquiryController;
 use App\Http\Controllers\AdminItemController;
 use App\Http\Controllers\AdminMailController;
+use App\Http\Controllers\AdminMaterialController;
 use App\Http\Controllers\AdminNoticeController;
 use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AdminPurchaseController;
@@ -167,6 +168,12 @@ Route::prefix('admin')->group(function () {
         Route::get('/notices/edit/{notice_id}', [AdminNoticeController::class, 'edit'])->whereNumber('notice_id')->name('admin.notices.edit');
         Route::post('/notices/update', [AdminNoticeController::class, 'update'])->name('admin.notices.update');
         Route::delete('/notices/delete', [AdminNoticeController::class, 'delete'])->name('admin.notices.delete');
+
+        // 資材（すべて設計書にない追加。追加・修正は一覧のモーダルで行い、ID はリクエストの値で受ける。削除は物理削除）
+        Route::get('/materials', [AdminMaterialController::class, 'index'])->name('admin.materials.index');
+        Route::post('/materials/store', [AdminMaterialController::class, 'store'])->name('admin.materials.store');
+        Route::post('/materials/update', [AdminMaterialController::class, 'update'])->name('admin.materials.update');
+        Route::delete('/materials/delete', [AdminMaterialController::class, 'delete'])->name('admin.materials.delete');
 
         // メール作成・送信（会員宛て・お問い合わせへの返信。宛先の種類とIDだけを送り、メールアドレスはサーバーで引き直す。送信後は来た一覧に戻る）
         Route::get('/mail/user/{user_id}', [AdminMailController::class, 'createUserMail'])->whereNumber('user_id')->name('admin.mail.user');
