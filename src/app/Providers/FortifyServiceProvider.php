@@ -103,6 +103,19 @@ class FortifyServiceProvider extends ServiceProvider
             });
         });
 
+        // 会員登録（POST /register）は、IPアドレスごとに1分あたり config('fortify.register_per_minute')（既定5）回まで（入力エラーも数える）。上限を超えたら登録ページに戻してメッセージを出す
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(max(1, config()->integer('fortify.register_per_minute')))->by($request->route()?->getName().'|'.$request->ip())->response(function (Request $request, array $headers) {
+                $message = trans('auth.register_throttle', ['seconds' => $headers['Retry-After']]);
+
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message], 429, $headers);
+                }
+
+                throw ValidationException::withMessages([Fortify::username() => [$message]]);
+            });
+        });
+
         // 管理者の確認コードの送信・再送（二段階認証）は、ルートごとに、入力待ちの管理者（なければIPアドレス）あたり1分10回まで。
         // コードの失敗回数の上限（5回）とは別に、再送・形式エラーを含めた連打を抑える。
         // 上限に達したとき、入力待ちの管理者がいれば確認コードの入力欄の近くに日本語のメッセージを出す。

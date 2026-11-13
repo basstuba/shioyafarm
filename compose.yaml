@@ -69,6 +69,8 @@ services:
       APP_ENV: e2e
       # .env.e2e が無く .env が読まれたときも、開発用DB（sf_db）を作り直さないよう DB 名はここで固定する
       DB_DATABASE: sf_db_e2e
+      # E2E ではテストごとに会員登録するため、会員登録の回数制限（1分あたり。既定5）を実質かけないようにする
+      REGISTER_THROTTLE_PER_MINUTE: 1000
     volumes:
       - ./src:/var/www/
     depends_on:
