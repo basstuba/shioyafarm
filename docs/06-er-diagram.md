@@ -183,6 +183,16 @@ erDiagram
         timestamp updated_at
     }
 
+    materials {
+        bigint id PK
+        varchar name UK
+        int stock
+        varchar location
+        int threshold
+        timestamp created_at
+        timestamp updated_at
+    }
+
     inquiries {
         bigint id PK
         varchar last_name

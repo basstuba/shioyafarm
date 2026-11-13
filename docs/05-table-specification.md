@@ -94,6 +94,22 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | created_at | timestamp | | | | |
 | updated_at | timestamp | | | | |
 
+## materials（資材データ）
+
+設計書にない追加のテーブル（`docs/01-project-overview.md` の資材管理機能）。発送用の化粧箱などの資材ごとに、在庫数・置き場所・基準値を1行で持つ（同じ資材を複数の場所に分けて持たない）。入出庫の履歴は持たず、注文・予約の発送とも連動しない。このテーブルを参照するテーブルはなく、管理画面の資材一覧の「削除」で物理削除する。
+
+`stock`・`threshold` は 0〜99,999 の整数（範囲は入力の検証で守る）。`stock` < `threshold` のとき「残りわずか」とする（`threshold` が0なら残りわずかにならない）。この判定は `App\Models\Material::isLow()` と `low` スコープに1か所にまとめ、一覧の強調と管理画面トップの件数で同じ判定を使う。
+
+| カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
+|---|---|:---:|:---:|:---:|---|
+| id | bigint unsigned | ○ | | | |
+| name | varchar(50) | | ○ | ○ | |
+| stock | integer unsigned | | | ○ | |
+| location | varchar(100) | | | ○ | |
+| threshold | integer unsigned | | | ○ | |
+| created_at | timestamp | | | | |
+| updated_at | timestamp | | | | |
+
 ## inquiries（お問い合わせデータ）
 
 | カラム名 | 型 | PRIMARY KEY | UNIQUE KEY | NOT NULL | FOREIGN KEY |
