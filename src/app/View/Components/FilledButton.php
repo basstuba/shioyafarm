@@ -2,6 +2,7 @@
 
 namespace App\View\Components;
 
+use App\Support\LivewireBoot;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use Override;
@@ -72,7 +73,7 @@ class FilledButton extends Component
     public function disabledClasses(): array
     {
         return [
-            'cursor-pointer disabled:cursor-not-allowed disabled:opacity-60',
+            'cursor-pointer '.LivewireBoot::DISABLED_CLASSES,
             $this->isReserve() ? 'disabled:hover:border-reserve disabled:hover:bg-reserve' : 'disabled:hover:border-action disabled:hover:bg-action',
             $this->hasShadow() ? 'disabled:hover:shadow-none' : '',
         ];

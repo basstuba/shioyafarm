@@ -42,7 +42,7 @@
                         </td>
                         <td class="border-b border-primary-dark px-1 py-3.5 align-middle whitespace-nowrap md:pr-0 md:pl-5">{{ number_format($row['total']) }}円</td>
                         <td class="border-b border-primary-dark px-0.5 py-1 align-middle md:py-[7px] md:pr-0 md:pl-5">
-                            <button type="button" wire:click="openDetail({{ $row['id'] }})" class="inline-flex h-11 w-[65px] cursor-pointer items-center justify-center rounded-[10px] bg-action-hover font-maru text-base text-primary-text transition-[background-color,box-shadow] duration-200 hover:bg-detail-hover hover:shadow-button focus-visible:bg-detail-hover focus-visible:shadow-button focus-visible:outline-none md:h-[30px]" aria-label="{{ $dateLabel }}{{ $row['date'] }}の詳細を見る">詳細</button>
+                            <button type="button" {{ \App\Support\LivewireBoot::attributes() }} wire:click="openDetail({{ $row['id'] }})" class="inline-flex h-11 w-[65px] cursor-pointer {{ \App\Support\LivewireBoot::DISABLED_CLASSES }} items-center justify-center rounded-[10px] bg-action-hover font-maru text-base text-primary-text transition-[background-color,box-shadow] duration-200 hover:bg-detail-hover hover:shadow-button focus-visible:bg-detail-hover focus-visible:shadow-button focus-visible:outline-none md:h-[30px]" aria-label="{{ $dateLabel }}{{ $row['date'] }}の詳細を見る">詳細</button>
                         </td>
                     </tr>
                 @endforeach

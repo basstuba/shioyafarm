@@ -35,6 +35,7 @@
                                 :min="$minQuantity"
                                 :max="$maxQuantity"
                                 change="updateQuantity({{ $id }}, $event.target.value)"
+                                :error="$errors->has('quantities.'.$id) || $errors->has('items.'.$loop->index.'.quantity')"
                             >
                                 <x-slot:hidden>
                                     <input type="hidden" name="items[{{ $loop->index }}][item_id]" value="{{ $id }}">
