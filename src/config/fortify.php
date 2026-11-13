@@ -121,6 +121,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Registration Rate Limit
+    |--------------------------------------------------------------------------
+    |
+    | 会員登録の送信（POST /register）の上限。同じIPアドレスから1分あたりの回数
+    | （.env の REGISTER_THROTTLE_PER_MINUTE。既定は5）。E2E用アプリ（php-e2e）は
+    | compose.yaml でこの値を大きくしている。空・数字以外（例：5/min）・0以下の値のときは既定の5にする。
+    |
+    */
+
+    'register_per_minute' => filter_var(
+        is_string($registerPerMinute = env('REGISTER_THROTTLE_PER_MINUTE')) ? trim($registerPerMinute) : null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1, 'default' => 5]],
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Register View Routes
     |--------------------------------------------------------------------------
     |

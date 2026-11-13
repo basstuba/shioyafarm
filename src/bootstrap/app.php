@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\NoStore;
 use App\Http\Middleware\ThrottlePasswordReset;
+use App\Http\Middleware\ThrottleRegistration;
 use App\Http\Requests\MailRequest;
 use App\Http\Responses\ExpiredPageResponder;
 use Illuminate\Auth\AuthenticationException;
@@ -21,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // パスワードを変えたとき、ほかの端末のセッションをログアウト状態にする（Auth::logoutOtherDevices の前提）
-        $middleware->web(append: [AuthenticateSession::class, ThrottlePasswordReset::class]);
+        $middleware->web(append: [AuthenticateSession::class, ThrottlePasswordReset::class, ThrottleRegistration::class]);
 
         // メール本文の先頭の字下げ（全角スペースを含む）を消さないよう、管理画面のメール本文の項目（MailRequest::BODY）だけ前後の空白を取り除かない（項目名で除外する。他のフォームの項目には影響しない）。
         // メールタイトルは他の入力と同じく取り除く
