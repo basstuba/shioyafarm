@@ -2,8 +2,10 @@
 
 namespace App\View\Components;
 
+use App\Support\LivewireBoot;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
+use Illuminate\View\ComponentAttributeBag;
 use Override;
 
 /**
@@ -11,6 +13,7 @@ use Override;
  *
  * - href を渡すとリンク（<a>）、渡さないとボタン（<button>。type は既定で submit）として出す
  * - size は sm（既定。会員登録・詳しく見るなど）／lg（フォームの送信ボタンなど）／md（200×40で文字16px。カート追加のモーダル）／xl（200×60。商品詳細）／address（160×40で文字14px、角丸20px。購入ページの「＋新しい住所を追加」と住所追加モーダル。SPは高さ44で、幅は親いっぱい。PCは160）。これ以外の値は sm と同じ
+ * - livewire を付けると、Livewire が起動するまでは押せない（disabled）。wire:click などを付けるボタン用（<button> のときだけ。App\Support\LivewireBoot）。呼び出し側が渡した disabled は、起動後も押せない条件として保つ
  * - disabled のボタンは薄くして押せなくし、ホバーでも変わらない（リンクには付けない）
  */
 class OutlineButton extends Component
@@ -19,6 +22,7 @@ class OutlineButton extends Component
         public ?string $href = null,
         public string $type = 'submit',
         public string $size = 'sm',
+        public bool $livewire = false,
     ) {}
 
     /**
@@ -51,8 +55,38 @@ class OutlineButton extends Component
     public function disabledClasses(): array
     {
         return [
-            'cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-action disabled:hover:bg-white disabled:hover:text-action disabled:hover:shadow-none',
+            'cursor-pointer '.LivewireBoot::DISABLED_CLASSES.' disabled:hover:border-action disabled:hover:bg-white disabled:hover:text-action disabled:hover:shadow-none',
         ];
+    }
+
+    /**
+     * <button> に付ける属性。livewire のときは Livewire の起動前だけ押せない属性を足す
+     *
+     * 呼び出し側が渡した disabled（`disabled`・`:disabled="条件"`）は、LivewireBoot に「もともと押せない条件」として渡す。
+     * 条件が true なら起動しても外れず、false でも起動前は disabled になる（渡された値のまま使うと起動前に押せてしまう）。
+     */
+    public function buttonAttributes(ComponentAttributeBag $attributes): ComponentAttributeBag
+    {
+        if (! $this->livewire) {
+            return $attributes;
+        }
+
+        return $attributes
+            ->except('disabled')
+            ->merge(LivewireBoot::attributes($this->isDisabled($attributes))->getAttributes());
+    }
+
+    /**
+     * 呼び出し側が渡した disabled が「押せない」を意味するか
+     *
+     * 押せない：true・属性だけ（`disabled`。Blade では true になる）・"disabled"・"true"・"1"・"on"・"yes"。
+     * 押せる：渡していない・false・null・"false"・"0"・""（文字の "false" や "0" を true にしない）。
+     */
+    private function isDisabled(ComponentAttributeBag $attributes): bool
+    {
+        $value = $attributes->get('disabled');
+
+        return $value === 'disabled' || filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 
     #[Override]

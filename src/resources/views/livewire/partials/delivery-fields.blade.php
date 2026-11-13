@@ -1,11 +1,12 @@
 {{--
     お届け先（購入ページ・予約ページ共通）。Livewire コンポーネントの WithDeliveryForm のプロパティを使う。
+    氏名・電話番号は wire:model（.live なし）で、Livewire は起動時に値を欄へ書き戻す。起動前に打った文字が消えないよう、起動前は readonly（値は送信される）にする
     PCは入力欄・選択欄が幅300px（左端の位置は呼び出し側で決める）。SPは全幅で、入力欄の高さは44px
 --}}
 <div class="flex flex-col gap-6 md:gap-9">
     <div class="flex flex-col gap-2">
         <label class="font-maru text-xl" for="delivery_name">お届け先氏名</label>
-        <input id="delivery_name" name="delivery_name" type="text" value="{{ $deliveryName }}" wire:model="deliveryName" autocomplete="name" @error('delivery_name') aria-invalid="true" @enderror class="h-11 w-full rounded-[10px] border bg-white px-[18px] text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark md:h-10 md:w-75 @error('delivery_name') border-danger @else border-primary-dark @enderror">
+        <input id="delivery_name" name="delivery_name" type="text" value="{{ $deliveryName }}" {{ \App\Support\LivewireBoot::inputAttributes() }} wire:model="deliveryName" autocomplete="name" @error('delivery_name') aria-invalid="true" @enderror class="h-11 w-full rounded-[10px] border bg-white px-[18px] text-base {{ \App\Support\LivewireBoot::READONLY_CLASSES }} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark md:h-10 md:w-75 @error('delivery_name') border-danger @else border-primary-dark @enderror">
         @error('delivery_name')
             <p class="text-sm text-danger" role="alert">{{ $message }}</p>
         @enderror
@@ -13,7 +14,7 @@
 
     <div class="flex flex-col gap-2">
         <label class="font-maru text-xl" for="delivery_tell">お届け先電話番号</label>
-        <input id="delivery_tell" name="delivery_tell" type="tel" inputmode="numeric" value="{{ $deliveryTell }}" wire:model="deliveryTell" autocomplete="tel" placeholder="ハイフンなしの数字10〜11桁" @error('delivery_tell') aria-invalid="true" @enderror class="h-11 w-full rounded-[10px] border bg-white px-[18px] text-base placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark md:h-10 md:w-75 @error('delivery_tell') border-danger @else border-primary-dark @enderror">
+        <input id="delivery_tell" name="delivery_tell" type="tel" inputmode="numeric" value="{{ $deliveryTell }}" {{ \App\Support\LivewireBoot::inputAttributes() }} wire:model="deliveryTell" autocomplete="tel" placeholder="ハイフンなしの数字10〜11桁" @error('delivery_tell') aria-invalid="true" @enderror class="h-11 w-full rounded-[10px] border bg-white px-[18px] text-base placeholder:text-line-strong {{ \App\Support\LivewireBoot::READONLY_CLASSES }} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark md:h-10 md:w-75 @error('delivery_tell') border-danger @else border-primary-dark @enderror">
         @error('delivery_tell')
             <p class="text-sm text-danger" role="alert">{{ $message }}</p>
         @enderror
@@ -27,6 +28,7 @@
                 id="address_id"
                 name="address_id"
                 wire:model.live="addressId"
+                lock
                 :error="$errors->has('address_id')"
                 :aria-invalid="$errors->has('address_id') ? 'true' : null"
                 :aria-describedby="collect([$errors->has('address_id') ? 'address_id-error' : null, $shippingError !== null ? 'address_id-shipping-error' : null])->filter()->implode(' ') ?: null"
@@ -37,7 +39,7 @@
                     <option value="{{ $option['value'] }}" @selected($addressId === $option['value'])>{{ $option['label'] }}</option>
                 @endforeach
             </x-select>
-            <x-outline-button size="address" type="button" wire:click="openAddressModal" class="md:shrink-0">＋新しい住所を追加</x-outline-button>
+            <x-outline-button size="address" type="button" livewire wire:click="openAddressModal" class="md:shrink-0">＋新しい住所を追加</x-outline-button>
         </div>
         @error('address_id')
             <p class="text-sm text-danger" id="address_id-error" role="alert">{{ $message }}</p>
