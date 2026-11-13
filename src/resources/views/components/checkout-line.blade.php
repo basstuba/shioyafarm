@@ -48,10 +48,11 @@
                     step="1"
                     inputmode="numeric"
                     value="{{ $value }}"
+                    {{ \App\Support\LivewireBoot::inputAttributes() }}
                     wire:change="{{ $change }}"
                     @if ($error) aria-invalid="true" @endif
                     @class([
-                        'h-11 w-[69px] rounded-[5px] border bg-white px-2 text-center text-base md:h-[29px]',
+                        'h-11 w-[69px] rounded-[5px] border bg-white px-2 text-center text-base '.\App\Support\LivewireBoot::READONLY_CLASSES.' md:h-[29px]',
                         'border-danger' => $error,
                         'border-line' => ! $error,
                     ])

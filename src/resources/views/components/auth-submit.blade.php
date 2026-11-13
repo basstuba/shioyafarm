@@ -10,4 +10,4 @@
         ? 'bg-accent text-ink hover:bg-accent-hover hover:text-white focus-visible:bg-accent-hover focus-visible:text-white focus-visible:outline-accent-hover'
         : 'bg-primary text-white hover:bg-primary-hover focus-visible:bg-primary-hover focus-visible:outline-primary-dark';
 @endphp
-<button {{ $attributes->merge(['type' => 'submit'])->class(['h-11 w-full cursor-pointer rounded-full text-base transition-[background-color,color,box-shadow] duration-200 hover:shadow-button focus-visible:shadow-button focus-visible:outline-2 focus-visible:outline-offset-2', $variantClasses, 'lg:h-[34px]']) }}>{{ $slot }}</button>
+<button {{ $attributes->merge(['type' => 'submit'])->class(['h-11 w-full cursor-pointer rounded-full text-base transition-[background-color,color,box-shadow] duration-200 hover:shadow-button focus-visible:shadow-button focus-visible:outline-2 focus-visible:outline-offset-2', \App\Support\LivewireBoot::DISABLED_CLASSES, $variantClasses, 'lg:h-[34px]']) }}>{{ $slot }}</button>

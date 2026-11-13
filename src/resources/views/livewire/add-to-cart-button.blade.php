@@ -1,6 +1,6 @@
 {{-- 「カートに入れる」ボタンと、結果を表示するモーダル --}}
 <div>
-    <x-outline-button size="xl" type="button" wire:click="addToCart" wire:loading.attr="disabled" wire:target="addToCart">カートに入れる</x-outline-button>
+    <x-outline-button size="xl" type="button" livewire wire:click="addToCart" wire:loading.attr="disabled" wire:target="addToCart">カートに入れる</x-outline-button>
 
     <div
         class="fixed inset-0 z-50 flex items-center justify-center p-4"
