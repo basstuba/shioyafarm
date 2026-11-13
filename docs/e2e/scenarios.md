@@ -14,6 +14,7 @@ UATは機能ごとの受け入れ、E2Eは利用者の流れ単位の回帰テ�
 
 - 実行のたびに専用DB（sf_db_e2e）を `migrate:fresh --seed` で作り直す。開発用DBは使わない。
 - 会員はテストごとに会員登録画面から新しく作る（メールは `e2e-<時刻>-<連番>@example.com`）。Stripeの顧客残高の影響を受けないようにするため。
+- 会員登録には「同じIPアドレスから1分5回まで」の回数制限があるため、E2E用アプリ（php-e2e）だけ、`compose.yaml` の環境変数 `REGISTER_THROTTLE_PER_MINUTE` で上限を1000にしている（テストごとに登録しても引っかからないようにするため。回数制限そのものは PHPUnit で確認する）。
 - メールは Mailpit の API で、宛先を指定して取得し、件名・本文を確かめる。
 - 要素は `getByRole` / `getByLabel` / 表示テキストで取り、クラス名やHTMLの構造に頼らない（フロントエンドの実装で壊れにくくする）。
 - クレジットカード（Stripe Checkout）を通る項目には `@stripe` タグを付け、普段の実行（`npm test`）から外す。必要なときに `npm run test:stripe` で流す。
