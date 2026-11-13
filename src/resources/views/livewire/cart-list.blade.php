@@ -32,15 +32,16 @@
                                     step="1"
                                     inputmode="numeric"
                                     value="{{ $line->quantity }}"
+                                    {{ \App\Support\LivewireBoot::inputAttributes() }}
                                     wire:change="updateQuantity({{ $line->item->id }}, $event.target.value)"
-                                    class="h-11 w-[69px] rounded-[5px] border border-line bg-white px-2 text-center text-base md:h-[29px]"
+                                    class="h-11 w-[69px] rounded-[5px] border border-line bg-white px-2 text-center text-base {{ \App\Support\LivewireBoot::READONLY_CLASSES }} md:h-[29px]"
                                 >
                                 <span class="text-base">個</span>
                             </div>
 
                             <p class="text-base whitespace-nowrap md:w-20 md:shrink-0 lg:w-[146px]">{{ number_format($line->amount) }}円</p>
 
-                            <button type="button" wire:click="remove({{ $line->item->id }})" class="inline-flex h-11 w-[86px] shrink-0 cursor-pointer items-center justify-center gap-1 rounded-[10px] bg-delete font-maru text-base text-white transition-[background-color,box-shadow] duration-200 hover:bg-delete-hover hover:shadow-button focus-visible:bg-delete-hover focus-visible:shadow-button focus-visible:outline-none md:h-[30px]">
+                            <button type="button" {{ \App\Support\LivewireBoot::attributes() }} wire:click="remove({{ $line->item->id }})" class="inline-flex h-11 w-[86px] shrink-0 cursor-pointer {{ \App\Support\LivewireBoot::DISABLED_CLASSES }} items-center justify-center gap-1 rounded-[10px] bg-delete font-maru text-base text-white transition-[background-color,box-shadow] duration-200 hover:bg-delete-hover hover:shadow-button focus-visible:bg-delete-hover focus-visible:shadow-button focus-visible:outline-none md:h-[30px]">
                                 <img class="size-5" src="{{ asset('storage/image/icon/white-dustbin-icon.webp') }}" alt="" aria-hidden="true">
                                 削除
                             </button>

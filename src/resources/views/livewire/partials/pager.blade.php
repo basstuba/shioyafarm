@@ -17,14 +17,14 @@
     @endphp
     <nav class="{{ $topClass ?? 'mt-4' }} flex justify-center" aria-label="ページ送り">
         <div class="inline-flex max-w-full divide-x divide-line-pager overflow-x-auto rounded-[5px] border border-line-pager bg-white">
-            <button type="button" wire:click="previousPage('{{ $pageName }}')" @disabled($paginator->onFirstPage()) class="{{ $buttonClass }} bg-white text-primary-text enabled:hover:bg-action-hover" aria-label="前のページ">&lt;</button>
+            <button type="button" {{ \App\Support\LivewireBoot::attributes($paginator->onFirstPage()) }} wire:click="previousPage('{{ $pageName }}')" class="{{ $buttonClass }} bg-white text-primary-text enabled:hover:bg-action-hover" aria-label="前のページ">&lt;</button>
             @foreach ($numbers as $number)
                 @if (! $loop->first && $number - $numbers[$loop->index - 1] > 1)
                     <span class="{{ $cellClass }} text-primary-text" aria-hidden="true">…</span>
                 @endif
-                <button type="button" wire:key="{{ $pageName }}-{{ $number }}" wire:click="gotoPage({{ $number }}, '{{ $pageName }}')" @class([$buttonClass, $number === $current ? 'bg-primary-text text-white' : 'bg-white text-primary-text hover:bg-action-hover']) @if ($number === $current) aria-current="page" @endif aria-label="{{ $number }}ページ目">{{ $number }}</button>
+                <button type="button" wire:key="{{ $pageName }}-{{ $number }}" {{ \App\Support\LivewireBoot::attributes() }} wire:click="gotoPage({{ $number }}, '{{ $pageName }}')" @class([$buttonClass, $number === $current ? 'bg-primary-text text-white' : 'bg-white text-primary-text hover:bg-action-hover']) @if ($number === $current) aria-current="page" @endif aria-label="{{ $number }}ページ目">{{ $number }}</button>
             @endforeach
-            <button type="button" wire:click="nextPage('{{ $pageName }}')" @disabled(! $paginator->hasMorePages()) class="{{ $buttonClass }} bg-white text-primary-text enabled:hover:bg-action-hover" aria-label="次のページ">&gt;</button>
+            <button type="button" {{ \App\Support\LivewireBoot::attributes(! $paginator->hasMorePages()) }} wire:click="nextPage('{{ $pageName }}')" class="{{ $buttonClass }} bg-white text-primary-text enabled:hover:bg-action-hover" aria-label="次のページ">&gt;</button>
         </div>
     </nav>
 @endif
