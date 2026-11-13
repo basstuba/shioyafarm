@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AreasTableSeeder::class,
             ItemsTableSeeder::class,
             NoticesTableSeeder::class,
+            MaterialSeeder::class,
         ]);
         // User::factory(10)->create();
     }

@@ -43,6 +43,7 @@ class AdminNav
                     ['label' => 'お問い合わせ一覧', 'url' => route('admin.inquiries.index'), 'active' => ['admin/inquiries', 'admin/inquiries/*']],
                     ['label' => 'お知らせ一覧', 'url' => route('admin.notices.index'), 'active' => ['admin/notices', 'admin/notices/search', 'admin/notices/edit/*']],
                     ['label' => '掲載商品一覧', 'url' => route('admin.items.index'), 'active' => ['admin/items', 'admin/items/edit/*']],
+                    ['label' => '資材一覧', 'url' => route('admin.materials.index'), 'active' => ['admin/materials']],
                 ],
             ],
             [
