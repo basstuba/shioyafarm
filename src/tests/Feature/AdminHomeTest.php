@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\AdminHomeController;
 use App\Models\Admin;
+use App\Models\Material;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
@@ -68,16 +69,54 @@ class AdminHomeTest extends TestCase
     }
 
     /**
-     * 「各種一覧」のリンクは注文・予約・会員・お問い合わせ・お知らせ・掲載商品の順
+     * 「各種一覧」のリンクは注文・予約・会員・お問い合わせ・お知らせ・掲載商品・資材の順
      */
     #[Test]
-    public function 各種一覧のカードに6つのリンクが順に表示される(): void
+    public function 各種一覧のカードに7つのリンクが順に表示される(): void
     {
         $this->openHome()->assertSeeInOrder([
             '各種一覧',
-            '注文一覧', '予約一覧', '会員一覧', 'お問い合わせ一覧', 'お知らせ一覧', '掲載商品一覧',
+            '注文一覧', '予約一覧', '会員一覧', 'お問い合わせ一覧', 'お知らせ一覧', '掲載商品一覧', '資材一覧',
             '作成・登録',
         ]);
+    }
+
+    /**
+     * 残りわずか（在庫数が基準値を下回った）の資材が1件以上あるとき、カードの上に赤字の件数と資材一覧へのリンクが出る。件数は一覧の「残りわずか」の数と一致する
+     */
+    #[Test]
+    public function 残りわずかの資材があるときは件数と資材一覧へのリンクが出る(): void
+    {
+        Material::factory()->create(['stock' => 9, 'threshold' => 10]);
+        Material::factory()->create(['stock' => 12345, 'threshold' => 20000]);
+        Material::factory()->create(['stock' => 10, 'threshold' => 10]);
+        Material::factory()->create(['stock' => 0, 'threshold' => 0]);
+
+        $html = $this->homeHtml();
+
+        $this->assertMatchesRegularExpression('#<div class="[^"]*text-danger" role="status">\s*<p>残りわずかの資材が 2件 あります。</p>\s*<a [^>]*href="'.preg_quote(route('admin.materials.index'), '#').'">資材一覧を見る</a>#u', $html);
+        // カードより上に出る
+        $this->assertLessThan(mb_strpos($html, '各種一覧'), mb_strpos($html, '残りわずかの資材が'));
+        // 一覧の「残りわずか」の数と同じ
+        $admin = Admin::factory()->create();
+        $list = $this->actingAs($admin, 'admin')->get(route('admin.materials.index'))->assertOk()->getContent();
+        $this->assertSame(2, substr_count($list, '残りわずか</span>'));
+    }
+
+    /**
+     * 残りわずかの資材が0件のとき（資材がないときを含む）は、件数もリンクも出ない
+     */
+    #[Test]
+    public function 残りわずかの資材がないときは何も出ない(): void
+    {
+        $this->assertStringNotContainsString('残りわずか', $this->homeHtml());
+
+        Material::factory()->create(['stock' => 10, 'threshold' => 10]);
+        Material::factory()->create(['stock' => 0, 'threshold' => 0]);
+        $html = $this->homeHtml();
+
+        $this->assertStringNotContainsString('残りわずか', $html);
+        $this->assertStringNotContainsString('資材一覧を見る', $html);
     }
 
     /**
@@ -90,10 +129,10 @@ class AdminHomeTest extends TestCase
     }
 
     /**
-     * 8つのリンクの行き先（画面が未実装のため url() で書いてある。実装時に route() へ置き換える）
+     * 9つのリンクの行き先（画面が未実装のため url() で書いてある。実装時に route() へ置き換える）
      */
     #[Test]
-    public function リンク8つの行き先は設計書の_ur_lになっている(): void
+    public function リンク9つの行き先は設計書の_ur_lになっている(): void
     {
         $html = $this->homeHtml();
 
@@ -104,6 +143,7 @@ class AdminHomeTest extends TestCase
             'お問い合わせ一覧' => '/admin/inquiries',
             'お知らせ一覧' => '/admin/notices',
             '掲載商品一覧' => '/admin/items',
+            '資材一覧' => '/admin/materials',
             'お知らせ作成' => '/admin/notices/create',
             '掲載商品登録' => '/admin/items/create',
         ];
@@ -114,7 +154,7 @@ class AdminHomeTest extends TestCase
                 "「{$label}」のリンクが {$path} を指していない"
             );
         }
-        $this->assertSame(8, preg_match_all('#<li>\s*<a #', $html));
+        $this->assertSame(9, preg_match_all('#<li[^>]*>\s*<a #', $html));
     }
 
     /**
@@ -181,10 +221,10 @@ class AdminHomeTest extends TestCase
     {
         $html = $this->homeHtml();
 
-        preg_match_all('#<li>\s*<a class="([^"]*)" href="[^"]*">([^<]*)</a>#u', $html, $matches, PREG_SET_ORDER);
-        $this->assertCount(8, $matches);
+        preg_match_all('#<li[^>]*>\s*<a class="([^"]*)" href="[^"]*">([^<]*)</a>#u', $html, $matches, PREG_SET_ORDER);
+        $this->assertCount(9, $matches);
         foreach ($matches as $i => [, $class, $label]) {
-            $decoration = $i < 6 ? 'decoration-accent-hover' : 'decoration-primary-text';
+            $decoration = $i < 7 ? 'decoration-accent-hover' : 'decoration-primary-text';
             $this->assertStringContainsString('text-ink', $class, $label);
             $this->assertStringContainsString('underline-thick hover:underline focus-visible:underline', $class, $label);
             $this->assertStringContainsString($decoration, $class, $label);
@@ -194,10 +234,10 @@ class AdminHomeTest extends TestCase
     }
 
     /**
-     * SP：ヘッダーは縦に2段、カードは縦積み（lg:以上で横並び）、リンクは18px・44px以上。PC：カードは500×400
+     * SP：ヘッダーは縦に2段、カードは上下に縦積み（PCも同じ。最大幅800px・高さは中身に合わせる）、リンクは18px・44px以上。リンクはSPで1列・mdで2列・lg以上で4列
      */
     #[Test]
-    public function レイアウトは_s_pで縦積みでlg以上で横並びになるクラスを持つ(): void
+    public function レイアウトはカードが上下に並びリンクが列数を変えるクラスを持つ(): void
     {
         $html = $this->homeHtml();
 
@@ -206,13 +246,19 @@ class AdminHomeTest extends TestCase
         // 画面が低くてもフッターと重ならない縦積み
         $this->assertStringContainsString('flex min-h-dvh flex-col', $html);
         $this->assertStringContainsString('<main class="flex flex-1 flex-col items-center justify-center', $html);
-        // カード：SPは縦積みで幅いっぱい、PCは横並びで500×400、間隔は xl で144px
-        $this->assertStringContainsString('flex w-full flex-col items-center gap-8 lg:flex-row', $html);
-        $this->assertStringContainsString('xl:gap-36', $html);
-        $this->assertSame(2, substr_count($html, 'w-full rounded-[20px] bg-white'));
-        $this->assertSame(2, substr_count($html, 'lg:h-100 lg:w-125'));
-        // リンク：SPは18px・高さ44px以上
-        $this->assertSame(8, substr_count($html, 'min-h-11 items-center justify-center text-lg'));
+        // カード：SP・PCとも上下に縦積み（各種一覧が上）。最大幅800pxで中央寄せ、高さは固定せず中身に合わせる（上下の余白は同じ）
+        $this->assertStringContainsString('flex w-full max-w-[800px] flex-col gap-8', $html);
+        $this->assertSame(2, substr_count($html, 'w-full rounded-[20px] bg-white px-4 py-8 shadow-card lg:px-8 lg:py-[43px]'));
+        $this->assertStringNotContainsString('lg:h-100', $html);
+        $this->assertStringNotContainsString('lg:flex-row lg:justify-center', $html);
+        $this->assertLessThan(mb_strpos($html, '作成・登録'), mb_strpos($html, '各種一覧'));
+        // リンクの並び：SPは縦1列、mdは2列、lg以上は4列（折り返し。最後の行が埋まらないときは中央）
+        $this->assertSame(2, substr_count($html, '<ul class="flex flex-col md:flex-row md:flex-wrap md:justify-center">'));
+        $this->assertSame(9, substr_count($html, '<li class="md:w-1/2 lg:w-1/4">'));
+        // リンク：SP・PCとも18px・高さ44px以上（PCだけ16pxにする指定はない）
+        $this->assertStringNotContainsString('lg:leading-[19px]', $html);
+        $this->assertStringNotContainsString('lg:min-h-0 lg:py-3.5', $html);
+        $this->assertSame(9, substr_count($html, 'min-h-11 items-center justify-center text-lg'));
         // ヘッダーの2つの操作は高さ44px以上で、文字はSPが18px・lg以上が16px
         $this->assertStringContainsString('inline-flex min-h-11 items-center text-lg lg:text-base', $html);
         $this->assertStringContainsString('group flex min-h-11 cursor-pointer items-center gap-2.5 text-lg lg:text-base', $html);

@@ -28,10 +28,10 @@ class AdminLayoutTest extends TestCase
     }
 
     /**
-     * AdminNav：トップページと8つのリンクが、決められた順とURLで並ぶ（未実装の画面は url() で書いてある）
+     * AdminNav：トップページと9つのリンクが、決められた順とURLで並ぶ（未実装の画面は url() で書いてある）
      */
     #[Test]
-    public function adminnavはトップと8つのリンクを決められた順とurlで返す(): void
+    public function adminnavはトップと9つのリンクを決められた順とurlで返す(): void
     {
         $this->assertSame(['label' => 'トップページ', 'url' => url('/admin'), 'active' => ['admin'], 'linkClass' => 'decoration-admin-head'], AdminNav::home());
 
@@ -50,6 +50,7 @@ class AdminLayoutTest extends TestCase
             'お問い合わせ一覧' => url('/admin/inquiries'),
             'お知らせ一覧' => url('/admin/notices'),
             '掲載商品一覧' => url('/admin/items'),
+            '資材一覧' => url('/admin/materials'),
             'お知らせ作成' => url('/admin/notices/create'),
             '掲載商品登録' => url('/admin/items/create'),
         ], $links);
@@ -90,10 +91,10 @@ class AdminLayoutTest extends TestCase
     }
 
     /**
-     * サイドメニュー：トップページと8つのリンクが決められた順に並び、注文一覧が表示中として示される
+     * サイドメニュー：トップページと9つのリンクが決められた順に並び、注文一覧が表示中として示される
      */
     #[Test]
-    public function サイドメニューにトップと8つのリンクが並び注文一覧が表示中になる(): void
+    public function サイドメニューにトップと9つのリンクが並び注文一覧が表示中になる(): void
     {
         $html = $this->ordersHtml();
 
@@ -106,6 +107,7 @@ class AdminLayoutTest extends TestCase
             'お問い合わせ一覧' => '/admin/inquiries',
             'お知らせ一覧' => '/admin/notices',
             '掲載商品一覧' => '/admin/items',
+            '資材一覧' => '/admin/materials',
             'お知らせ作成' => '/admin/notices/create',
             '掲載商品登録' => '/admin/items/create',
         ];
@@ -114,7 +116,7 @@ class AdminLayoutTest extends TestCase
         foreach ($hrefs as $label => $path) {
             $this->assertMatchesRegularExpression('#<a [^>]*href="'.preg_quote(url($path), '#').'"[^>]*>'.preg_quote($label, '#').'</a>#u', $aside, $label);
         }
-        $this->assertSame(9, preg_match_all('#<li>\s*<a #', $aside));
+        $this->assertSame(10, preg_match_all('#<li>\s*<a #', $aside));
         $this->assertSame(1, preg_match_all('#aria-current="page"#', $aside));
         $this->assertMatchesRegularExpression('#class="[^"]*bg-admin-bar-end font-bold[^"]*" href="'.preg_quote(route('admin.purchase.index'), '#').'" aria-current="page">注文一覧</a>#u', $aside);
         // 見出しの順（各種一覧 → 作成・登録）と色
@@ -140,6 +142,7 @@ class AdminLayoutTest extends TestCase
             'お問い合わせ一覧' => 'decoration-accent-hover',
             'お知らせ一覧' => 'decoration-accent-hover',
             '掲載商品一覧' => 'decoration-accent-hover',
+            '資材一覧' => 'decoration-accent-hover',
             'お知らせ作成' => 'decoration-primary-text',
             '掲載商品登録' => 'decoration-primary-text',
         ];
