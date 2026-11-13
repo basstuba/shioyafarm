@@ -44,7 +44,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
 | `/register` | GET | Fortify の RegisteredUserController | create | | 会員登録ページ表示（ルート名 `register`） |
-| `/register` | POST | RegisteredUserController（Fortify を継承） | store | | 新規会員登録機能（ルート名 `register.store`） |
+| `/register` | POST | RegisteredUserController（Fortify を継承） | store | | 新規会員登録機能（ルート名 `register.store`。登録に成功したら `RegistrationMailService` で会員登録完了メール（下の「会員登録完了メール」）を送る。登録された会員が `User` でないときは、メールを送らず警告をログに残す。IPごとに1分5回まで（上限は設定 `fortify.register_per_minute`＝`REGISTER_THROTTLE_PER_MINUTE` で変えられる。E2E用アプリ（php-e2e）では大きくしている）。超えたときは登録ページに戻して「登録の操作が続いたため、〇秒後に再度お試しください。」（〇は待ち時間の秒数）を表示する） |
 | `/login` | GET | Fortify の AuthenticatedSessionController | create | | ログインページ表示（ルート名 `login`） |
 | `/login` | POST | Fortify の AuthenticatedSessionController | store | | ログイン機能（ルート名 `login.store`。入力の検証は LoginRequest に差し替え。回数制限あり） |
 | `/logout` | POST | Fortify の AuthenticatedSessionController | destroy | 必須 | ログアウト機能（ルート名 `logout`） |
@@ -199,6 +199,16 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 送信はキューを使わず、リクエストの中で同期的に行う。宛先（To）は会員登録のメールアドレス、またはお問い合わせのメールアドレスだけ。控えを農園のアドレス（`config('mail.from.address')`）に BCC で送る（お客様には見えない）。送信履歴は保存しない。差出人は `config('mail.from')`。
 
 本文はサンクスメールと同じ Markdown メールの枠（ヘッダー・フッター。HTML版とテキスト版）に、管理者が入力した本文だけを入れる（宛名・署名は自動で付けない）。入力した文字はエスケープし、改行はそのまま出す。お問い合わせへの返信だけ、本文の下に元のお問い合わせ（問い合わせ日 YYYY/MM/DD・内容）を引用として付ける（会員宛てには付けない）。同じ宛先に同じ内容を10秒以内に続けて送ろうとしたときは、2通目を送らない（二重送信の防止）。送信に失敗したときはログに残し、メール作成ページに入力を残して「メールを送信できませんでした。時間をおいて、もう一度お試しください。」を表示する。
+
+### 会員登録完了メール
+
+| Mailable | 送るタイミング | 件名 |
+|---|---|---|
+| RegistrationMail | 会員登録に成功したとき（`POST /register`。`RegisteredUserController` から `RegistrationMailService` を通して送る。設計書にはなかった追加機能） | 【しおや農園】会員登録ありがとうございます |
+
+宛先は登録したメールアドレス。差出人は `config('mail.from')`。送信はキューを使わず、`defer`（`always: true`）でレスポンスを返した後に同じリクエストの中で行う。送信に失敗しても会員登録とログインは成立させ、ログに残す。入力エラーで登録されなかったときは送らない。
+
+本文の構成（Markdownメール。HTML版とテキスト版）：宛名（「姓 名 様」）、登録のお礼、■ご登録内容（お名前・メールアドレスだけ。パスワード・住所・電話番号は載せない）、マイページで登録情報の変更・退会ができる案内、「マイページを開く」ボタン（マイページ `/mypage`。登録直後はログイン済みのため。未ログインで開いたときはログインページを経てマイページへ戻る）、心当たりがない場合の案内、送信専用の注意とお問い合わせページのURL、署名。姓・名・メールアドレスはエスケープして出す。
 
 ### パスワード再設定メール
 
