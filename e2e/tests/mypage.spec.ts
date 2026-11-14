@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { fillLoginForm } from '../support/member';
 import { openItem, startPurchase, valueOf } from '../support/shop';
 
-// マイページの流れ（docs/e2e/scenarios.md E-8・E-10）
+// マイページの流れ（docs/e2e/user.md E-8・E-10）
 
 test('E-8 登録情報を変更すると、マイページと購入ページの初期値に反映される', async ({ page, member }) => {
     await page.goto('/mypage');

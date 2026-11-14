@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
 import { addToCart, changeQuantity, openItem, startPurchase, valueOf } from '../support/shop';
 
-// 購入の流れ（docs/e2e/scenarios.md E-4・E-5）
+// 購入の流れ（docs/e2e/user.md E-4・E-5）
 // 送料は config/shipping.php の値。2kgの商品2つ（4kg）は80サイズで、北海道 1,230円・関東 1,740円
 
 test('E-4 カートから代金引換で購入し、住所を追加して届け先にする', async ({ page, member }) => {

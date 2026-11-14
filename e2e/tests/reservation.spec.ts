@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
 import { openItem, startReservation, valueOf } from '../support/shop';
 
-// 予約の流れ（docs/e2e/scenarios.md E-6）
+// 予約の流れ（docs/e2e/user.md E-6）
 // 北の恵みセット 5kg（825円）は予約限定の商品。5kgは80サイズで、北海道の送料は1,230円
 
 test('E-6 予約限定の商品を銀行振込で予約する', async ({ page, member }) => {

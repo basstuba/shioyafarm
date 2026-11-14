@@ -73,3 +73,20 @@ export async function fillLoginForm(page: Page, email: string, password: string,
 export async function logout(page: Page): Promise<void> {
     await clickHeaderItem(page, 'ログアウト', 'button');
 }
+
+/**
+ * 管理画面の一覧で検索して1件に絞れるよう、姓に時刻（と連番）を入れた会員の入力値を作る
+ *
+ * 会員はテストごとに作るが、姓名は通常みな同じ（試験 太郎）。管理画面の一覧は全会員が並ぶため、検索で見分けられる氏名にする。
+ */
+export function newSearchableMember(overrides: Partial<Member> = {}): Member {
+    const member = newMember(overrides);
+    // メールアドレスの時刻・連番の部分（e2e-xxxx-N@…）を姓に入れる
+    const tag = member.email.split('@')[0].replace(/^e2e-/, '').replace('-', '');
+    return { ...member, lastName: overrides.lastName ?? `試験${tag}` };
+}
+
+/** 管理画面の氏名の検索欄に入れる値（姓名をつなげたもの。検索はスペースを無視する） */
+export function searchName(member: Member): string {
+    return `${member.lastName}${member.firstName}`;
+}

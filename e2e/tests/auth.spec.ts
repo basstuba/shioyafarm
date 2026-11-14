@@ -6,7 +6,7 @@ import { clickHeaderItem, expectHeaderItem } from '../support/header';
 import { clickAndWaitForLoad, waitForLoad } from '../support/navigation';
 import { openItem, startPurchase } from '../support/shop';
 
-// 会員登録・ログイン・パスワード再設定の流れ（docs/e2e/scenarios.md E-1・E-2・E-7・E-9）
+// 会員登録・ログイン・パスワード再設定の流れ（docs/e2e/user.md E-1・E-2・E-7・E-9）
 
 test('E-1 会員登録してログアウトし、もう一度ログインする', async ({ page }) => {
     const member = newMember();
