@@ -20,17 +20,21 @@ class StripePaymentGateway implements PaymentGatewayInterface
     /**
      * @param  int  $timeout  1回の通信の全体のタイムアウト（秒）
      * @param  int  $connectTimeout  接続のタイムアウト（秒）
+     * @param  ?string  $displayName  Stripe Checkout に出す店名（null・空のときは渡さず、Stripe アカウントの設定のままにする）
      */
     public function __construct(
         private readonly ?string $secret,
         private readonly int $timeout = 20,
         private readonly int $connectTimeout = 5,
+        private readonly ?string $displayName = null,
     ) {}
 
     /**
      * Checkout Session を作成する（クレジットカード専用）
      *
      * Adaptive Pricing は無効にし、金額は常に円で表示する。
+     * 店名が設定されているときは branding_settings.display_name で渡す（渡さないと Stripe アカウントのメールアドレスが
+     * 「〜に支払う」と出る）。
      */
     #[Override]
     public function createCheckoutSession(
@@ -66,6 +70,10 @@ class StripePaymentGateway implements PaymentGatewayInterface
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
         ];
+
+        if ($this->displayName !== null && $this->displayName !== '') {
+            $params['branding_settings'] = ['display_name' => $this->displayName];
+        }
 
         try {
             $session = $client->checkout->sessions->create($params);

@@ -34,6 +34,9 @@ return [
         // Stripe への通信のタイムアウト（秒）。ロックの有効期限（config/purchase.php）を決める元になる
         'connect_timeout' => 5,
         'timeout' => 20,
+        // Stripe Checkout に出す店名。未設定だと Stripe アカウントのメールアドレスが「〜に支払う」と出てしまうため、
+        // Checkout Session の作成時に branding_settings.display_name で渡す（メールの送信者名は環境変数しだいで変わるので使わない）
+        'display_name' => 'しおや農園',
     ],
 
     'slack' => [

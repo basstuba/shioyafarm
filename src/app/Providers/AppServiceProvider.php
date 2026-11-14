@@ -30,11 +30,13 @@ class AppServiceProvider extends ServiceProvider
         // 決済サービス（テストではこのバインドをモックに差し替える）
         $this->app->bind(PaymentGatewayInterface::class, function (): StripePaymentGateway {
             $secret = config('services.stripe.secret');
+            $displayName = config('services.stripe.display_name');
 
             return new StripePaymentGateway(
                 is_string($secret) ? $secret : null,
                 (int) config('services.stripe.timeout'),
                 (int) config('services.stripe.connect_timeout'),
+                is_string($displayName) ? $displayName : null,
             );
         });
 
