@@ -4,7 +4,7 @@ import { clickHeaderItem } from '../support/header';
 import { clickAndWaitForLoad } from '../support/navigation';
 import { openItem } from '../support/shop';
 
-// 商品を見る・カート・お問い合わせ・静的ページの流れ（docs/e2e/scenarios.md E-3・E-11・E-12）
+// 商品を見る・カート・お問い合わせ・静的ページの流れ（docs/e2e/user.md E-3・E-11・E-12）
 
 // カートは会員だけが使えるので、member（登録・ログイン済み）から始める
 test('E-3 トップから商品を探してカートに入れ、数量の変更と削除をする', async ({ page, member: _member }) => {

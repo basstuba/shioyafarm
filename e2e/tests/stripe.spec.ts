@@ -1,19 +1,45 @@
 import { test, expect } from '../support/fixtures';
 import { waitForMail } from '../support/mailpit';
 import { openItem, startPurchase, startReservation } from '../support/shop';
-import type { Page } from '@playwright/test';
+import type { Frame, Page } from '@playwright/test';
 
-// クレジットカード（Stripe Checkout）の流れ（docs/e2e/scenarios.md E-13・E-14）
+// クレジットカード（Stripe Checkout）の流れ（docs/e2e/user.md E-13・E-14）
 // Stripe のテストページを実際に操作するため @stripe タグを付け、普段の実行からは外す（./e2e/run.sh stripe で流す）
 
-/** Stripe Checkout のページでテストカードを入力して支払う */
+/**
+ * 決済フォームが入っている frame を探す。
+ * Stripe Checkout は決済フォームを iframe の中に置き、その中にさらに Apple Pay などの iframe を入れ子にしている。
+ * iframe の name や src、入れ子の深さは Stripe が変えることがあるので、それらに頼らず、
+ * 「カード番号の入力欄を持つ frame」をページ内の全 frame から探す（入れ子の深さが変わっても見つかる）。
+ */
+async function findCardFrame(page: Page): Promise<Frame> {
+    let found: Frame | undefined;
+    await expect
+        .poll(
+            async () => {
+                for (const frame of page.frames()) {
+                    if ((await frame.getByRole('textbox', { name: 'カード番号' }).count()) > 0) {
+                        found = frame;
+                        return true;
+                    }
+                }
+                return false;
+            },
+            { message: 'Stripe Checkout のカード番号の入力欄が見つかりません', timeout: 30_000 },
+        )
+        .toBe(true);
+    return found!;
+}
+
+/** Stripe Checkout のページでテストカードを入力して支払う（表示言語は ja-JP 前提） */
 async function payWithTestCard(page: Page): Promise<void> {
     await page.waitForURL(/checkout\.stripe\.com/);
-    await page.locator('#cardNumber').fill('4242424242424242');
-    await page.locator('#cardExpiry').fill('12 / 34');
-    await page.locator('#cardCvc').fill('123');
-    await page.locator('#billingName').fill('SHIKEN TARO');
-    await page.getByTestId('hosted-payment-submit-button').click();
+    const form = await findCardFrame(page);
+    await form.getByRole('textbox', { name: 'カード番号' }).fill('4242424242424242');
+    await form.getByRole('textbox', { name: '有効期限 (月/年)' }).fill('12 / 34');
+    await form.getByRole('textbox', { name: 'セキュリティコード' }).fill('123');
+    await form.getByRole('textbox', { name: 'カードに記載された名前' }).fill('SHIKEN TARO');
+    await form.getByRole('button', { name: '支払う', exact: true }).click();
 }
 
 test('E-13 クレジットカードで購入する', { tag: '@stripe' }, async ({ page, member }) => {

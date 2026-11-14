@@ -1,16 +1,13 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { isSp } from './device';
 
 // ヘッダーのナビの操作
 // SP（768px未満）では、ヘッダーに出る項目（ログイン・マイページ・カート・オンラインショップのいずれか）と、
 // 「メニュー」ボタンで開くパネルに入る項目（お知らせ・ログアウトなど）に分かれる。
 // どちらにあるかはページごとに変わるので、テストからは項目名だけで操作できるようにする。
+// PCではすべての項目がヘッダーに並ぶ。SPかどうかは isSp()（Playwright の project 名）で判断する。
 
 type Role = 'link' | 'button';
-
-/** PCではすべての項目がヘッダーに並ぶ。SPかどうかは Playwright の project 名（playwright.config.ts の 'sp'）で判断する */
-function isSp(): boolean {
-    return test.info().project.name === 'sp';
-}
 
 function header(page: Page): Locator {
     return page.getByRole('banner');

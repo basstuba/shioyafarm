@@ -18,3 +18,20 @@ export async function clickAndWaitForLoad(target: Locator, url: string | RegExp)
     await target.click();
     await waitForLoad(target.page(), url);
 }
+
+/**
+ * 目印をつけた現在のページが、新しいページ（読み込み直し）に置き換わるまで待つ
+ *
+ * 同じURLへ戻るフォーム送信（エラー表示のログインなど）では URL で待てず、遷移の前のページに残った表示（前回のエラーなど）を
+ * 結果と取り違えうる。押す前に window へ目印を付け、押したあとにそれが消える（＝新しいページが読み込まれた）のを待つ。
+ * 押したあとに必ずページが読み込み直される操作（フォームの送信）で使う。
+ */
+export async function clickAndWaitForNewPage(target: Locator): Promise<void> {
+    const page = target.page();
+    await page.evaluate(() => {
+        (window as unknown as { __e2eOldPage?: boolean }).__e2eOldPage = true;
+    });
+    await target.click();
+    await page.waitForFunction(() => !(window as unknown as { __e2eOldPage?: boolean }).__e2eOldPage);
+    await page.waitForLoadState('load');
+}
