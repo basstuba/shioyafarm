@@ -190,6 +190,28 @@ class StripePaymentGatewayTest extends TestCase
     }
 
     /**
+     * クレジットカード：店名を渡したときは、Checkout Session の branding_settings.display_name として送る（渡さないときは送らない）
+     */
+    #[Test]
+    public function checkout_sessionに店名を渡す(): void
+    {
+        $this->fakeStripe(['post /v1/checkout/sessions' => ['id' => 'cs_test_1', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_1', 'status' => 'open', 'payment_status' => 'unpaid']]);
+
+        (new StripePaymentGateway('sk_test_dummy', 20, 5, 'しおや農園'))->createCheckoutSession(
+            PaymentMethod::Card, 'cus_test_1', $this->lineItems(), 'https://example.test/s', 'https://example.test/c',
+        );
+        $this->assertSame(['display_name' => 'しおや農園'], $this->requests[0]['params']['branding_settings']);
+
+        // 店名を渡さないときは branding_settings を送らない
+        $this->fakeStripe(['post /v1/checkout/sessions' => ['id' => 'cs_test_2', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_2', 'status' => 'open', 'payment_status' => 'unpaid']]);
+
+        (new StripePaymentGateway('sk_test_dummy'))->createCheckoutSession(
+            PaymentMethod::Card, 'cus_test_1', $this->lineItems(), 'https://example.test/s', 'https://example.test/c',
+        );
+        $this->assertArrayNotHasKey('branding_settings', $this->requests[0]['params']);
+    }
+
+    /**
      * 銀行振込：会員の Customer で、customer_balance（jp_bank_transfer）の PaymentIntent を confirm して振込先を取り出す
      */
     #[Test]
