@@ -3,7 +3,7 @@
     "type": "project",
     "description": "しおや農園：小規模な家族農家の直販ECサイト（ポートフォリオ）",
     "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "license": "proprietary",
     "require": {
         "php": "^8.4",
         "laravel/fortify": "^1.33",
