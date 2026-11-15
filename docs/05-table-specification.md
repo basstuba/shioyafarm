@@ -57,7 +57,7 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | id | bigint unsigned | ○ | | | |
 | admin_id | bigint unsigned | | ○ | ○ | admins.id（cascade） |
 | code | varchar(255) | | | ○ | |
-| attempts | tinyint unsigned | | | ○ | |
+| attempts | tinyint unsigned（既定値 0） | | | ○ | |
 | expires_at | timestamp | | | ○ | |
 | sent_at | timestamp | | | ○ | |
 | created_at | timestamp | | | | |
@@ -141,9 +141,9 @@ ER図は [ER図](06-er-diagram.md) を参照。
 | quantity | integer | | | ○ | |
 | price | integer | | | ○ | |
 | subtotal | integer | | | ○ | |
+| payment_method | varchar(25) | | | ○ | |
 | shipping_fee | integer | | | ○ | |
 | total_price | integer | | | ○ | |
-| payment_method | varchar(25) | | | ○ | |
 | shipped | boolean | | | ○ | |
 | canceled_at | timestamp | | | | |
 | created_at | timestamp | | | | |
