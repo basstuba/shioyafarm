@@ -10,6 +10,10 @@ use App\Models\User;
 use App\Services\OrderTokenStore;
 use App\Services\Payment\BankTransferInstructions;
 use App\Services\PendingOrder;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Mockery\MockInterface;
 
 /**
@@ -180,5 +184,28 @@ trait PurchaseTestHelpers
         session(['pending_order' => $order->toArray()]);
 
         return $order;
+    }
+
+    /**
+     * 先のリクエストがセッションの排他を持ったままの状態を作る（block をかけたルートが、本当に待ちきれず LockTimeoutException になるのを確かめるため）
+     *
+     * StartSession ミドルウェアと同じストア（session.block_store。未設定ならキャッシュの既定のストア）・同じ鍵（'session:'.セッションID）のロックを先に取り、
+     * 次のリクエストがそのセッションIDのクッキーを送るようにする。待ち秒数はルート定義の時点で決まっていて config を後から変えても効かないため、
+     * テストが長引かないようルートの待ち時間だけ0秒にする（ロックの有効秒数は本来の値のまま）。
+     * 返すロックは、テストの最後に release() する（テストごとにアプリが作り直されるため、しなくても他のテストには残らない）。
+     */
+    private function holdSessionLock(string $routeName): Lock
+    {
+        $route = Route::getRoutes()->getByName($routeName);
+        $this->assertNotNull($route);
+        $route->block($route->locksFor(), 0);
+
+        $sessionId = Str::random(40);
+        $lock = Cache::store(config('session.block_store'))->lock('session:'.$sessionId, (int) $route->locksFor());
+        $this->assertTrue($lock->get());
+
+        $this->withCookie(config('session.cookie'), $sessionId);
+
+        return $lock;
     }
 }

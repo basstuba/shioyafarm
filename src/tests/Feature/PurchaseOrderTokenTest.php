@@ -536,22 +536,56 @@ class PurchaseOrderTokenTest extends TestCase
     }
 
     /**
-     * セッションの排他を待ちきれなかったとき（先のリクエストが終わらず、LockTimeoutException になる）は、500にせず「処理中」の案内（503）を返す
+     * セッションの排他を待ちきれなかったとき（先のリクエストが終わらず、ルートの block が時間切れになる）は、500にせず「処理中」の案内（503）を返し、注文は保存しない
      */
     #[Test]
     public function セッションの排他を待ちきれなければ処理中を案内する(): void
     {
         [$user, $items] = $this->makeCartScenario();
         $data = $this->paymentData($user, [$items['potato']->id => 2], ['payment_method' => 'cod']);
-        $this->mock(PurchaseService::class, function (MockInterface $mock): void {
-            $mock->shouldReceive('beginCheckout')->once()->andThrow(new LockTimeoutException);
-        });
+        $lock = $this->holdSessionLock('shop.checkout.payment');
 
         $this->actingAs($user)->post(route('shop.checkout.payment'), $data)
             ->assertStatus(503)
-            ->assertSee('ただいまご注文を処理しています');
+            ->assertSee('<title>ご注文を処理しています | Shioya Farm</title>', false)
+            ->assertSee('ただいまご注文を処理しています。しばらく待ってから、購入ページを開き直してください。')
+            ->assertDontSee('予約');
 
+        $lock->release();
         $this->assertSame(0, Purchase_history::count());
+    }
+
+    /**
+     * セッションの排他（block）をかけたルートは、すべて「処理中」の案内（503）の対象（config の session_locked_routes）に入っている
+     */
+    #[Test]
+    public function セッションの排他をかけたルートは案内の対象に入っている(): void
+    {
+        $locked = collect(Route::getRoutes()->getRoutes())
+            ->filter(fn ($route) => $route->locksFor() !== null)
+            ->map(fn ($route) => $route->getName())
+            ->sort()
+            ->values()
+            ->all();
+
+        $listed = array_keys(config('purchase.session_locked_routes'));
+        sort($listed);
+
+        $this->assertSame($locked, $listed);
+    }
+
+    /**
+     * 購入・予約の確定以外のルートで LockTimeoutException が起きたときは、案内に差し替えず従来どおり（500）にする
+     */
+    #[Test]
+    public function 購入と予約の確定以外のルートは処理中の案内にしない(): void
+    {
+        Route::get('/test-lock-timeout', fn () => throw new LockTimeoutException)->name('test.lock-timeout');
+
+        $this->get('/test-lock-timeout')
+            ->assertStatus(500)
+            ->assertDontSee('<title>ご注文を処理しています', false)
+            ->assertDontSee('<title>ご予約を処理しています', false);
     }
 
     /**

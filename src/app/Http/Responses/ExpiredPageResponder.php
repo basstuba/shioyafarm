@@ -16,11 +16,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * CSRFトークンの不一致（TokenMismatchException。描画の前に 419 の HttpException になる）のとき、ログイン・ログアウトだけは、案内つきで元のページへ戻す
+ * CSRFトークンの不一致（TokenMismatchException。描画の前に 419 の HttpException になる）のとき、ルート名で決めた対象の送信（会員・管理者のログイン、管理者の認証まわり、管理画面の主な操作）だけ、案内つきで元のページへ戻す
  *
  * 同じブラウザで別の窓のログイン・ログアウトをしたときや、時間が経ったときにトークンが古くなる。
  * 対象は会員のログイン（login.store）・管理者のログイン（admin.login.store）・管理者の確認コードの送信と再送（admin.two-factor.store・admin.two-factor.resend。入力待ちが残っていれば、それぞれの案内つきで確認コードの入力ページへ、なければログインページへ戻す）・管理者のログアウト（admin.logout）・会員の物理削除（admin.users.delete）・注文と予約の取消（admin.purchase.cancel・admin.reservations.cancel）・管理者のパスワード再設定の2つの送信（admin.password.email・admin.password.update）・管理画面のメール送信（admin.mail.send）・掲載商品の登録と修正（admin.items.store・admin.items.update）・お知らせの作成・修正・削除（admin.notices.store・admin.notices.update・admin.notices.delete）・資材の追加・修正・削除（admin.materials.store・admin.materials.update・admin.materials.delete）だけで、
  * それ以外のリクエスト（JSONを期待するリクエスト、Livewireの更新を含む）は null を返して従来どおり419のページにする。
+ * 新しい送信ルートを足すときは、__invoke() のルート名の match と案内の定数に足す（.claude/rules/backend.md の「認証」）。
  * 案内は flash の status に入れ、各ページがフォームの上に表示する（会員の物理削除と、注文・予約の取消は、実行できなかった知らせなので errors の delete・cancel に入れ、一覧の検索欄の下に赤字で出す。メール送信は errors の send に入れ、メール作成ページに入力を残して赤字で出す。掲載商品の登録・修正は errors の form に入れ、登録・修正ページに画像以外の入力を残してボタンの上に赤字で出す。お知らせの作成・修正も errors の form に入れ、作成・修正ページに入力を残してボタンの上に赤字で出す。お知らせの削除は errors の delete に入れ、削除の前に見ていたお知らせ一覧（検索条件・ページ）の検索欄の下に赤字で出す。資材の追加・修正は errors の form に入れ、入力を残したまま資材一覧のモーダルを開いて赤字で出す。資材の削除は errors の delete に入れ、資材一覧の表の上に赤字で出す）。
  */
 class ExpiredPageResponder
