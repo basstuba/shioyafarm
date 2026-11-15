@@ -19,3 +19,10 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# フリー素材の画像（配布元の規約で再配布が禁止のため、リポジトリに含めない。README の「画像について」を参照）
+/storage/app/public/image/icon/*.webp
+/storage/app/public/image/product/*.webp
+/storage/app/public/image/tool/*.webp
+!/storage/app/public/image/tool/shioya-farm-logo-medium.webp
+!/storage/app/public/image/tool/shioya-farm-logo-small.webp
