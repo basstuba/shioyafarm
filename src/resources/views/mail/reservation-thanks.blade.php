@@ -17,7 +17,7 @@
 <strong>合計　　　　{{ $total }}</strong>
 </x-mail::panel>
 
-商品は9月中に発送いたします。
+商品は{{ config('shipping.reservation_ship_period_text') }}に発送いたします。
 
 @include('mail.partials.delivery')
 

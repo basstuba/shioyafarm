@@ -1324,6 +1324,46 @@ class AdminItemFormTest extends TestCase
     }
 
     /**
+     * 商品金額・予約可能数は、先頭の0を除いて受け付ける（半角でも全角でも。「0500」「０５００」は500。登録・修正とも）
+     */
+    #[Test]
+    public function 先頭に0のある数字は0を除いて保存する(): void
+    {
+        $this->loginAsAdmin();
+
+        $this->store(['name' => '半角', 'price' => '0500', 'is_reserved_only' => '1', 'reservation_limit_type' => 'limited', 'reservation_limit' => '010'])->assertSessionHasNoErrors();
+        $this->store(['name' => '全角', 'price' => '０５００', 'is_reserved_only' => '1', 'reservation_limit_type' => 'limited', 'reservation_limit' => '００１０'])->assertSessionHasNoErrors();
+
+        $this->assertSame([500, 10], [Item::where('name', '半角')->sole()->price, Item::where('name', '半角')->sole()->reservation_limit]);
+        $this->assertSame([500, 10], [Item::where('name', '全角')->sole()->price, Item::where('name', '全角')->sole()->reservation_limit]);
+
+        $item = Item::where('name', '半角')->sole();
+        $this->update($item, ['name' => '半角', 'price' => '０７００', 'is_reserved_only' => '1', 'reservation_limit_type' => 'limited', 'reservation_limit' => '0020'])->assertSessionHasNoErrors();
+        $this->assertSame([700, 20], [$item->fresh()->price, $item->fresh()->reservation_limit]);
+        $this->update($item, ['name' => '半角', 'price' => '0800'])->assertSessionHasNoErrors();
+        $this->assertSame(800, $item->fresh()->price);
+
+        // 0だけは0のまま（1円以上・1以上の検証でエラーになる）
+        $this->update($item, ['name' => '半角', 'price' => '０００'])->assertSessionHasErrors(['price' => '商品金額は1円以上で入力してください']);
+        $this->update($item, ['name' => '半角', 'is_reserved_only' => '1', 'reservation_limit_type' => 'limited', 'reservation_limit' => '００'])->assertSessionHasErrors(['reservation_limit' => '予約可能数は1以上で入力してください']);
+    }
+
+    /**
+     * 「上限なし」のときは予約可能数の欄が送られない。入力エラーで戻っても、キーを足さず、修正ページの欄は今の値のまま
+     */
+    #[Test]
+    public function 送られなかった予約可能数は入力エラーで戻っても今の値のまま(): void
+    {
+        $this->loginAsAdmin();
+        $item = $this->makeListed('上限あり', 2, ['is_reserved_only' => true, 'reservation_limit' => 200]);
+
+        $this->update($item, ['name' => '上限あり', 'price' => '0', 'is_reserved_only' => '1', 'reservation_limit_type' => 'unlimited'])->assertSessionHasErrors('price');
+
+        $this->assertArrayNotHasKey('reservation_limit', session()->getOldInput());
+        $this->get(route('admin.items.edit', $item->id))->assertOk()->assertSee('value="200"', false);
+    }
+
+    /**
      * 画像の選択・ドロップの検証（形式・大きさ）と、DataTransfer が使えないときの案内は、ブラウザ側（Alpine）で行う。必要な値と文言がページに出る
      */
     #[Test]

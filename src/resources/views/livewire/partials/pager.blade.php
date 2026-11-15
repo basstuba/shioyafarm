@@ -11,7 +11,7 @@
     @php
         $current = $paginator->currentPage();
         $last = $paginator->lastPage();
-        $numbers = array_values(array_filter(range(1, $last), fn (int $n): bool => $n === 1 || $n === $last || abs($n - $current) <= 2));
+        $numbers = \App\Support\PageNumbers::visible($current, $last);
         $cellClass = 'inline-flex size-11 shrink-0 items-center justify-center font-maru text-base md:size-[31px]';
         $buttonClass = $cellClass.' cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-text disabled:cursor-not-allowed disabled:opacity-40';
     @endphp

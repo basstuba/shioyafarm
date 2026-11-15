@@ -42,6 +42,14 @@ paths:
   - 呼び出し側で処理してほしい例外：`@throws`
 - Eloquentモデルのカラムは `@property` で書かない（Larastanがマイグレーションから読み取る）。
 
+## メール・入力・回数制限の共通処理
+
+- **メール**（`app/Mail`）：しおや農園から送るメールは `App\Mail\ShopMail`（`Mailable` を継承した抽象クラス）を継承する。差出人・署名の名前とアドレス（`config('mail.from')`）、件名の接頭辞（`SUBJECT_PREFIX`＝「【しおや農園】」）、お問い合わせページのURLはここで決める。個別のメールに直書きしない。
+- **メールの送信**：会員登録・購入・予約のお礼のように、保存のあとに送る通知は `App\Support\DeferredMail::send($build, $failureMessage, $context)` で、レスポンスを返した後（`defer`）に送る。画面の表示はメールサーバーを待たず、送信に失敗しても例外は外に出さずログ（`Log::error`）に残す（保存済みのため）。送信の成否を画面に返す必要があるもの（パスワード再設定・管理者の二段階認証のコード・管理画面からのメール）は、従来どおり同期で `Mail::send()` する。
+- **Fortify のルートの回数制限**：Fortify のルートには limiter を設定できないため、`App\Http\Middleware\ThrottleFortifyRoutes`（`bootstrap/app.php` で web グループに追加）の `LIMITERS`（ルート名 => limiter 名の対応表）に足す。limiter 本体は `FortifyServiceProvider` の `RateLimiter::for(...)` で決める。
+- **管理画面の ID の検証**：管理画面の削除・修正の FormRequest は、`App\Http\Requests\Concerns\ValidatesRecordId` トレイトで ID の規則（必須・1以上の整数）と、形が不正なときの扱い（存在しない対象と同じ扱い）をそろえる。FormRequest ごとに ID の規則を書き直さない。
+- **入力の整形**：フォームの入力の前後の空白の除去・全角の数字の半角化は `App\Support\FormText`（`trim()`・`halfWidth()`・`number()`）を使い、FormRequest の `prepareForValidation()` などで呼ぶ。文字列でない値は、検証のエラーにするためそのまま返す。FormRequest ごとに `mb_convert_kana` などを書き直さない。
+
 ## ルート名とヘッダーナビ
 
 ヘッダーのナビはルート名で切り替わる。`ViewServiceProvider` が `HeaderComposer` を `layouts.header` に紐づけていて、HeaderComposerは現在のルート名を次のパターンと照合し、`app/Support/Nav.php` のメニューを選ぶ。

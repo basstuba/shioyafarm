@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\FormText;
 use Illuminate\Foundation\Http\FormRequest;
 use Override;
 
@@ -21,16 +22,12 @@ class AdminTwoFactorRequest extends FormRequest
     protected $redirectRoute = 'admin.two-factor';
 
     /**
-     * 全角数字を半角にする（前後の空白は TrimStrings が取り除く。全角の空白は半角にしてから取り除く）
+     * 全角数字を半角にする（前後の空白は TrimStrings が取り除く。全角の空白は半角にしてから取り除く）。先頭の0は残す
      */
     #[Override]
     protected function prepareForValidation(): void
     {
-        $code = $this->input('code');
-
-        if (is_string($code)) {
-            $this->merge(['code' => trim(mb_convert_kana($code, 'ns'))]);
-        }
+        $this->merge(['code' => FormText::halfWidth($this->input('code'))]);
     }
 
     /**

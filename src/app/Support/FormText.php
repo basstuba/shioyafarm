@@ -3,7 +3,7 @@
 namespace App\Support;
 
 /**
- * フォームに入力された文字の整え方（管理画面の資材の入力で使う）
+ * フォームに入力された文字の整え方（管理画面の資材・掲載商品・確認コードの入力で使う）
  *
  * 文字列でない値（配列など）は、検証のエラーにするため、そのまま返す。
  */
@@ -23,19 +23,28 @@ final class FormText
     }
 
     /**
+     * 全角の数字・空白を半角にして、前後の空白を取り除く（例：「１２３４５６」→「123456」）。先頭の0は取り除かない
+     *
+     * 確認コードのように、先頭の0に意味がある数字の検証の前にそろえる。
+     */
+    public static function halfWidth(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        return trim(mb_convert_kana($value, 'ns'));
+    }
+
+    /**
      * 全角の数字を半角にして、前後の空白を取り除く（例：「４０」→「40」）。数字だけのときは、先頭の0を取り除く（「05」→「5」、「00」→「0」）
      *
-     * 先頭に0のある数字は、整数の検証（integer）が受け付けないため、検証の前にそろえる。数字以外を含む値（-1・1.5・abc）はそのまま返す。
+     * 先頭に0のある数字は、整数の検証（integer）が受け付けないため、検証の前にそろえる。数字以外を含む値（-1・1.5・abc）は、先頭の0を残したまま返す。
      */
     public static function number(mixed $value): mixed
     {
-        $trimmed = self::trim($value);
-        if (! is_string($trimmed)) {
-            return $trimmed;
-        }
+        $halfWidth = self::halfWidth($value);
 
-        $halfWidth = mb_convert_kana($trimmed, 'n');
-
-        return preg_match('/\A[0-9]+\z/', $halfWidth) === 1 ? ltrim($halfWidth, '0') ?: '0' : $halfWidth;
+        return is_string($halfWidth) && preg_match('/\A[0-9]+\z/', $halfWidth) === 1 ? ltrim($halfWidth, '0') ?: '0' : $halfWidth;
     }
 }

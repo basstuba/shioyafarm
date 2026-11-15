@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Services\ItemInput;
+use App\Support\FormText;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -44,20 +45,15 @@ class ItemStoreRequest extends FormRequest
     }
 
     /**
-     * 商品金額・予約可能数は、全角数字を半角にし、前後の空白（全角を含む）を除いてから検証する
+     * 商品金額・予約可能数は、全角数字を半角にし、前後の空白（全角を含む）と先頭の0を除いてから検証する（「０５００」→「500」）
+     *
+     * 送られてこなかった項目は、そのまま送られていない扱いにする（予約可能数は、「上限なし」のとき入力欄が無効で送られない。
+     * キーを足すと、入力エラーで戻ったときに、修正する商品の今の値ではなく空欄が残ってしまう）。
      */
     #[Override]
     protected function prepareForValidation(): void
     {
-        $normalized = [];
-        foreach (['price', 'reservation_limit'] as $field) {
-            $value = $this->input($field);
-            if (is_string($value)) {
-                $normalized[$field] = trim(mb_convert_kana($value, 'ns'));
-            }
-        }
-
-        $this->merge($normalized);
+        $this->merge(array_map(FormText::number(...), $this->only(['price', 'reservation_limit'])));
     }
 
     /**

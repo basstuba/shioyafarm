@@ -9,7 +9,7 @@
     @php
         $current = $paginator->currentPage();
         $last = $paginator->lastPage();
-        $numbers = array_values(array_filter(range(1, $last), fn (int $n): bool => $n === 1 || $n === $last || abs($n - $current) <= 2));
+        $numbers = \App\Support\PageNumbers::visible($current, $last);
         $cellClass = 'inline-flex size-11 shrink-0 items-center justify-center font-maru text-base text-admin-gray lg:size-[31px]';
         $linkClass = $cellClass.' bg-white hover:bg-admin-bar-end focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink';
     @endphp

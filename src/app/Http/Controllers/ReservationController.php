@@ -6,6 +6,7 @@ use App\Http\Requests\ReservationRequest;
 use App\Http\Responses\CheckoutResponder;
 use App\Services\ReservationLimitService;
 use App\Services\ReservationService;
+use App\Support\BankTransferPage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -148,14 +149,7 @@ class ReservationController extends Controller
 
         Log::debug('ReservationController bankTransfer end');
 
-        return view('shop.bank_transfer', [
-            'order' => $order,
-            'bankTransfer' => $order->bankTransfer,
-            'cancelRoute' => 'shop.reservation.bank-transfer.cancel',
-            'confirmRoute' => 'shop.reservation.bank-transfer.confirm',
-            'orderHeading' => 'ご予約内容',
-            'shippingNotice' => '下記の口座へお振込みください。お振込みの確認後、商品は9月中に発送いたします。',
-        ]);
+        return view('shop.bank_transfer', BankTransferPage::reservation($order));
     }
 
     /**

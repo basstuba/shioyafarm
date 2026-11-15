@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentGatewayInterface;
+use App\Support\DeferredMail;
 use App\Support\ItemLabel;
 use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -17,7 +18,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Throwable;
@@ -468,10 +468,8 @@ abstract class CheckoutService
     /**
      * 保存した購入履歴・予約のサンクスメールを、会員登録のメールアドレスへ送る（送信はレスポンスを返した後）
      *
-     * ここでは送信を defer に登録するだけで、実際に送るのはリクエストの終了時。排他ロックの中から呼んでも、送信はロックの外になり、
-     * サンクスページの表示もメールサーバーの応答を待たない。登録後に処理が例外で終わっても（レスポンスが500でも）、always で送る。
-     * 宛先はメール（ThanksMail）が持つ。キューは使わず、同じプロセスの中で送る。送信に失敗しても例外は外に出さない
-     * （購入・予約は保存済み）。失敗はログに残す。
+     * 送信の登録と、失敗のログは DeferredMail が行う（実際に送るのはリクエストの終了時。排他ロックの中から呼んでも、送信はロックの外になる。
+     * 送信に失敗しても例外は外に出さない。購入・予約は保存済み）。宛先はメール（ThanksMail）が持つ。
      * 会員は呼び出し側が持っているものを渡し、メールの組み立てで会員を読み込み直さない。
      *
      * @param  TSaved  $saved
@@ -480,18 +478,11 @@ abstract class CheckoutService
     {
         $saved->setRelation('user', $user);
 
-        defer(function () use ($saved): void {
-            try {
-                Mail::send($this->thanksMail($saved));
-            } catch (Throwable $e) {
-                Log::error('サンクスメールの送信に失敗しました', [
-                    'saved' => $saved::class,
-                    'id' => $saved->getKey(),
-                    'exception' => $e::class,
-                    'message' => $e->getMessage(),
-                ]);
-            }
-        }, always: true);
+        DeferredMail::send(
+            fn () => $this->thanksMail($saved),
+            'サンクスメールの送信に失敗しました',
+            ['saved' => $saved::class, 'id' => $saved->getKey()],
+        );
     }
 
     /**

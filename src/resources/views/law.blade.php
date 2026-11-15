@@ -63,8 +63,8 @@
             <section class="my-8 text-base">
                 <dt class="mb-4 font-extrabold">商品のお届け時期</dt>
                 <dd class="flex flex-col gap-4">
-                    <p>お支払い確定後3〜5営業日以内に発送いたします。</p>
-                    <p>代金引換はご注文確定後3〜5営業日以内に発送いたします。</p>
+                    <p>お支払い確定後{{ config('shipping.ship_days_text') }}以内に発送いたします。</p>
+                    <p>代金引換はご注文確定後{{ config('shipping.ship_days_text') }}以内に発送いたします。</p>
                 </dd>
             </section>
             <hr class="border-line">

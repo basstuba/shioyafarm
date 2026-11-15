@@ -4,8 +4,6 @@ namespace App\Mail;
 
 use App\Models\User;
 use App\Support\MailText;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
@@ -16,7 +14,7 @@ use Illuminate\Mail\Mailables\Envelope;
  * 本文に載せるのはお名前とメールアドレスだけ（パスワード・住所・電話番号は載せない）。
  * 会員が入力した値は MailText::safe() で無害化する。
  */
-class RegistrationMail extends Mailable
+class RegistrationMail extends ShopMail
 {
     public function __construct(
         public readonly User $user,
@@ -29,10 +27,7 @@ class RegistrationMail extends Mailable
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
-            from: new Address((string) config('mail.from.address'), (string) config('mail.from.name')),
-            subject: '【しおや農園】会員登録ありがとうございます',
-        );
+        return $this->shopEnvelope(self::SUBJECT_PREFIX.'会員登録ありがとうございます');
     }
 
     /**
@@ -46,10 +41,7 @@ class RegistrationMail extends Mailable
                 'recipientName' => MailText::safe($this->user->last_name.' '.$this->user->first_name),
                 'email' => MailText::safe($this->user->email),
                 'myPageUrl' => route('shop.mypage.index'),
-                'senderName' => (string) config('mail.from.name'),
-                'senderAddress' => (string) config('mail.from.address'),
-                'contactUrl' => route('top.inquiry'),
-            ],
+            ] + $this->commonData(),
         );
     }
 }

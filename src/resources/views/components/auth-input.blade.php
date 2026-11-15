@@ -1,5 +1,3 @@
-@props(['name', 'label', 'type' => 'text', 'placeholder' => '', 'autocomplete' => 'off', 'value' => null, 'srLabel' => false, 'labelClass' => 'text-base font-medium', 'describedby' => null, 'variant' => 'default', 'inputmode' => null, 'maxlength' => null])
-
 {{--
     認証ページ（ログイン・会員登録）の入力欄。ラベル・input・エラーメッセージをまとめて表示する。
     srLabel を true にすると、ラベルは画面に表示せずスクリーンリーダー用にだけ残す（姓・名のように1つの見出しの下に並べる場合）。
@@ -14,15 +12,8 @@
     エラーは $errors から name で拾う。パスワードは再表示しない（type が password のときは value を出さない）。
     old() の値は、配列など文字列にできないもの（改変した送信）のときは表示しない。
 --}}
-@use('App\Support\OldInput')
-@php
-    $oldValue = OldInput::scalar($name, $value);
-    $isPassword = $type === 'password';
-    [$borderClass, $outlineClass, $toggleClass] = $variant === 'neutral'
-        ? ['border-line-strong', 'focus-visible:outline-ink', 'text-muted']
-        : ['border-primary-dark', 'focus-visible:outline-primary-dark', 'text-primary-text'];
-    $describedIds = trim(($describedby ?? '').' '.($errors->has($name) ? $name.'-error' : ''));
-@endphp
+@php($hasError = $errors->has($name))
+@php($describedBy = $describedIds($hasError))
 <div {{ $attributes->merge(['class' => 'flex flex-col gap-2 lg:gap-1.5']) }}>
     @if (isset($labelExtra) && $labelExtra->isNotEmpty())
         <div class="flex flex-wrap items-baseline gap-x-[15px] gap-y-1">
@@ -45,9 +36,9 @@
         <input
             @class([
                 'h-11 w-full rounded-[10px] border',
-                $borderClass,
+                $borderClass(),
                 'bg-white px-4 text-base placeholder:text-line-strong focus-visible:outline-2 focus-visible:outline-offset-2',
-                $outlineClass,
+                $outlineClass(),
                 'lg:h-10 lg:px-5',
                 'pr-16 lg:pr-16' => $isPassword,
             ])
@@ -55,22 +46,22 @@
             name="{{ $name }}"
             type="{{ $type }}"
             @if ($isPassword) x-ref="input" x-bind:type="shown ? 'text' : 'password'" @endif
-            @if (! $isPassword) value="{{ $oldValue }}" @endif
+            @if (! $isPassword) value="{{ $oldValue() }}" @endif
             placeholder="{{ $placeholder }}"
             autocomplete="{{ $autocomplete }}"
             @if ($inputmode !== null) inputmode="{{ $inputmode }}" @endif
             @if ($maxlength !== null) maxlength="{{ $maxlength }}" @endif
-            @if ($errors->has($name)) aria-invalid="true" @endif
-            @if ($describedIds !== '') aria-describedby="{{ $describedIds }}" @endif
+            @if ($hasError) aria-invalid="true" @endif
+            @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         />
         @if ($isPassword)
             {{-- 文言（表示／非表示）で状態を伝えるため aria-pressed は付けない（文言と押下状態が二重になり、読み上げで分かりにくくなる） --}}
             <button
                 @class([
                     'absolute inset-y-0 right-0 flex w-16 items-center justify-center rounded-r-[10px] text-base whitespace-nowrap',
-                    $toggleClass,
+                    $toggleClass(),
                     'focus-visible:outline-2 focus-visible:-outline-offset-2',
-                    $outlineClass,
+                    $outlineClass(),
                 ])
                 type="button"
                 x-cloak

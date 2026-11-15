@@ -1,4 +1,5 @@
 @extends('layouts.admin.app')
+@use('App\Support\AdminListStyle')
 
 @section('page-title', 'お問い合わせ一覧 | 管理画面 | Shioya Farm')
 
@@ -12,10 +13,8 @@
     「返信」のリンク先は admin.mail.inquiry（/admin/mail/inquiry/{お問い合わせID}。メール作成ページ。来た一覧の検索条件・ページに戻るため、リンクにクエリは付けない）。
 --}}
 @php
-    $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
     $dateValue = \App\Support\SearchCondition::restoreDate($conditions, $errors->has('date'));
     $addressedValue = \App\Support\SearchCondition::restore($conditions, 'addressed');
-    $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
 @endphp
 
 @section('content')
@@ -71,21 +70,21 @@
                             @endphp
                             {{-- 対応済みの行は地が admin-shipped（白と灰色の交互より優先）。文字色は変えない --}}
                             <x-admin-check-row :checked="$inquiry->addressed">
-                                <td class="col-start-2 row-start-1 {{ $cellClass }} lg:text-center">
+                                <td class="col-start-2 row-start-1 {{ AdminListStyle::CELL }} lg:text-center">
                                     <x-admin-check-box :id="$inquiry->id" :checked="$inquiry->addressed" :label="$inquiry->full_name.'（'.$date.'）のお問い合わせの対応済み'" text="対応済" />
                                 </td>
-                                <td class="col-start-1 row-start-1 self-center text-base {{ $cellClass }}">
+                                <td class="col-start-1 row-start-1 self-center text-base {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">問い合わせ日</span>{{ $date }}
                                 </td>
-                                <td class="col-span-2 col-start-1 row-start-2 min-w-0 text-base break-words {{ $cellClass }}">
+                                <td class="col-span-2 col-start-1 row-start-2 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">氏名</span>{{ $inquiry->full_name }}
                                 </td>
-                                <td class="col-start-1 row-start-3 self-start {{ $cellClass }}">
+                                <td class="col-start-1 row-start-3 self-start {{ AdminListStyle::CELL }}">
                                     <x-admin-detail-button :label="$inquiry->full_name.'のお問い合わせの詳細を見る'" event="open-inquiry-detail" :id="$inquiry->id" />
                                 </td>
-                                <td class="col-start-2 row-start-3 self-start lg:text-right {{ $cellClass }}">
+                                <td class="col-start-2 row-start-3 self-start lg:text-right {{ AdminListStyle::CELL }}">
                                     <a
-                                        class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ $focusClass }}"
+                                        class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ AdminListStyle::FOCUS }}"
                                         href="{{ route('admin.mail.inquiry', ['inquiry_id' => $inquiry->id]) }}"
                                         aria-label="{{ $inquiry->full_name }}に返信"
                                     >返信</a>

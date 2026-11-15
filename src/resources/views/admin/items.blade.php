@@ -1,4 +1,5 @@
 @extends('layouts.admin.app')
+@use('App\Support\AdminListStyle')
 @use('App\Support\ItemLabel')
 
 @section('page-title', '掲載商品一覧 | 管理画面 | Shioya Farm')
@@ -12,13 +13,6 @@
     「削除」は確認のモーダルを開き（1行目は「{商品名} {重さ}kg を削除します。よろしいですか？」。商品名は Alpine の x-text で入れるため、HTMLの記号は文字のまま出る）、確認の「削除する」で DELETE /admin/items/delete へ送る（ページを移る）。確認の状態は Alpine（Livewire 同梱）が持ち、確認の中は x-trap でフォーカスを閉じ込める。
     削除・登録・修正に成功したら一覧に戻り、表の上に緑の文字（flash の list_status）。削除・修正する商品が削除済み・存在しないときは、赤字（$errors）で案内する。
 --}}
-@php
-    $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
-    $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
-    // 「修正」「削除」。SPは「詳細」と同じ枠線つきのボタン（高さ44px）、PC（lg以上）は下線つきの文字
-    $actionClass = 'inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-[10px] border border-line-strong bg-white px-2 text-base hover:no-underline focus-visible:no-underline lg:w-auto lg:min-w-16 lg:border-0 lg:bg-transparent lg:px-0 lg:underline '.$focusClass;
-@endphp
-
 @section('content')
     <div class="flex flex-col items-center">
         <h1 class="text-center text-[28px] font-normal text-accent-hover lg:text-[32px]">掲載商品一覧</h1>
@@ -67,29 +61,29 @@
                         @foreach ($items as $item)
                             @php($label = ItemLabel::of($item->name, $item->weight))
                             <tr class="grid grid-cols-3 gap-x-2 gap-y-1 rounded-[10px] border border-line bg-white px-4 py-3 lg:table-row lg:h-[45px] lg:rounded-none lg:border-0 lg:p-0 lg:even:bg-admin-bar">
-                                <td class="col-span-3 min-w-0 text-base break-words {{ $cellClass }}">
+                                <td class="col-span-3 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">商品名</span>{{ $item->name }}
                                 </td>
-                                <td class="col-span-3 text-base {{ $cellClass }}">
+                                <td class="col-span-3 text-base {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">商品重量（kg）</span>{{ $item->weight }}
                                 </td>
-                                <td class="col-span-3 text-base {{ $cellClass }}">
+                                <td class="col-span-3 text-base {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">商品金額（円・税込）</span>{{ number_format($item->price) }}
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <x-admin-detail-button class="w-full lg:w-auto" :label="$label.'の詳細を見る'" event="open-item-detail" :id="$item->id" />
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <a
-                                        class="{{ $actionClass }} text-mail-link"
+                                        class="{{ AdminListStyle::ACTION }} text-mail-link"
                                         href="{{ route('admin.items.edit', $item->id) }}"
                                         aria-label="{{ $label }}を修正"
                                     >修正</a>
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <button
                                         type="button"
-                                        class="{{ $actionClass }} text-delete"
+                                        class="{{ AdminListStyle::ACTION }} text-delete"
                                         aria-haspopup="dialog"
                                         aria-label="{{ $label }}を削除"
                                         x-on:click="deleting = false; deleteId = {{ $item->id }}; deleteLabel = @js($label); confirming = true"

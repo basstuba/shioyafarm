@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Responses\CheckoutResponder;
 use App\Services\PurchaseService;
+use App\Support\BankTransferPage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -90,7 +91,7 @@ class PurchaseController extends Controller
 
         Log::debug('PurchaseController bankTransfer end');
 
-        return view('shop.bank_transfer', ['order' => $order, 'bankTransfer' => $order->bankTransfer]);
+        return view('shop.bank_transfer', BankTransferPage::purchase($order));
     }
 
     /**

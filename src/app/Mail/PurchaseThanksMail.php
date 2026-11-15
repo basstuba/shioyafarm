@@ -26,7 +26,7 @@ class PurchaseThanksMail extends ThanksMail
     #[Override]
     protected function subjectLine(): string
     {
-        return "【しおや農園】ご注文ありがとうございます（注文番号：{$this->purchase->id}）";
+        return self::SUBJECT_PREFIX."ご注文ありがとうございます（注文番号：{$this->purchase->id}）";
     }
 
     /**
