@@ -127,7 +127,7 @@ class PurchasePageTest extends TestCase
             ->get(route('shop.checkout.index', $carrot))
             ->assertOk()
             ->assertSee('人参 2kg')
-            ->assertDontSee('玉ねぎ')
+            ->assertDontSee('玉ねぎ 5kg')
             ->assertSeeInOrder(['小計', '418円', '送料', '940円', '合計', '1,358円']);
     }
 

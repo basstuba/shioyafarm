@@ -129,7 +129,7 @@ class BankTransferPageTest extends TestCase
             ->assertSee('北海道札幌市中央区1-1-1')
             ->assertSee('data-testid="bank-transfer-instructions"', false)
             ->assertDontSee('代引手数料')
-            ->assertSee('下記の口座へお振込みください。お振込みの確認後、3~5営業日以内に発送いたします。')
+            ->assertSee('下記の口座へお振込みください。お振込みの確認後、3〜5営業日以内に発送いたします。')
             ->assertSee('action="'.route('shop.checkout.bank-transfer.cancel').'"', false)
             ->assertSee('戻る')
             ->assertSee('振込み')

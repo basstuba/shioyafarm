@@ -1,7 +1,7 @@
 {
-    "name": "laravel/laravel",
+    "name": "portfolio/shioyafarm",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "しおや農園：小規模な家族農家の直販ECサイト（ポートフォリオ）",
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {

@@ -13,7 +13,10 @@ use App\Services\AdminTwoFactorStore;
 use App\Services\AreaService;
 use App\Support\IntendedUrl;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Foundation\CachesRoutes;
 use Illuminate\Http\Request;
+use Illuminate\Routing\RouteCollection;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -28,6 +31,11 @@ use Laravel\Fortify\Http\Requests\SendPasswordResetLinkRequest as FortifySendPas
 
 class FortifyServiceProvider extends ServiceProvider
 {
+    /**
+     * 使わないFortifyのルートの名前（パスワードの確認。マイページ・管理画面では使わない）
+     */
+    private const UNUSED_ROUTES = ['password.confirm', 'password.confirm.store', 'password.confirmation'];
+
     /**
      * Register any application services.
      */
@@ -52,6 +60,8 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->removeUnusedRoutes();
+
         // ログイン・会員登録の後は、ページを開く前に見ていたページへ戻す
         Fortify::loginView(function (Request $request) {
             IntendedUrl::rememberPrevious($request);
@@ -141,6 +151,31 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+    }
+
+    /**
+     * Fortifyが登録するルートのうち、使わないパスワード確認の3本を取り除く（取り除くと、存在しないURLと同じく404になる）。
+     * Fortifyのルートは標準どおり登録させ（config/fortify.php の features・views・prefix・domain も効く）、登録のあとで名前を指定して外す。
+     * route:cache では、外した状態で保存される（キャッシュ済みのときは何もしない）。
+     */
+    private function removeUnusedRoutes(): void
+    {
+        $this->app->booted(function () {
+            if ($this->app instanceof CachesRoutes && $this->app->routesAreCached()) {
+                return;
+            }
+
+            $router = $this->app->make(Router::class);
+            $kept = new RouteCollection;
+
+            foreach ($router->getRoutes()->getRoutes() as $route) {
+                if (! in_array($route->getName(), self::UNUSED_ROUTES, true)) {
+                    $kept->add($route);
+                }
+            }
+
+            $router->setRoutes($kept);
         });
     }
 

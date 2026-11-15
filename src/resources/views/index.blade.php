@@ -34,7 +34,7 @@
                     “誰が作ったか”まで、<br class="md:hidden">おいしい理由になる。
                 </h1>
                 <p class="text-base leading-normal md:text-2xl xl:text-[40px]">
-                    ー野菜のことを誰より知る人から、<br class="md:hidden">まっすぐあなたへ。
+                    ―野菜のことを誰より知る人から、<br class="md:hidden">まっすぐあなたへ。
                 </p>
             </div>
         </section>
@@ -88,11 +88,11 @@
             <h2 class="mb-8 text-center font-maru text-[32px] font-medium text-accent md:mb-[90px] md:text-5xl">おすすめ商品</h2>
             <ul class="mx-auto grid max-w-[1260px] gap-6 md:grid-cols-3 xl:gap-30">
                 @foreach ($recommendItems as $item)
-                    <li class="flex flex-col bg-white text-center md:h-[460px]">
+                    <li class="flex flex-col bg-white text-center md:min-h-[460px]">
                         <x-item-image :item="$item" />
                         <div class="flex flex-1 flex-col items-center gap-3 px-5 pt-5 pb-6 md:gap-0 md:px-6 md:pt-[15px] md:pb-[30px]">
-                            <h3 class="text-xl md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</h3>
-                            <p class="text-base leading-normal md:mt-7 md:text-xl">{{ $item->detail }}</p>
+                            <h3 class="line-clamp-2 w-full text-xl [overflow-wrap:anywhere] md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</h3>
+                            <p class="line-clamp-3 w-full text-base leading-normal [overflow-wrap:anywhere] md:mt-7 md:text-xl">{{ $item->detail }}</p>
                             <p class="text-lg md:mt-auto md:text-xl">{{ number_format($item->price) }}円(税込)</p>
                         </div>
                     </li>

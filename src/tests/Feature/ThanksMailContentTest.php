@@ -194,7 +194,7 @@ class ThanksMailContentTest extends TestCase
         }
 
         foreach (['assertDontSeeInHtml', 'assertDontSeeInText'] as $dontSee) {
-            foreach (['代引手数料', '■ お振込先', '残高', '9月より'] as $unexpected) {
+            foreach (['代引手数料', '■ お振込先', '残高', '9月中に発送'] as $unexpected) {
                 $mail->{$dontSee}($unexpected, false);
             }
         }
@@ -329,7 +329,7 @@ class ThanksMailContentTest extends TestCase
                 '商品小計　　¥1,450',
                 '送料　　　　¥1,530',
                 '合計　　　　¥2,980',
-                '商品は9月より、準備が整い次第順次発送いたします。',
+                '商品は9月中に発送いたします。',
                 '■ お届け先',
                 '塩谷花子 様',
                 '北海道札幌市中央区1-1-1',

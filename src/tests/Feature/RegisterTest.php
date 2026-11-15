@@ -76,7 +76,7 @@ class RegisterTest extends TestCase
         }
         $response->assertSee('action="'.route('register.store').'"', false);
         $response->assertSee('登録する');
-        $response->assertSee('&copy;Shioya farm', false);
+        $response->assertSee('&copy;Shioya Farm', false);
         foreach (['例：山田', '例：太郎', '例：適当市適当町３４－５６', '例：09012345678', '例：sample@example.com', '例：demo12345'] as $placeholder) {
             $response->assertSee('placeholder="'.$placeholder.'"', false);
         }

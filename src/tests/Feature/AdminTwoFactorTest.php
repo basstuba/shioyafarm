@@ -303,7 +303,7 @@ class AdminTwoFactorTest extends TestCase
         $response->assertSee('form="two-factor-resend"', false);
         $response->assertSee('id="two-factor-resend" action="'.route('admin.two-factor.resend').'"', false);
         $response->assertSee('href="'.route('admin.login').'">ログインへ戻る</a>', false);
-        $response->assertSee('&copy;Shioya farm', false);
+        $response->assertSee('&copy;Shioya Farm', false);
     }
 
     /**

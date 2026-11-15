@@ -194,7 +194,7 @@ class ReservationPageTest extends TestCase
             ->withSession(['cart' => [$carrot->id => 1]])
             ->get(route('shop.reservation.index', $item))
             ->assertOk()
-            ->assertDontSee('人参');
+            ->assertDontSee('人参 2kg');
 
         $this->assertSame([$carrot->id => 1], session('cart'));
     }

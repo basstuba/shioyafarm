@@ -2,8 +2,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta property='og:type' content='website'>
 <meta property='og:title' content='Shioya Farm'>
-<meta property='og:description' content='TAKAYOSHI SHIOYAの個人開発ウェブサイトです。'>
-<meta name="description" content="TAKAYOSHI SHIOYAの個人開発ウェブサイトです。" />
+<meta property='og:description' content='北海道の小さな家族農家『しおや農園』の直販サイトです。じゃがいも・玉ねぎ・人参を産地から直接お届けします。（ポートフォリオ用の架空のサイトです）'>
+<meta name="description" content="北海道の小さな家族農家『しおや農園』の直販サイトです。じゃがいも・玉ねぎ・人参を産地から直接お届けします。（ポートフォリオ用の架空のサイトです）" />
 <title>@yield('page-title', 'Shioya Farm')</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -15,12 +15,10 @@ RUN apt-get update \
     libwebp-dev \
     libpng-dev \
     unzip \
-    libmagickwand-dev --no-install-recommends \
+    --no-install-recommends \
     && docker-php-ext-install pdo_mysql zip bcmath exif \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) gd \
-    && pecl install imagick \
-    && docker-php-ext-enable imagick \
     && pecl install pcov \
     && docker-php-ext-enable pcov \
     && apt-get clean \

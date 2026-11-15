@@ -32,6 +32,14 @@
             ],
         ],
         [
+            'title' => '保存方法',
+            'lines' => [
+                '冷暗所で保存してください。',
+                '生鮮品のため、到着後はお早めにお召し上がりください。',
+                '人参は冷蔵での保存をおすすめします。',
+            ],
+        ],
+        [
             'title' => '返品について',
             'lines' => [
                 '商品の特性上、お客様のご都合による返品はお受けできません。',
@@ -71,13 +79,13 @@
             <div class="mx-auto flex max-w-[1260px] flex-col gap-12 md:gap-[130px]">
                 @forelse ($itemGroups as $name => $items)
                     <div class="flex flex-col gap-6 md:gap-[70px]">
-                        <h3 class="flex h-16 font-maru items-center justify-center border border-primary bg-white text-2xl text-primary md:h-25 md:text-[32px]">{{ $name }}</h3>
+                        <h3 class="flex min-h-16 font-maru items-center justify-center border border-primary bg-white px-4 py-2 text-2xl text-primary md:min-h-25 md:text-[32px]"><span class="line-clamp-2 min-w-0 text-center [overflow-wrap:anywhere]">{{ $name }}</span></h3>
                         <ul class="flex flex-wrap justify-center gap-x-8 gap-y-6 md:gap-y-10 xl:gap-x-30">
                             @foreach ($items as $item)
-                                <li class="flex w-full flex-col md:max-w-[340px] bg-white text-center md:h-[360px] md:w-[calc((100%-2rem)/2)] lg:w-[calc((100%-4rem)/3)] xl:w-[calc((100%-15rem)/3)]">
+                                <li class="flex w-full flex-col md:max-w-[340px] bg-white text-center md:min-h-[360px] md:w-[calc((100%-2rem)/2)] lg:w-[calc((100%-4rem)/3)] xl:w-[calc((100%-15rem)/3)]">
                                     <x-item-image :item="$item" />
                                     <div class="flex flex-1 flex-col items-center gap-3 px-5 pt-5 pb-6 md:gap-3.5 md:px-4 md:pt-4 md:pb-5">
-                                        <h4 class="text-xl md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</h4>
+                                        <h4 class="line-clamp-2 w-full text-xl [overflow-wrap:anywhere] md:text-2xl">{{ $item->name }} {{ $item->weight }}kg</h4>
                                         <p class="text-lg md:text-xl">{{ number_format($item->price) }}円(税込)</p>
                                         <x-outline-button class="md:mt-auto" :href="route('shop.items.show', $item)" aria-label="{{ $item->name }} {{ $item->weight }}kgの詳細を見る">詳しく見る</x-outline-button>
                                     </div>
@@ -91,11 +99,11 @@
             </div>
         </section>
 
-        {{-- ご案内（各項目を独立して開閉できる） --}}
+        {{-- ご案内（各項目を独立して開閉できる）。PCは6列に各項目2列ぶんで、1行に3項目。最終行が3項目に満たないときは中央に寄せる（5項目なら3＋2） --}}
         <section class="px-4 pb-15 md:pb-24">
-            <div class="mx-auto grid max-w-[1260px] gap-3 md:grid-cols-2 md:items-start lg:grid-cols-4 lg:gap-x-[72px]">
+            <div class="mx-auto grid max-w-[1260px] gap-3 md:grid-cols-2 md:items-start lg:grid-cols-6 lg:gap-x-12 lg:gap-y-10">
                 @foreach ($guides as $guide)
-                    <details class="group">
+                    <details @class(['group', 'lg:col-span-2', \App\Support\LastRowCenter::startClass($loop->iteration, $loop->count)])>
                         <summary class="flex h-13 font-maru cursor-pointer list-none items-center justify-between rounded-[10px] border border-cream-200 bg-white px-4 text-lg transition-[border-color,box-shadow] duration-200 group-open:rounded-b-none hover:border-transparent hover:shadow-card focus-visible:border-transparent focus-visible:shadow-card focus-visible:outline-none md:h-10 md:text-xl [&::-webkit-details-marker]:hidden">
                             {{ $guide['title'] }}
                             <span class="text-xl text-black transition-transform duration-200 group-open:rotate-90 md:text-2xl" aria-hidden="true">＞</span>

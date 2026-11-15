@@ -137,7 +137,7 @@ class AdminPasswordResetTest extends TestCase
         $response->assertSee('name="email"', false);
         $response->assertSee('action="'.route('admin.password.email').'"', false);
         $response->assertSee('再設定メールを送信');
-        $response->assertSee('&copy;Shioya farm', false);
+        $response->assertSee('&copy;Shioya Farm', false);
         // 管理画面用の背景画像、緑のボタン、グレー系の入力欄
         $response->assertSee('storage/image/tool/admin-login-page-back-image.webp', false);
         $response->assertDontSee('tool/login-page-back-image.webp', false);

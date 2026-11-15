@@ -69,7 +69,7 @@ class AdminLoginTest extends TestCase
         $response->assertSee('placeholder="例：sample@example.com"', false);
         $response->assertSee('placeholder="例：demo12345"', false);
         $response->assertSee('action="'.route('admin.login.store').'"', false);
-        $response->assertSee('&copy;Shioya farm', false);
+        $response->assertSee('&copy;Shioya Farm', false);
         // パスワード欄には表示切り替えが付く
         $response->assertSee('x-on:click="shown = ! shown"', false);
         $response->assertSee('lg:flex-row-reverse', false);
