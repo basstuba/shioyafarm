@@ -151,7 +151,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 
 注文・予約の確定の POST（`shop.checkout.payment`・`shop.reservation.payment`）には、ルートの `->block()` で、同じセッションの同時リクエストを順番に処理する排他をかけている（ロックの有効 `purchase.begin_lock_ttl`＝180秒、待つ時間 `purchase.session_lock_wait`＝15秒。`config/purchase.php`）。後のリクエストが古いセッションを書き戻して、カートの減算や保存待ちの注文を上書きしないようにするため。
 
-待ちきれなかったとき（`LockTimeoutException`）は、`bootstrap/app.php` が、購入の `/payment`（`shop.checkout.payment`）に限り、セッションを使わないレイアウトなしの簡単な案内「ただいまご注文を処理しています。しばらく待ってから、購入ページを開き直してください。」を503で返す。
+待ちきれなかったとき（`LockTimeoutException`）は、`bootstrap/app.php` が、購入の `/payment`（`shop.checkout.payment`）と予約の `/reservation/payment`（`shop.reservation.payment`）に限り（対象のルート名と文言は `config/purchase.php` の `session_locked_routes`）、セッションを使わないレイアウトなしの簡単な案内を503で返す。購入は「ただいまご注文を処理しています。しばらく待ってから、購入ページを開き直してください。」、予約は「ただいまご予約を処理しています。しばらく待ってから、予約ページを開き直してください。」。
 
 このほか、会員ごとの排他ロック（`CheckoutService`。注文確定の `purchase.begin_lock_wait`＝10秒、購入・予約の完了処理の `purchase.complete_lock_wait`）があり、取れなかったときは入力エラー（「処理中」の案内）か、支払い確定処理中の案内ページ（[ページ一覧](03-page-list.md)。503）を返す。
 

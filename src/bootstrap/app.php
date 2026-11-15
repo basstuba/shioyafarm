@@ -47,13 +47,26 @@ return Application::configure(basePath: dirname(__DIR__))
             return redirect()->route('admin.login');
         });
 
-        // 「注文を確定する」の同じセッションの先のリクエストが終わらず、待ちきれなかったとき（セッションの排他。500にしない）。
+        // 「注文を確定する」「予約を確定する」の同じセッションの先のリクエストが終わらず、待ちきれなかったとき（セッションの排他。500にしない）。
+        // 対象と文言（購入・予約で出し分ける）は config('purchase.session_locked_routes')。それ以外のルートは従来どおり
         // セッションを開始する前の例外のため、セッションやログイン状態を使うレイアウトは使わず、簡単な案内だけを返す
         $exceptions->render(function (LockTimeoutException $e, Request $request) {
-            if (! $request->routeIs('shop.checkout.payment')) {
+            $routeName = $request->route()?->getName();
+
+            if ($routeName === null) {
                 return null;
             }
 
-            return response('<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ご注文を処理しています | Shioya Farm</title></head><body><p>ただいまご注文を処理しています。しばらく待ってから、購入ページを開き直してください。</p></body></html>', 503);
+            $wording = config('purchase.session_locked_routes')[$routeName] ?? null;
+
+            if ($wording === null) {
+                return null;
+            }
+
+            return response(sprintf(
+                '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>%1$sを処理しています | Shioya Farm</title></head><body><p>ただいま%1$sを処理しています。しばらく待ってから、%2$sを開き直してください。</p></body></html>',
+                $wording['noun'],
+                $wording['page'],
+            ), 503);
         });
     })->create();

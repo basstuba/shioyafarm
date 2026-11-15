@@ -83,7 +83,7 @@ class PurchaseRequest extends FormRequest
             'delivery_name' => 'required|string|max:255',
             // 正規表現に | を含むため、パイプ区切りの文字列ではなく配列で書く
             'address_id' => ['required', 'string', 'regex:/^(user|delivery)_[0-9]+$/'],
-            'delivery_tell' => 'required|digits_between:10,11|max:15',
+            'delivery_tell' => 'required|digits_between:10,11',
             'payment_method' => ['required', 'string', 'max:25', Rule::in($paymentMethods)],
             'order_token' => 'required|string|max:100',
         ];
@@ -104,7 +104,6 @@ class PurchaseRequest extends FormRequest
             'address_id.regex' => 'お届け先住所が正しくありません',
             'delivery_tell.required' => 'お届け先電話番号を入力してください',
             'delivery_tell.digits_between' => 'お届け先電話番号はハイフンなしの数字のみで10〜11桁で入力してください',
-            'delivery_tell.max' => 'お届け先電話番号は15文字以内で入力してください',
             'payment_method.required' => 'お支払い方法を選択してください',
             'payment_method.in' => 'お支払い方法を選択してください',
             'order_token.required' => CheckoutService::STALE_MESSAGE,

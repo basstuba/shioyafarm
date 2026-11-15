@@ -46,6 +46,26 @@ class ReservationPaymentTest extends TestCase
     }
 
     /**
+     * セッションの排他を待ちきれなかったとき（先のリクエストが終わらず、ルートの block が時間切れになる）は、購入と同じく、500にせず「処理中」の案内（503。文言は予約用）を返し、予約は保存しない
+     */
+    #[Test]
+    public function セッションの排他を待ちきれなければ処理中を案内する(): void
+    {
+        [$user, $item] = $this->scenario();
+        $data = $this->reservationData($user, $item);
+        $lock = $this->holdSessionLock('shop.reservation.payment');
+
+        $this->actingAs($user)->post(route('shop.reservation.payment'), $data)
+            ->assertStatus(503)
+            ->assertSee('<title>ご予約を処理しています | Shioya Farm</title>', false)
+            ->assertSee('ただいまご予約を処理しています。しばらく待ってから、予約ページを開き直してください。')
+            ->assertDontSee('ご注文');
+
+        $lock->release();
+        $this->assertSame(0, Reservation::count());
+    }
+
+    /**
      * Stripe を呼ばないことを保証する（呼ばれたらテスト失敗）
      */
     private function gatewayNeverCalled(): void
