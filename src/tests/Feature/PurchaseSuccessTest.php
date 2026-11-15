@@ -153,8 +153,8 @@ class PurchaseSuccessTest extends TestCase
             ->assertSee('storage/image/tool/thanks-page-photo.webp', false)
             ->assertSee('ご注文ありがとうございました。')
             ->assertSee('心を込めてお届けいたします。')
-            ->assertSee('商品はお支払い確定後3~5営業日以内、')
-            ->assertSee('代金引換の場合はご注文確定後3~5営業日以内に発送いたします。')
+            ->assertSee('商品はお支払い確定後3〜5営業日以内、')
+            ->assertSee('代金引換の場合はご注文確定後3〜5営業日以内に発送いたします。')
             ->assertSee('ホームに戻る')
             ->assertSee('href="'.route('top.index').'"', false)
             ->assertDontSee('ログアウト');

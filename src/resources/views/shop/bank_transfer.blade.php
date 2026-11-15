@@ -11,7 +11,7 @@
         $cancelRoute ??= 'shop.checkout.bank-transfer.cancel';
         $confirmRoute ??= 'shop.checkout.bank-transfer.confirm';
         $orderHeading ??= 'ご注文内容';
-        $shippingNotice ??= '下記の口座へお振込みください。お振込みの確認後、3~5営業日以内に発送いたします。';
+        $shippingNotice ??= '下記の口座へお振込みください。お振込みの確認後、3〜5営業日以内に発送いたします。';
 
         // 金額のカード（livewire/partials/order-summary）には購入ページと同じ OrderSummary を渡す。銀行振込なので代引手数料は 0 円で行は出ない
         $summary = new \App\Services\OrderSummary($order->subtotal, 0, $order->shippingFee, $order->codFee);

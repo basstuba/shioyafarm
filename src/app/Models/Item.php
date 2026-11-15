@@ -30,6 +30,19 @@ class Item extends Model
     ];
 
     /**
+     * 真偽値として扱う項目（おすすめ商品に載せるか・予約限定か）
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'recommend' => 'boolean',
+            'is_reserved_only' => 'boolean',
+        ];
+    }
+
+    /**
      * この商品の予約
      *
      * @return HasMany<Reservation, $this>

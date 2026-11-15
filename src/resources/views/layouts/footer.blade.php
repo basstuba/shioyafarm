@@ -18,7 +18,7 @@
                 </div>
             </dl>
             <div>
-                <span class="text-xs">&copy; Shioya Farm</span>
+                <span class="text-xs">&copy;Shioya Farm</span>
             </div>
         </div>
         <nav>

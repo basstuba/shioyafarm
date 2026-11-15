@@ -43,7 +43,7 @@ class LoginTest extends TestCase
         $response->assertSee('name="password"', false);
         $response->assertSee('type="password"', false);
         $response->assertSee('会員登録');
-        $response->assertSee('&copy;Shioya farm', false);
+        $response->assertSee('&copy;Shioya Farm', false);
     }
 
     /**

@@ -199,4 +199,60 @@ class HomeTest extends TestCase
         $response->assertSee('じゃがいも 5kg');
         $response->assertSee('1,450円(税込)');
     }
+
+    /**
+     * おすすめ商品の商品名は2行・紹介文は3行までで省略し、空白のない長い文字も折り返す（高さは最小値だけ決め、行の中でそろう）
+     */
+    #[Test]
+    public function 長い商品名と紹介文はカードの中で省略され折り返す(): void
+    {
+        Item::factory()->create([
+            'name' => str_repeat('Ab1', 85),
+            'weight' => 5,
+            'detail' => str_repeat('Xy9', 100),
+            'recommend' => true,
+        ]);
+
+        $response = $this->get(route('top.index'));
+
+        $response->assertSee('<h3 class="line-clamp-2 w-full text-xl [overflow-wrap:anywhere] md:text-2xl">'.str_repeat('Ab1', 85).' 5kg</h3>', false);
+        $response->assertSee('line-clamp-3 w-full text-base leading-normal [overflow-wrap:anywhere]', false);
+        $response->assertSee('md:min-h-[460px]', false);
+    }
+
+    /**
+     * サブコピーの先頭は長音「ー」ではなくダッシュ「―」（U+2015）
+     */
+    #[Test]
+    public function サブコピーの先頭はダッシュで始まる(): void
+    {
+        $response = $this->get(route('top.index'));
+
+        $response->assertSee("\u{2015}野菜のことを誰より知る人から、", false);
+        $response->assertDontSee('ー野菜のことを誰より知る人から、', false);
+    }
+
+    /**
+     * ページの説明（description・og:description）は、しおや農園のサイトの説明でポートフォリオであることがわかる
+     */
+    #[Test]
+    public function ページの説明はサイトの説明になっている(): void
+    {
+        $description = '北海道の小さな家族農家『しおや農園』の直販サイトです。じゃがいも・玉ねぎ・人参を産地から直接お届けします。（ポートフォリオ用の架空のサイトです）';
+
+        $response = $this->get(route('top.index'));
+
+        $response->assertSee('<meta name="description" content="'.$description.'" />', false);
+        $response->assertSee("<meta property='og:description' content='".$description."'>", false);
+        $response->assertDontSee('TAKAYOSHI SHIOYA');
+    }
+
+    /**
+     * 公開側のフッターの©は、空白なしの「©Shioya Farm」
+     */
+    #[Test]
+    public function フッターの著作権表記は空白なしで表示される(): void
+    {
+        $this->get(route('top.index'))->assertSee('&copy;Shioya Farm', false)->assertDontSee('&copy; Shioya Farm', false);
+    }
 }

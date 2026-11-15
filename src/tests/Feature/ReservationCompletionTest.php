@@ -151,8 +151,8 @@ class ReservationCompletionTest extends TestCase
         $response->assertOk()
             ->assertSee('storage/image/tool/thanks-page-photo.webp', false)
             // SP・タブレットでは見出しの途中に改行が入るため、区切りごとに順番どおり並ぶことを確認する
-            ->assertSeeInOrder(['ご予約ありがとうございます。', 'お届けまで、', 'どうぞ楽しみにお待ちください。', '商品は9月より'])
-            ->assertSee('商品は9月より、準備が整い次第順次発送いたします。')
+            ->assertSeeInOrder(['ご予約ありがとうございます。', 'お届けまで、', 'どうぞ楽しみにお待ちください。', '商品は9月中に'])
+            ->assertSee('商品は9月中に発送いたします。')
             // 見出しは予約サンクス用の濃い橙（ユーザーと決めた色）
             ->assertSee('text-reserve-text', false)
             ->assertSee('ホームに戻る')
@@ -343,7 +343,7 @@ class ReservationCompletionTest extends TestCase
             ->assertSee('ご予約内容')
             ->assertDontSee('ご注文内容')
             ->assertSee('北の恵みセット 10kg × 1個')
-            ->assertSee('商品は9月より、準備が整い次第順次発送いたします。')
+            ->assertSee('商品は9月中に発送いたします。')
             ->assertSee('action="'.route('shop.reservation.bank-transfer.cancel').'"', false)
             ->assertSee('action="'.route('shop.reservation.bank-transfer.confirm').'"', false)
             ->assertSee('戻る')
@@ -395,7 +395,7 @@ class ReservationCompletionTest extends TestCase
             ->assertOk()
             ->assertSee('action="'.route('shop.checkout.bank-transfer.cancel').'"', false)
             ->assertSee('ご注文内容')
-            ->assertSee('3~5営業日以内に発送いたします');
+            ->assertSee('3〜5営業日以内に発送いたします');
 
         // 予約の保存待ちは無いので、予約の案内ページはトップへ
         $this->get(route('shop.reservation.bank-transfer'))->assertRedirect(route('top.index'));

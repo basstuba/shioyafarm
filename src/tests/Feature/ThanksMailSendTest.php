@@ -333,7 +333,7 @@ class ThanksMailSendTest extends TestCase
                 $mail->{$see}('商品小計　　¥1,450', false);
                 $mail->{$see}('送料　　　　¥1,530', false);
                 $mail->{$see}('合計　　　　¥2,980', false);
-                $mail->{$see}('商品は9月より、準備が整い次第順次発送いたします。', false);
+                $mail->{$see}('商品は9月中に発送いたします。', false);
                 $mail->{$see}('山田花子 様', false);
             }
             $mail->assertDontSeeInText('■ お振込先');

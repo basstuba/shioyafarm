@@ -154,7 +154,7 @@ class ReservationController extends Controller
             'cancelRoute' => 'shop.reservation.bank-transfer.cancel',
             'confirmRoute' => 'shop.reservation.bank-transfer.confirm',
             'orderHeading' => 'ご予約内容',
-            'shippingNotice' => '下記の口座へお振込みください。お振込みの確認後、商品は9月より、準備が整い次第順次発送いたします。',
+            'shippingNotice' => '下記の口座へお振込みください。お振込みの確認後、商品は9月中に発送いたします。',
         ]);
     }
 

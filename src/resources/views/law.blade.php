@@ -44,7 +44,10 @@
             <hr class="border-line">
             <section class="my-8 text-base">
                 <dt class="mb-4 font-extrabold">その他必要になる費用</dt>
-                <dd>別途送料がかかります。詳しくは送料案内ページを参照してください。</dd>
+                <dd class="flex flex-col gap-4">
+                    <p>別途送料がかかります。詳しくは送料案内ページを参照してください。</p>
+                    <p>代金引換の場合は、別途手数料{{ number_format(config('shipping.cod_fee')) }}円（税込）がかかります。</p>
+                </dd>
             </section>
             <hr class="border-line">
             <section class="my-8 text-base">
@@ -52,7 +55,7 @@
                 <dd class="flex flex-col gap-4">
                     <p>銀行振込</p>
                     <p>クレジットカード決済</p>
-                    <p>代金引換</p>
+                    <p>代金引換（手数料{{ number_format(config('shipping.cod_fee')) }}円・税込）</p>
                     <p>※銀行振込とクレジットカード決済につきましては、お支払いは前払いとなります。</p>
                 </dd>
             </section>
@@ -60,8 +63,8 @@
             <section class="my-8 text-base">
                 <dt class="mb-4 font-extrabold">商品のお届け時期</dt>
                 <dd class="flex flex-col gap-4">
-                    <p>お支払い確定後3~5営業日以内に発送いたします。</p>
-                    <p>代金引換はご注文確定後3~5営業日以内に発送いたします。</p>
+                    <p>お支払い確定後3〜5営業日以内に発送いたします。</p>
+                    <p>代金引換はご注文確定後3〜5営業日以内に発送いたします。</p>
                 </dd>
             </section>
             <hr class="border-line">

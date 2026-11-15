@@ -125,7 +125,7 @@ class PasswordResetTest extends TestCase
         $response->assertSee('name="email"', false);
         $response->assertSee('再設定メールを送信');
         $response->assertSee('href="'.route('login').'"', false);
-        $response->assertSee('&copy;Shioya farm', false);
+        $response->assertSee('&copy;Shioya Farm', false);
         $response->assertDontSee('お知らせ');
         $response->assertDontSee(self::SENT_MESSAGE);
     }

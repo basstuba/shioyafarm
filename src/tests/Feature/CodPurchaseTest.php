@@ -96,7 +96,7 @@ class CodPurchaseTest extends TestCase
             ->assertOk()
             ->assertViewIs('shop.purchase_thanks')
             ->assertSee('ご注文ありがとうございました。')
-            ->assertSee('代金引換の場合はご注文確定後3~5営業日以内に発送いたします。');
+            ->assertSee('代金引換の場合はご注文確定後3〜5営業日以内に発送いたします。');
         $this->get(route('shop.checkout.thanks'))->assertRedirect(route('top.index'));
         $this->get(route('shop.checkout.success'))->assertRedirect(route('top.index'));
 

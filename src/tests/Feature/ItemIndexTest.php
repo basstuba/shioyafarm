@@ -179,14 +179,31 @@ class ItemIndexTest extends TestCase
     }
 
     /**
-     * ご案内の4項目と文章を表示し、各項目は独立して開閉できる（details要素）
+     * ご案内はPCで1行に3項目。5項目のときは最終行（4つ目から）を2列目から置いて中央に寄せる
      */
     #[Test]
-    public function ご案内の4項目と文章を表示する(): void
+    public function ご案内の最終行は項目数に応じて中央に寄る(): void
+    {
+        $html = $this->get(route('shop.items.index'))->getContent();
+
+        preg_match_all('/<details class="([^"]*)"/', $html, $matches);
+
+        $this->assertSame(
+            ['group lg:col-span-2', 'group lg:col-span-2', 'group lg:col-span-2', 'group lg:col-span-2 lg:col-start-2', 'group lg:col-span-2'],
+            array_map('trim', $matches[1]),
+        );
+    }
+
+    /**
+     * ご案内の5項目と文章を表示し、各項目は独立して開閉できる（details要素）
+     */
+    #[Test]
+    public function ご案内の5項目と文章を表示する(): void
     {
         $response = $this->get(route('shop.items.index'));
 
-        $response->assertSeeInOrder(['送料について', '支払方法について', 'お届けについて', '返品について']);
+        $response->assertSeeInOrder(['送料について', '支払方法について', 'お届けについて', '保存方法', '返品について']);
+        $response->assertSeeInOrder(['冷暗所で保存してください。', '生鮮品のため、到着後はお早めにお召し上がりください。', '人参は冷蔵での保存をおすすめします。', '商品の特性上、お客様のご都合による返品はお受けできません。']);
         $response->assertSee('送料は別途ご負担となります。');
         $response->assertSee('送料は提携運送会社の価格に準じます。');
         $response->assertSee('クレジットカード・銀行振込・代金引換をご利用いただけます。');
@@ -198,7 +215,7 @@ class ItemIndexTest extends TestCase
         $response->assertSee('発送元：北海道架空郡架空町567-34');
         $response->assertSee('商品の特性上、お客様のご都合による返品はお受けできません。');
         $response->assertSee('万が一不良品が届いた場合は、商品の到着後3日以内にご連絡ください。交換または返金にて対応いたします。');
-        $this->assertSame(4, substr_count($response->getContent(), '<details'));
+        $this->assertSame(5, substr_count($response->getContent(), '<details'));
         // 初期表示はすべて閉じている
         $response->assertDontSee('<details open', false);
     }
@@ -250,6 +267,22 @@ class ItemIndexTest extends TestCase
     {
         $content = $this->get(route('shop.items.index'))->getContent();
 
-        $this->assertSame(4, substr_count($content, 'flex flex-col gap-2 rounded-b-[10px]'));
+        $this->assertSame(5, substr_count($content, 'flex flex-col gap-2 rounded-b-[10px]'));
+    }
+
+    /**
+     * 商品カードの商品名は2行までで省略し、空白のない長い文字も折り返す。カードは高さを固定せず、行の中で高さがそろう
+     */
+    #[Test]
+    public function 長い商品名のカードは2行で省略し折り返す(): void
+    {
+        Item::factory()->create(['name' => str_repeat('Ab1', 85), 'weight' => 5, 'is_reserved_only' => false]);
+
+        $response = $this->get(route('shop.items.index'));
+
+        $response->assertSee('<h4 class="line-clamp-2 w-full text-xl [overflow-wrap:anywhere] md:text-2xl">'.str_repeat('Ab1', 85).' 5kg</h4>', false);
+        $response->assertSee('md:min-h-[360px]', false);
+        // 品目の見出し（長い商品名がそのまま入る）も折り返す
+        $response->assertSee('<span class="line-clamp-2 min-w-0 text-center [overflow-wrap:anywhere]">'.str_repeat('Ab1', 85).'</span>', false);
     }
 }

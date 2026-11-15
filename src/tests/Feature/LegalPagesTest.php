@@ -45,4 +45,23 @@ class LegalPagesTest extends TestCase
             ->assertOk()
             ->assertSee('<hr class="my-10 border-line-strong md:my-20">', false);
     }
+
+    /**
+     * 特商法に、代金引換の手数料（送料の設定から出した金額・税込）と、発送の目安（3〜5営業日）が書かれる
+     */
+    #[Test]
+    public function 特商法に代金引換の手数料と発送の目安が載る(): void
+    {
+        $fee = number_format(config('shipping.cod_fee'));
+
+        $response = $this->get(route('info.commercial-transaction'))->assertOk();
+
+        $this->assertSame('330', $fee);
+        $response->assertSee('別途送料がかかります。詳しくは送料案内ページを参照してください。');
+        $response->assertSeeInOrder(['その他必要になる費用', '代金引換の場合は、別途手数料'.$fee.'円（税込）がかかります。', 'お支払い方法']);
+        $response->assertSee('代金引換（手数料'.$fee.'円・税込）');
+        $response->assertSee('お支払い確定後3〜5営業日以内に発送いたします。');
+        $response->assertSee('代金引換はご注文確定後3〜5営業日以内に発送いたします。');
+        $response->assertDontSee('3~5営業日');
+    }
 }

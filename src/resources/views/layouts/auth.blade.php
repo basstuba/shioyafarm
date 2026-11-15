@@ -35,7 +35,7 @@
                 @yield('guide')
             </div>
             <footer class="order-5 mt-auto py-4 text-center text-sm lg:order-none lg:mt-0 lg:pt-0 lg:pb-8 lg:text-base">
-                <small>&copy;Shioya farm</small>
+                <small>&copy;Shioya Farm</small>
             </footer>
         </aside>
     </div>
