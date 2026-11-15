@@ -6,27 +6,6 @@
 @section('body-class', 'bg-cream-100')
 
 @section('content')
-    @php
-        // 購入と予約で共通のページ。予約のときは、コントローラーが「戻る」「振込み」の送信先と文言を渡す
-        $cancelRoute ??= 'shop.checkout.bank-transfer.cancel';
-        $confirmRoute ??= 'shop.checkout.bank-transfer.confirm';
-        $orderHeading ??= 'ご注文内容';
-        $shippingNotice ??= '下記の口座へお振込みください。お振込みの確認後、3〜5営業日以内に発送いたします。';
-
-        // 金額のカード（livewire/partials/order-summary）には購入ページと同じ OrderSummary を渡す。銀行振込なので代引手数料は 0 円で行は出ない
-        $summary = new \App\Services\OrderSummary($order->subtotal, 0, $order->shippingFee, $order->codFee);
-
-        // 振込先の項目（項目名 => [値, dd に付けるクラス]）
-        $bankRows = [
-            '銀行名' => [$bankTransfer->bankName, 'text-xl break-words'],
-            '支店名' => [$bankTransfer->branchName, 'text-xl break-words'],
-            '口座種別' => [$bankTransfer->accountTypeLabel(), 'text-xl'],
-            '口座番号' => [$bankTransfer->accountNumber, 'text-xl'],
-            '口座名義' => [$bankTransfer->accountHolderName, 'text-xl break-words'],
-            '振込金額' => [number_format($bankTransfer->amount).'円', 'font-maru text-2xl text-primary-text'],
-        ];
-    @endphp
-
     {{-- 購入ページ（purchase.blade.php・livewire/purchase-form.blade.php）と同じ作り：白い大きなカードの中に、白い小さなカードを並べる --}}
     <div class="px-4 pt-header pb-12 text-ink md:pb-[67px]">
         <div class="mx-auto mt-6 max-w-325 md:mt-[69px]">
@@ -38,7 +17,7 @@
 
                     {{-- 振込先。PCは「項目名｜値」の2列、SPは項目名の下に値 --}}
                     <dl class="mt-6 rounded-[10px] bg-white px-4 py-2 shadow-button md:mt-8 md:px-6" data-testid="bank-transfer-instructions">
-                        @foreach ($bankRows as $label => [$value, $valueClass])
+                        @foreach ($rows as $label => [$value, $valueClass])
                             <div @class(['flex flex-col gap-1 py-3 md:grid md:grid-cols-[160px_1fr] md:items-baseline md:gap-6', 'border-b border-line' => ! $loop->last])>
                                 <dt class="text-base text-muted">{{ $label }}</dt>
                                 <dd class="{{ $valueClass }}">{{ $value }}</dd>

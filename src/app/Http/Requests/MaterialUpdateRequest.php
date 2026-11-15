@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesRecordId;
 use App\Models\Material;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Override;
@@ -18,6 +18,8 @@ use Override;
  */
 class MaterialUpdateRequest extends MaterialRequest
 {
+    use ValidatesRecordId;
+
     /**
      * 自分自身の資材名は重複とみなさない
      */
@@ -44,11 +46,7 @@ class MaterialUpdateRequest extends MaterialRequest
     #[Override]
     protected function failedValidation(Validator $validator): void
     {
-        if ($validator->errors()->has('id')) {
-            throw new HttpResponseException(
-                redirect()->route('admin.materials.index')->withErrors(['material' => Material::NOT_FOUND_MESSAGE])
-            );
-        }
+        $this->redirectToIndexIfIdInvalid($validator, 'admin.materials.index', 'material', Material::NOT_FOUND_MESSAGE);
 
         parent::failedValidation($validator);
     }

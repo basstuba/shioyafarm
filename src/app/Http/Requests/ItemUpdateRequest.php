@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesRecordId;
 use App\Models\Item;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Override;
 
 /**
@@ -16,13 +16,15 @@ use Override;
  */
 class ItemUpdateRequest extends ItemStoreRequest
 {
+    use ValidatesRecordId;
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     #[Override]
     public function rules(): array
     {
-        return ['id' => ['required', 'integer', 'min:1'], ...parent::rules()];
+        return ['id' => $this->idRules(), ...parent::rules()];
     }
 
     /**
@@ -42,11 +44,7 @@ class ItemUpdateRequest extends ItemStoreRequest
     #[Override]
     protected function failedValidation(Validator $validator): void
     {
-        if ($validator->errors()->has('id')) {
-            throw new HttpResponseException(
-                redirect()->route('admin.items.index')->withErrors(['item' => Item::NOT_FOUND_MESSAGE])
-            );
-        }
+        $this->redirectToIndexIfIdInvalid($validator, 'admin.items.index', 'item', Item::NOT_FOUND_MESSAGE);
 
         parent::failedValidation($validator);
     }

@@ -9,6 +9,7 @@ use App\Services\AdminTwoFactorStore;
 use App\Support\AdminListUrl;
 use App\Support\AdminUserListUrl;
 use App\Support\MailTarget;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
@@ -82,28 +83,66 @@ class ExpiredPageResponder
             return null;
         }
 
+        // forAdmin() で包んだものは、管理者がログインしていなければ（応答の中身より先に）ログインページへ戻す
         return match ($request->route()?->getName()) {
             'login.store' => $this->backWithEmail($request, 'login', self::LOGIN_MESSAGE),
             'admin.login.store' => $this->backWithEmail($request, 'admin.login', self::LOGIN_MESSAGE),
             'admin.two-factor.store' => $this->backFromTwoFactor($request, self::TWO_FACTOR_MESSAGE),
             'admin.two-factor.resend' => $this->backFromTwoFactor($request, self::TWO_FACTOR_RESEND_MESSAGE),
-            'admin.logout' => $this->backFromLogout(),
-            'admin.users.delete' => $this->backFromUserDelete(),
-            'admin.purchase.cancel' => $this->backFromOrderCancel(AdminListType::Purchase),
-            'admin.reservations.cancel' => $this->backFromOrderCancel(AdminListType::Reservation),
-            'admin.mail.send' => $this->backFromMailSend($request),
-            'admin.items.store' => $this->backFromItemStore($request),
-            'admin.items.update' => $this->backFromItemUpdate($request),
-            'admin.notices.store' => $this->backFromNoticeStore($request),
-            'admin.notices.update' => $this->backFromNoticeUpdate($request),
-            'admin.notices.delete' => $this->backFromNoticeDelete(),
-            'admin.materials.store' => $this->backFromMaterialStore($request),
-            'admin.materials.update' => $this->backFromMaterialUpdate($request),
-            'admin.materials.delete' => $this->backFromMaterialDelete(),
+            'admin.logout' => $this->forAdmin(fn () => redirect()->route('admin.home')->with('status', self::LOGOUT_MESSAGE)),
+            'admin.users.delete' => $this->forAdmin(fn () => redirect(AdminUserListUrl::previousOrIndex())->withErrors(['delete' => self::USER_DELETE_MESSAGE])),
+            'admin.purchase.cancel' => $this->forAdmin(fn () => $this->backFromOrderCancel(AdminListType::Purchase)),
+            'admin.reservations.cancel' => $this->forAdmin(fn () => $this->backFromOrderCancel(AdminListType::Reservation)),
+            'admin.mail.send' => $this->forAdmin(fn () => $this->backFromMailSend($request)),
+            'admin.items.store' => $this->forAdmin(fn () => $this->backToForm($request, 'admin.items.create', [], ['_token', 'image'], self::ITEM_STORE_MESSAGE)),
+            'admin.items.update' => $this->forAdmin(fn () => $this->backFromItemUpdate($request)),
+            'admin.notices.store' => $this->forAdmin(fn () => $this->backToForm($request, 'admin.notices.create', [], ['_token'], self::NOTICE_STORE_MESSAGE)),
+            'admin.notices.update' => $this->forAdmin(fn () => $this->backFromNoticeUpdate($request)),
+            'admin.notices.delete' => $this->forAdmin(fn () => redirect(AdminListUrl::previousOrIndex('admin.notices.index', 'admin.notices.search'))->withErrors(['delete' => self::NOTICE_DELETE_MESSAGE])),
+            'admin.materials.store' => $this->forAdmin(fn () => $this->backToForm($request, 'admin.materials.index', [], ['_token', 'id'], self::MATERIAL_STORE_MESSAGE)),
+            'admin.materials.update' => $this->forAdmin(fn () => $this->backFromMaterialUpdate($request)),
+            'admin.materials.delete' => $this->forAdmin(fn () => redirect()->route('admin.materials.index')->withErrors(['delete' => self::MATERIAL_DELETE_MESSAGE])),
             'admin.password.email' => $this->backWithEmail($request, 'admin.password.request', self::ADMIN_PASSWORD_RESET_MESSAGE),
             'admin.password.update' => $this->backToAdminResetPassword($request),
             default => null,
         };
+    }
+
+    /**
+     * 管理者がまだログイン中なら $back の応答を、そうでなければログインページへ戻す
+     *
+     * @param  Closure(): Response  $back
+     */
+    private function forAdmin(Closure $back): Response
+    {
+        if (! Auth::guard('admin')->check()) {
+            return redirect()->route('admin.login');
+        }
+
+        return $back();
+    }
+
+    /**
+     * 送信フォームの id が、正しい形（1以上の整数の文字列）ならその値を、そうでなければ null を返す
+     */
+    private function validId(Request $request): ?string
+    {
+        $id = $request->input('id');
+
+        return is_string($id) && ctype_digit($id) && (int) $id >= 1 ? $id : null;
+    }
+
+    /**
+     * 入力フォームのページへ、入力（$except を除く）を残して戻し、できなかった知らせを errors の form に入れる（登録・追加・修正のとき）
+     *
+     * @param  array<string, mixed>  $parameters  戻り先のルートのパラメーター
+     * @param  list<string>  $except  残さない入力（_token や画像など）
+     */
+    private function backToForm(Request $request, string $route, array $parameters, array $except, string $message): Response
+    {
+        return redirect()->route($route, $parameters)
+            ->withInput($request->except($except))
+            ->withErrors(['form' => $message]);
     }
 
     /**
@@ -132,51 +171,19 @@ class ExpiredPageResponder
     }
 
     /**
-     * 管理者がまだログイン中なら管理画面のトップへ、そうでなければログインページへ戻す
-     */
-    private function backFromLogout(): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect()->route('admin.home')->with('status', self::LOGOUT_MESSAGE);
-    }
-
-    /**
-     * 管理者がまだログイン中なら削除の前に見ていた会員一覧へ（削除はされていない）、そうでなければログインページへ戻す
-     */
-    private function backFromUserDelete(): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect(AdminUserListUrl::previousOrIndex())->withErrors(['delete' => self::USER_DELETE_MESSAGE]);
-    }
-
-    /**
-     * 管理者がまだログイン中なら取消の前に見ていた注文一覧・予約一覧へ（取消はされていない）、そうでなければログインページへ戻す
+     * 取消の前に見ていた注文一覧・予約一覧へ戻す（取消はされていない）
      */
     private function backFromOrderCancel(AdminListType $type): Response
     {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
         return redirect(AdminListUrl::previousOrIndex($type->listRoute(), $type->searchRoute()))->withErrors(['cancel' => self::ORDER_CANCEL_MESSAGE]);
     }
 
     /**
-     * 管理者がまだログイン中なら、送信フォームの宛先（type・id）のメール作成ページへ入力（タイトル・本文・戻り先）を残して戻す（メールは送らない）。
-     * 宛先の種類・IDが不正なときは、種類だけ有効ならその種類の一覧へ、種類も不正なら会員一覧へ戻す。管理者がログインしていなければログインページへ戻す
+     * 送信フォームの宛先（type・id）のメール作成ページへ入力（タイトル・本文・戻り先）を残して戻す（メールは送らない）。
+     * 宛先の種類・IDが不正なときは、種類だけ有効ならその種類の一覧へ、種類も不正なら会員一覧へ戻す
      */
     private function backFromMailSend(Request $request): Response
     {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
         $target = MailTarget::fromInput($request->input('type'), $request->input('id'));
 
         if ($target === null) {
@@ -192,129 +199,44 @@ class ExpiredPageResponder
     }
 
     /**
-     * 管理者がまだログイン中なら、掲載商品の登録ページへ画像以外の入力を残して戻す（登録はしない）。ログインしていなければログインページへ
-     */
-    private function backFromItemStore(Request $request): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect()->route('admin.items.create')
-            ->withInput($request->except(['_token', 'image']))
-            ->withErrors(['form' => self::ITEM_STORE_MESSAGE]);
-    }
-
-    /**
-     * 管理者がまだログイン中なら、送信フォームの商品（id）の修正ページへ画像以外の入力を残して戻す（更新はしない）。
-     * 商品のIDが正しくないときは一覧へ戻す。管理者がログインしていなければログインページへ
+     * 送信フォームの商品（id）の修正ページへ画像以外の入力を残して戻す（更新はしない）。
+     * 商品のIDが正しくないときは一覧へ戻す
      */
     private function backFromItemUpdate(Request $request): Response
     {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        $id = $request->input('id');
-        if (! is_string($id) || ! ctype_digit($id) || (int) $id < 1) {
+        $id = $this->validId($request);
+        if ($id === null) {
             return redirect()->route('admin.items.index')->withErrors(['item' => self::ITEM_UPDATE_MESSAGE]);
         }
 
-        return redirect()->route('admin.items.edit', ['item_id' => $id])
-            ->withInput($request->except(['_token', 'image']))
-            ->withErrors(['form' => self::ITEM_UPDATE_MESSAGE]);
+        return $this->backToForm($request, 'admin.items.edit', ['item_id' => $id], ['_token', 'image'], self::ITEM_UPDATE_MESSAGE);
     }
 
     /**
-     * 管理者がまだログイン中なら、お知らせの作成ページへ入力を残して戻す（作成はしない）。ログインしていなければログインページへ
-     */
-    private function backFromNoticeStore(Request $request): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect()->route('admin.notices.create')
-            ->withInput($request->except('_token'))
-            ->withErrors(['form' => self::NOTICE_STORE_MESSAGE]);
-    }
-
-    /**
-     * 管理者がまだログイン中なら、送信フォームのお知らせ（id）の修正ページへ入力を残して戻す（更新はしない）。
-     * お知らせのIDが正しくないときは一覧へ戻す。管理者がログインしていなければログインページへ
+     * 送信フォームのお知らせ（id）の修正ページへ入力を残して戻す（更新はしない）。
+     * お知らせのIDが正しくないときは一覧へ戻す
      */
     private function backFromNoticeUpdate(Request $request): Response
     {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        $id = $request->input('id');
-        if (! is_string($id) || ! ctype_digit($id) || (int) $id < 1) {
+        $id = $this->validId($request);
+        if ($id === null) {
             return redirect()->route('admin.notices.index')->withErrors(['notice' => self::NOTICE_UPDATE_MESSAGE]);
         }
 
-        return redirect()->route('admin.notices.edit', ['notice_id' => $id])
-            ->withInput($request->except('_token'))
-            ->withErrors(['form' => self::NOTICE_UPDATE_MESSAGE]);
+        return $this->backToForm($request, 'admin.notices.edit', ['notice_id' => $id], ['_token'], self::NOTICE_UPDATE_MESSAGE);
     }
 
     /**
-     * 管理者がまだログイン中なら削除の前に見ていたお知らせ一覧へ（削除はされていない）、そうでなければログインページへ戻す
-     */
-    private function backFromNoticeDelete(): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect(AdminListUrl::previousOrIndex('admin.notices.index', 'admin.notices.search'))->withErrors(['delete' => self::NOTICE_DELETE_MESSAGE]);
-    }
-
-    /**
-     * 管理者がまだログイン中なら、資材一覧へ入力を残して戻す（追加はしない。一覧が、入力の残りから追加のモーダルを開く）。ログインしていなければログインページへ
-     */
-    private function backFromMaterialStore(Request $request): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect()->route('admin.materials.index')
-            ->withInput($request->except(['_token', 'id']))
-            ->withErrors(['form' => self::MATERIAL_STORE_MESSAGE]);
-    }
-
-    /**
-     * 管理者がまだログイン中なら、送信フォームの資材（id）の修正のモーダルを開く形で、入力を残して資材一覧へ戻す（更新はしない）。
-     * 資材のIDが正しくないときは、モーダルを開かずに案内だけを出す。管理者がログインしていなければログインページへ
+     * 送信フォームの資材（id）の修正のモーダルを開く形で、入力を残して資材一覧へ戻す（更新はしない）。
+     * 資材のIDが正しくないときは、モーダルを開かずに案内だけを出す
      */
     private function backFromMaterialUpdate(Request $request): Response
     {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        $id = $request->input('id');
-        if (! is_string($id) || ! ctype_digit($id) || (int) $id < 1) {
+        if ($this->validId($request) === null) {
             return redirect()->route('admin.materials.index')->withErrors(['material' => self::MATERIAL_UPDATE_MESSAGE]);
         }
 
-        return redirect()->route('admin.materials.index')
-            ->withInput($request->except('_token'))
-            ->withErrors(['form' => self::MATERIAL_UPDATE_MESSAGE]);
-    }
-
-    /**
-     * 管理者がまだログイン中なら資材一覧へ（削除はされていない）、そうでなければログインページへ戻す
-     */
-    private function backFromMaterialDelete(): Response
-    {
-        if (! Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
-        }
-
-        return redirect()->route('admin.materials.index')->withErrors(['delete' => self::MATERIAL_DELETE_MESSAGE]);
+        return $this->backToForm($request, 'admin.materials.index', [], ['_token'], self::MATERIAL_UPDATE_MESSAGE);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesRecordId;
 use App\Models\Material;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -17,6 +18,8 @@ use Override;
  */
 class MaterialDeleteRequest extends FormRequest
 {
+    use ValidatesRecordId;
+
     /**
      * 管理者のログインはルートの認証（auth:admin）で確認するため、ここでは常に許可する
      */
@@ -33,7 +36,7 @@ class MaterialDeleteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'integer', 'min:1'],
+            'id' => $this->idRules(),
         ];
     }
 

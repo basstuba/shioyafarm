@@ -71,6 +71,19 @@ class FormTextTest extends TestCase
     }
 
     /**
+     * 全角の数字・空白を半角にして、前後の空白を取り除く。先頭の0は取り除かない
+     */
+    #[Test]
+    public function 全角を半角にして先頭の0は残す(): void
+    {
+        $this->assertSame('012345', FormText::halfWidth('０１２３４５'));
+        $this->assertSame('012345', FormText::halfWidth(" \u{3000}０１２３４５\u{3000}\t"));
+        $this->assertSame('1 2', FormText::halfWidth("1\u{3000}２"));
+        $this->assertSame('abc', FormText::halfWidth('abc'));
+        $this->assertSame('', FormText::halfWidth(" \u{3000}"));
+    }
+
+    /**
      * 文字列でない値（配列・null）は、検証のエラーにするため、そのまま返す
      */
     #[Test]
@@ -80,6 +93,8 @@ class FormTextTest extends TestCase
         $this->assertSame(['a'], FormText::trim(['a']));
         $this->assertNull(FormText::number(null));
         $this->assertSame(['1'], FormText::number(['1']));
+        $this->assertNull(FormText::halfWidth(null));
+        $this->assertSame(['1'], FormText::halfWidth(['1']));
     }
 
     /**

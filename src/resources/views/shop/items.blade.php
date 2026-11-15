@@ -4,51 +4,6 @@
 
 @section('body-class', 'bg-cream-100')
 
-@php
-    // ご案内（アコーディオン）の項目。1文ずつ段落にする
-    $guides = [
-        [
-            'title' => '送料について',
-            'lines' => [
-                '送料は別途ご負担となります。',
-                '送料は提携運送会社の価格に準じます。',
-            ],
-        ],
-        [
-            'title' => '支払方法について',
-            'lines' => [
-                'クレジットカード・銀行振込・代金引換をご利用いただけます。',
-                '代金引換の場合は、別途手数料'.number_format(config('shipping.cod_fee')).'円（税込）がかかります。',
-                '予約限定商品は、クレジットカードまたは銀行振込による先払いとなります。',
-            ],
-        ],
-        [
-            'title' => 'お届けについて',
-            'lines' => [
-                'お支払いの確定後、3〜5営業日以内に発送いたします（代金引換はご注文の確定後）。',
-                '収穫状況により、発送が前後する場合がございます。',
-                '北の恵みセットは9月中の発送となります。',
-                '発送元：北海道架空郡架空町567-34',
-            ],
-        ],
-        [
-            'title' => '保存方法',
-            'lines' => [
-                '冷暗所で保存してください。',
-                '生鮮品のため、到着後はお早めにお召し上がりください。',
-                '人参は冷蔵での保存をおすすめします。',
-            ],
-        ],
-        [
-            'title' => '返品について',
-            'lines' => [
-                '商品の特性上、お客様のご都合による返品はお受けできません。',
-                '万が一不良品が届いた場合は、商品の到着後3日以内にご連絡ください。交換または返金にて対応いたします。',
-            ],
-        ],
-    ];
-@endphp
-
 @section('content')
     <div class="pt-header text-ink">
         {{-- ファーストビュー（SPは画像が上、PCは左にコピー・右に画像） --}}
@@ -102,7 +57,7 @@
         {{-- ご案内（各項目を独立して開閉できる）。PCは6列に各項目2列ぶんで、1行に3項目。最終行が3項目に満たないときは中央に寄せる（5項目なら3＋2） --}}
         <section class="px-4 pb-15 md:pb-24">
             <div class="mx-auto grid max-w-[1260px] gap-3 md:grid-cols-2 md:items-start lg:grid-cols-6 lg:gap-x-12 lg:gap-y-10">
-                @foreach ($guides as $guide)
+                @foreach (\App\Support\ItemGuide::sections() as $guide)
                     <details @class(['group', 'lg:col-span-2', \App\Support\LastRowCenter::startClass($loop->iteration, $loop->count)])>
                         <summary class="flex h-13 font-maru cursor-pointer list-none items-center justify-between rounded-[10px] border border-cream-200 bg-white px-4 text-lg transition-[border-color,box-shadow] duration-200 group-open:rounded-b-none hover:border-transparent hover:shadow-card focus-visible:border-transparent focus-visible:shadow-card focus-visible:outline-none md:h-10 md:text-xl [&::-webkit-details-marker]:hidden">
                             {{ $guide['title'] }}

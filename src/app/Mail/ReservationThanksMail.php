@@ -25,7 +25,7 @@ class ReservationThanksMail extends ThanksMail
     #[Override]
     protected function subjectLine(): string
     {
-        return "【しおや農園】ご予約ありがとうございます（予約番号：{$this->reservation->id}）";
+        return self::SUBJECT_PREFIX."ご予約ありがとうございます（予約番号：{$this->reservation->id}）";
     }
 
     /**

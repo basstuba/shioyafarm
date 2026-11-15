@@ -12,6 +12,7 @@ use App\Http\Responses\FailedPasswordResetLinkRequestResponse;
 use App\Services\AdminTwoFactorStore;
 use App\Services\AreaService;
 use App\Support\IntendedUrl;
+use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\CachesRoutes;
 use Illuminate\Http\Request;
@@ -99,31 +100,20 @@ class FortifyServiceProvider extends ServiceProvider
 
         // パスワード再設定の送信（再設定メールの送信・新しいパスワードの設定。管理者用のルートも含む）は、ルートごとにIPアドレスあたり1分5回まで。
         // 上限に達したとき、通常のリクエストは入力欄の近くに日本語のメッセージを表示し、JSONを期待するリクエストは429で返す。
-        // 会員のルートは ThrottlePasswordReset（bootstrap/app.php で web グループに追加）で絞り、管理者のルートは routes/web.php で throttle:password-reset を付ける。
+        // 会員のルートは ThrottleFortifyRoutes（bootstrap/app.php で web グループに追加）で絞り、管理者のルートは routes/web.php で throttle:password-reset を付ける。
         RateLimiter::for('password-reset', function (Request $request) {
-            return Limit::perMinute(5)->by($request->route()?->getName().'|'.$request->ip())->response(function (Request $request, array $headers) {
-                $message = trans('passwords.rate_limited', ['seconds' => $headers['Retry-After']]);
-
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => $message], 429, $headers);
-                }
-
+            return Limit::perMinute(5)->by($request->route()?->getName().'|'.$request->ip())->response($this->limitResponse('passwords.rate_limited', function (Request $request, string $message) {
                 // メールアドレスの入力欄と、新しいパスワードの入力欄の近くに出す（再設定ページの email は無効リンクの案内になるため使わない）
                 throw ValidationException::withMessages([$request->routeIs('password.update', 'admin.password.update') ? 'password' : 'email' => [$message]]);
-            });
+            }));
         });
 
         // 会員登録（POST /register）は、IPアドレスごとに1分あたり config('fortify.register_per_minute')（既定5）回まで（入力エラーも数える）。上限を超えたら登録ページに戻してメッセージを出す
+        // 登録のルートは1つだけなので、ルート名はキーに含めない
         RateLimiter::for('register', function (Request $request) {
-            return Limit::perMinute(max(1, config()->integer('fortify.register_per_minute')))->by($request->route()?->getName().'|'.$request->ip())->response(function (Request $request, array $headers) {
-                $message = trans('auth.register_throttle', ['seconds' => $headers['Retry-After']]);
-
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => $message], 429, $headers);
-                }
-
+            return Limit::perMinute(max(1, config()->integer('fortify.register_per_minute')))->by($request->ip())->response($this->limitResponse('auth.register_throttle', function (Request $request, string $message) {
                 throw ValidationException::withMessages([Fortify::username() => [$message]]);
-            });
+            }));
         });
 
         // 管理者の確認コードの送信・再送（二段階認証）は、ルートごとに、入力待ちの管理者（なければIPアドレス）あたり1分10回まで。
@@ -134,19 +124,13 @@ class FortifyServiceProvider extends ServiceProvider
             $pending = (new AdminTwoFactorStore($request->session()))->get();
             $adminId = $pending !== null ? 'admin-'.$pending['id'] : 'ip-'.$request->ip();
 
-            return Limit::perMinute(10)->by($request->route()?->getName().'|'.$adminId)->response(function (Request $request, array $headers) use ($pending) {
-                $message = trans('admin_two_factor.rate_limited', ['seconds' => $headers['Retry-After']]);
-
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => $message], 429, $headers);
-                }
-
+            return Limit::perMinute(10)->by($request->route()?->getName().'|'.$adminId)->response($this->limitResponse('admin_two_factor.rate_limited', function (Request $request, string $message) use ($pending) {
                 if ($pending === null) {
                     return redirect()->route('admin.login')->with('status', $message);
                 }
 
                 throw ValidationException::withMessages(['code' => [$message]])->redirectTo(route('admin.two-factor'));
-            });
+            }));
         });
 
         RateLimiter::for('two-factor', function (Request $request) {
@@ -190,16 +174,32 @@ class FortifyServiceProvider extends ServiceProvider
         $username = $request->input(Fortify::username());
         $throttleKey = Str::transliterate(Str::lower(is_string($username) ? $username : '').'|'.$request->ip());
 
-        return Limit::perMinute(5)->by($throttleKey)->response(function (Request $request, array $headers) use ($redirectTo) {
-            $message = trans('auth.throttle', ['seconds' => $headers['Retry-After']]);
+        return Limit::perMinute(5)->by($throttleKey)->response($this->limitResponse('auth.throttle', function (Request $request, string $message) use ($redirectTo) {
+            $exception = ValidationException::withMessages([Fortify::username() => [$message]]);
+
+            throw $redirectTo === null ? $exception : $exception->redirectTo($redirectTo);
+        }));
+    }
+
+    /**
+     * 回数制限の上限に達したときの応答を作る（4つの制限で共通）
+     *
+     * 文言は $messageKey の翻訳に、再試行までの秒数（seconds）を入れて作る。
+     * JSONを期待するリクエストは、入力エラーと区別できるよう429で返す。それ以外は $onWeb が、入力エラーの例外を投げるか、リダイレクトを返す。
+     *
+     * @param  Closure(Request, string): mixed  $onWeb  通常のリクエストの応答（第2引数は文言）
+     * @return Closure(Request, array<string, mixed>): mixed
+     */
+    private function limitResponse(string $messageKey, Closure $onWeb): Closure
+    {
+        return function (Request $request, array $headers) use ($messageKey, $onWeb) {
+            $message = trans($messageKey, ['seconds' => $headers['Retry-After']]);
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 429, $headers);
             }
 
-            $exception = ValidationException::withMessages([Fortify::username() => [$message]]);
-
-            throw $redirectTo === null ? $exception : $exception->redirectTo($redirectTo);
-        });
+            return $onWeb($request, $message);
+        };
     }
 }

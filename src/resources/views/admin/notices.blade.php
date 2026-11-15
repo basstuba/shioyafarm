@@ -1,4 +1,5 @@
 @extends('layouts.admin.app')
+@use('App\Support\AdminListStyle')
 
 @section('page-title', 'お知らせ一覧 | 管理画面 | Shioya Farm')
 
@@ -13,10 +14,6 @@
 --}}
 @php
     $dateValue = \App\Support\SearchCondition::restoreDate($conditions, $errors->has('date'));
-    $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
-    $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
-    // 「修正」「削除」。SPは「詳細」と同じ枠線つきのボタン（高さ44px）、PC（lg以上）は下線つきの文字
-    $actionClass = 'inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-[10px] border border-line-strong bg-white px-2 text-base hover:no-underline focus-visible:no-underline lg:w-auto lg:min-w-16 lg:border-0 lg:bg-transparent lg:px-0 lg:underline '.$focusClass;
 @endphp
 
 @section('content')
@@ -59,26 +56,26 @@
                     <tbody class="flex flex-col gap-3 lg:table-row-group">
                         @foreach ($notices as $notice)
                             <tr class="grid grid-cols-3 gap-x-2 gap-y-1 rounded-[10px] border border-line bg-white px-4 py-3 lg:table-row lg:h-[45px] lg:rounded-none lg:border-0 lg:p-0 lg:even:bg-admin-bar">
-                                <td class="col-span-3 text-base {{ $cellClass }}">
+                                <td class="col-span-3 text-base {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">作成日</span>{{ $notice->created_at?->format('Y/m/d') }}
                                 </td>
-                                <td class="col-span-3 min-w-0 text-base break-words {{ $cellClass }}">
+                                <td class="col-span-3 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">タイトル</span>{{ $notice->title }}
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <x-admin-detail-button class="w-full lg:w-auto" :label="$notice->title.'の詳細を見る'" event="open-notice-detail" :id="$notice->id" />
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <a
-                                        class="{{ $actionClass }} text-mail-link"
+                                        class="{{ AdminListStyle::ACTION }} text-mail-link"
                                         href="{{ route('admin.notices.edit', $notice->id) }}"
                                         aria-label="{{ $notice->title }}を修正"
                                     >修正</a>
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <button
                                         type="button"
-                                        class="{{ $actionClass }} text-delete"
+                                        class="{{ AdminListStyle::ACTION }} text-delete"
                                         aria-haspopup="dialog"
                                         aria-label="{{ $notice->title }}を削除"
                                         x-on:click="deleting = false; deleteId = {{ $notice->id }}; deleteLabel = @js($notice->title); confirming = true"

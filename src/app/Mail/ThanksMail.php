@@ -10,19 +10,16 @@ use App\Models\Reservation_bank_transfer;
 use App\Models\User;
 use App\Services\BankTransferInfo;
 use App\Support\MailText;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 
 /**
- * 購入・予約のサンクスメールの共通部分（差出人・宛名・お問い合わせページのURL・お振込先の判定）
+ * 購入・予約のサンクスメールの共通部分（宛名・お振込先の判定・本文の共通の値。差出人・署名・お問い合わせページのURLは ShopMail）
  *
  * 本文は Markdown メール（resources/views/mail）。ヘッダー・フッター・色は resources/views/vendor/mail にある。
- * 差出人と署名の名前・メールアドレスは、config('mail.from')（MAIL_FROM_ADDRESS / MAIL_FROM_NAME。未設定のときの既定値は config/mail.php）から出す。
  */
-abstract class ThanksMail extends Mailable
+abstract class ThanksMail extends ShopMail
 {
     /** お支払方法（購入履歴・予約の payment_method。コンストラクタで設定する） */
     protected PaymentMethod $paymentMethod;
@@ -37,10 +34,7 @@ abstract class ThanksMail extends Mailable
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
-            from: new Address($this->senderAddress(), $this->senderName()),
-            subject: $this->subjectLine(),
-        );
+        return $this->shopEnvelope($this->subjectLine());
     }
 
     /**
@@ -119,35 +113,5 @@ abstract class ThanksMail extends Mailable
     protected function joinLines(array $lines): HtmlString
     {
         return new HtmlString(implode("<br>\n", array_map(strval(...), $lines)));
-    }
-
-    /**
-     * 差出人の名前（署名にも使う）
-     */
-    protected function senderName(): string
-    {
-        return (string) config('mail.from.name');
-    }
-
-    /**
-     * 差出人のメールアドレス（署名にも使う）
-     */
-    protected function senderAddress(): string
-    {
-        return (string) config('mail.from.address');
-    }
-
-    /**
-     * 本文の共通の値（差出人・お問い合わせページのURL）
-     *
-     * @return array{senderName: string, senderAddress: string, contactUrl: string}
-     */
-    protected function commonData(): array
-    {
-        return [
-            'senderName' => $this->senderName(),
-            'senderAddress' => $this->senderAddress(),
-            'contactUrl' => route('top.inquiry'),
-        ];
     }
 }

@@ -1,4 +1,5 @@
 @extends('layouts.admin.app')
+@use('App\Support\AdminListStyle')
 
 @section('page-title', '会員一覧 | 管理画面 | Shioya Farm')
 
@@ -11,9 +12,7 @@
     「メール送信」のリンク先は admin.mail.user（/admin/mail/user/{会員ID}。メール作成ページ。来た一覧の検索条件・ページに戻るため、リンクにクエリは付けない）。
 --}}
 @php
-    $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
     $statusValue = \App\Support\SearchCondition::restore($conditions, 'status');
-    $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
 @endphp
 
 @section('content')
@@ -59,21 +58,21 @@
                     <tbody class="flex flex-col gap-3 lg:table-row-group">
                         @foreach ($users as $user)
                             <tr class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 rounded-[10px] border border-line bg-white px-4 py-3 lg:table-row lg:h-[45px] lg:rounded-none lg:border-0 lg:p-0 lg:even:bg-admin-bar">
-                                <td class="col-start-1 row-start-1 self-center text-base {{ $cellClass }}">
+                                <td class="col-start-1 row-start-1 self-center text-base {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">状態</span>{{ $user->trashed() ? '退会済' : '会員' }}
                                 </td>
-                                <td class="col-start-1 row-start-2 min-w-0 text-base break-words {{ $cellClass }}">
+                                <td class="col-start-1 row-start-2 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">氏名</span>{{ $user->full_name }}
                                 </td>
-                                <td class="col-start-1 row-start-3 text-base {{ $cellClass }}">
+                                <td class="col-start-1 row-start-3 text-base {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-cancel-text lg:hidden">電話番号</span>{{ $user->tell }}
                                 </td>
-                                <td class="col-start-2 row-start-1 {{ $cellClass }}">
+                                <td class="col-start-2 row-start-1 {{ AdminListStyle::CELL }}">
                                     <x-admin-detail-button :label="$user->full_name.'の詳細を見る'" event="open-user-detail" :id="$user->id" />
                                 </td>
-                                <td class="col-start-2 row-span-2 row-start-2 self-start lg:text-right {{ $cellClass }}">
+                                <td class="col-start-2 row-span-2 row-start-2 self-start lg:text-right {{ AdminListStyle::CELL }}">
                                     <a
-                                        class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ $focusClass }}"
+                                        class="inline-flex min-h-11 min-w-16 items-center justify-center text-base text-mail-link underline hover:no-underline focus-visible:no-underline {{ AdminListStyle::FOCUS }}"
                                         href="{{ route('admin.mail.user', ['user_id' => $user->id]) }}"
                                         aria-label="{{ $user->full_name }}にメール送信"
                                     >メール送信</a>

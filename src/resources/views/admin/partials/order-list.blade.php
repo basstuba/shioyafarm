@@ -9,11 +9,11 @@
     発送済みのチェックは、押した瞬間に Alpine から、発送済みの更新のルートへ送る（ページは移動しない）。保存できなかったときは、チェックと行の色を戻して案内を出す。
     取消済みの行は、チェックの代わりに「取消済」と出し、文字を灰色にする（地は未発送と同じ。発送済みの色にしない）。取消の操作は詳細のモーダルにある（admin/partials/order-detail-modal）。
 --}}
+@use('App\Support\AdminListStyle')
 @php
     $subject = $listType->subject();
     $dateValue = \App\Support\SearchCondition::restoreDate($conditions, $errors->has('date'));
     $shippedValue = \App\Support\SearchCondition::restore($conditions, 'shipped');
-    $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
 @endphp
 
 <div class="flex flex-col items-center">
@@ -84,23 +84,23 @@
                         @endphp
                         {{-- 発送済みの行は地が admin-shipped（白と灰色の交互より優先）。文字色は変えない。取消済みの行は地を未発送と同じにして、文字を灰色にする --}}
                         <x-admin-check-row :checked="$record->shipped" :active="! $canceled" :class="$canceled ? 'text-admin-gray' : ''">
-                            <td class="col-start-2 row-start-1 {{ $cellClass }} lg:text-center">
+                            <td class="col-start-2 row-start-1 {{ AdminListStyle::CELL }} lg:text-center">
                                 @if ($canceled)
                                     <span class="flex h-11 items-center justify-end text-base lg:justify-center">取消済</span>
                                 @else
                                     <x-admin-check-box :id="$record->id" :checked="$record->shipped" :label="$subject.$record->id.'の発送済み'" text="発送済" />
                                 @endif
                             </td>
-                            <td class="col-start-1 row-start-1 self-center text-base {{ $cellClass }}">
+                            <td class="col-start-1 row-start-1 self-center text-base {{ AdminListStyle::CELL }}">
                                 <span class="mr-2 {{ $labelClass }} lg:hidden">{{ $subject }}管理番号</span>{{ $record->id }}
                             </td>
-                            <td class="col-start-1 row-start-2 text-base {{ $cellClass }}">
+                            <td class="col-start-1 row-start-2 text-base {{ AdminListStyle::CELL }}">
                                 <span class="mr-2 {{ $labelClass }} lg:hidden">{{ $subject }}日</span>{{ $record->created_at?->format('Y/m/d') }}
                             </td>
-                            <td class="col-start-1 row-start-3 min-w-0 text-base break-words {{ $cellClass }}">
+                            <td class="col-start-1 row-start-3 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                 <span class="mr-2 {{ $labelClass }} lg:hidden">{{ $subject }}者</span>{{ $record->user->full_name }}
                             </td>
-                            <td class="col-start-2 row-span-2 row-start-2 self-start {{ $cellClass }}">
+                            <td class="col-start-2 row-span-2 row-start-2 self-start {{ AdminListStyle::CELL }}">
                                 <x-admin-detail-button :label="$subject.$record->id.'の詳細を見る'" :event="$listType->detailEvent()" :id="$record->id" />
                             </td>
                         </x-admin-check-row>

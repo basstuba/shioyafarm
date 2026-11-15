@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesRecordId;
 use App\Models\Item;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,6 +16,8 @@ use Override;
  */
 class ItemDeleteRequest extends FormRequest
 {
+    use ValidatesRecordId;
+
     public function authorize(): bool
     {
         return true;
@@ -32,7 +35,7 @@ class ItemDeleteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['required', 'integer', 'min:1'],
+            'id' => $this->idRules(),
         ];
     }
 
@@ -42,12 +45,6 @@ class ItemDeleteRequest extends FormRequest
     #[Override]
     public function messages(): array
     {
-        $message = Item::NOT_FOUND_MESSAGE;
-
-        return [
-            'id.required' => $message,
-            'id.integer' => $message,
-            'id.min' => $message,
-        ];
+        return $this->idMessages(Item::NOT_FOUND_MESSAGE);
     }
 }

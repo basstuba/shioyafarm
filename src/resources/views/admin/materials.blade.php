@@ -1,4 +1,5 @@
 @extends('layouts.admin.app')
+@use('App\Support\AdminListStyle')
 
 @section('page-title', '資材一覧 | 管理画面 | Shioya Farm')
 
@@ -14,12 +15,8 @@
 @php
     $form = \App\Support\MaterialFormState::fromOld($errors);
     $blank = \App\Support\MaterialFormState::blank();
-    $focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink';
-    $cellClass = 'lg:table-cell lg:border-b lg:border-line lg:px-3 lg:align-middle';
     // 在庫数・基準値の数字の列（PCは右寄せ。次の列と離す）
     $numberCellClass = 'lg:text-right lg:tabular-nums lg:pr-8';
-    // 「修正」「削除」。SPは枠線つきのボタン（高さ44px）、PC（lg以上）は下線つきの文字
-    $actionClass = 'inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-[10px] border border-line-strong bg-white px-2 text-base hover:no-underline focus-visible:no-underline lg:w-auto lg:min-w-16 lg:border-0 lg:bg-transparent lg:px-0 lg:underline '.$focusClass;
 @endphp
 
 @section('content')
@@ -72,7 +69,7 @@
             <div class="flex justify-end">
                 <button
                     type="button"
-                    class="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-[30px] bg-primary px-8 text-base text-ink transition-[background-color,box-shadow] duration-200 hover:bg-primary-dark hover:shadow-button focus-visible:bg-primary-dark focus-visible:shadow-button lg:w-auto {{ $focusClass }}"
+                    class="inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-[30px] bg-primary px-8 text-base text-ink transition-[background-color,box-shadow] duration-200 hover:bg-primary-dark hover:shadow-button focus-visible:bg-primary-dark focus-visible:shadow-button lg:w-auto {{ AdminListStyle::FOCUS }}"
                     aria-haspopup="dialog"
                     x-on:click="openCreate()"
                 >資材を追加</button>
@@ -104,34 +101,34 @@
                     <tbody class="flex flex-col gap-3 lg:table-row-group">
                         @foreach ($materials as $material)
                             <tr class="grid grid-cols-2 gap-x-2 gap-y-1 rounded-[10px] border border-line bg-white px-4 py-3 lg:table-row lg:h-[45px] lg:rounded-none lg:border-0 lg:p-0 lg:even:bg-admin-bar">
-                                <td class="col-span-2 min-w-0 text-base break-words {{ $cellClass }}">
+                                <td class="col-span-2 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-muted lg:hidden">資材名</span>{{ $material->name }}
                                     @if ($material->isLow())
                                         <span class="block text-danger">残りわずか</span>
                                     @endif
                                 </td>
-                                <td class="col-span-2 text-base {{ $cellClass }} {{ $numberCellClass }}">
+                                <td class="col-span-2 text-base {{ AdminListStyle::CELL }} {{ $numberCellClass }}">
                                     <span class="mr-2 text-muted lg:hidden">在庫数</span><span @class(['font-bold text-danger' => $material->isLow()])>{{ number_format($material->stock) }}</span>
                                 </td>
-                                <td class="col-span-2 min-w-0 text-base break-words {{ $cellClass }}">
+                                <td class="col-span-2 min-w-0 text-base break-words {{ AdminListStyle::CELL }}">
                                     <span class="mr-2 text-muted lg:hidden">置き場所</span>{{ $material->location }}
                                 </td>
-                                <td class="col-span-2 text-base {{ $cellClass }} {{ $numberCellClass }}">
+                                <td class="col-span-2 text-base {{ AdminListStyle::CELL }} {{ $numberCellClass }}">
                                     <span class="mr-2 text-muted lg:hidden">基準値</span>{{ number_format($material->threshold) }}
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <button
                                         type="button"
-                                        class="{{ $actionClass }} text-mail-link"
+                                        class="{{ AdminListStyle::ACTION }} text-mail-link"
                                         aria-haspopup="dialog"
                                         aria-label="{{ $material->name }}を修正"
                                         x-on:click="openEdit(@js(['id' => (string) $material->id, 'name' => $material->name, 'stock' => (string) $material->stock, 'location' => $material->location, 'threshold' => (string) $material->threshold]))"
                                     >修正</button>
                                 </td>
-                                <td class="mt-2 {{ $cellClass }} lg:mt-0">
+                                <td class="mt-2 {{ AdminListStyle::CELL }} lg:mt-0">
                                     <button
                                         type="button"
-                                        class="{{ $actionClass }} text-delete"
+                                        class="{{ AdminListStyle::ACTION }} text-delete"
                                         aria-haspopup="dialog"
                                         aria-label="{{ $material->name }}を削除"
                                         x-on:click="deleting = false; deleteId = {{ $material->id }}; deleteLabel = @js($material->name); confirming = true"
