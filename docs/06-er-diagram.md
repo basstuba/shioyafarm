@@ -4,7 +4,7 @@
 
 ## Mermaid版
 
-このMermaid版が元の図で、上の画像（`images/er-diagram.png`）はここから生成したものです。カラムの詳細は [テーブル仕様書](05-table-specification.md) を参照してください。自分たちで作ったテーブルだけを載せ、Laravel 標準のテーブル（`password_reset_tokens`・`sessions`・`cache`・`jobs` など）は載せません。
+このMermaid版が元の図で、上の画像（`images/er-diagram.png`）はここから生成したものです。カラムの詳細は [テーブル仕様書](05-table-specification.md) を参照してください。自分たちで作ったテーブルだけを載せ、Laravel 標準のテーブル（`password_reset_tokens`・`sessions`・`cache`・`jobs` など）は載せません。unique 制約のある列には `UK` を付けています（外部キーかつ unique の列は `FK, UK`）。
 
 テーブルを変えたときは、下のMermaidを直してから、画像を作り直します（mermaid-cli はプロジェクトには入れず、`npx` で一時的に使う。一時ファイルはリポジトリの外に置く）。画像の作り直し（`npx`）は、メインセッションが確認を経て行う。エージェントは Mermaid の修正までで止まり、画像の更新が必要だと報告する。
 
@@ -33,9 +33,9 @@ erDiagram
         varchar prefecture
         varchar city
         varchar tell
-        varchar email
+        varchar email UK
         varchar password
-        varchar stripe_customer_id
+        varchar stripe_customer_id UK
         text two_factor_secret
         text two_factor_recovery_codes
         timestamp two_factor_confirmed_at
@@ -67,9 +67,9 @@ erDiagram
         int quantity
         int price
         int subtotal
+        varchar payment_method
         int shipping_fee
         int total_price
-        varchar payment_method
         boolean shipped
         timestamp canceled_at
         timestamp created_at
@@ -78,8 +78,8 @@ erDiagram
 
     reservation_bank_transfers {
         bigint id PK
-        bigint reservation_id FK
-        varchar stripe_payment_intent_id
+        bigint reservation_id FK, UK
+        varchar stripe_payment_intent_id UK
         varchar bank_name
         varchar branch_name
         varchar account_type
@@ -109,8 +109,8 @@ erDiagram
 
     purchase_bank_transfers {
         bigint id PK
-        bigint purchase_history_id FK
-        varchar stripe_payment_intent_id
+        bigint purchase_history_id FK, UK
+        varchar stripe_payment_intent_id UK
         varchar bank_name
         varchar branch_name
         varchar account_type
@@ -152,7 +152,7 @@ erDiagram
     admins {
         bigint id PK
         varchar name
-        varchar email
+        varchar email UK
         varchar password
         timestamp created_at
         timestamp updated_at
@@ -166,7 +166,7 @@ erDiagram
 
     admin_two_factor_codes {
         bigint id PK
-        bigint admin_id FK
+        bigint admin_id FK, UK
         varchar code
         tinyint attempts
         timestamp expires_at

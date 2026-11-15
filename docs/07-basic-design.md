@@ -2,15 +2,17 @@
 
 ## Route / Controller
 
+ヘルスチェック（`/up`）と Livewire が登録するルートは載せない。ルートパラメータの制限・回数制限・セッションの排他・認証のミドルウェア・404は、[下の「ルートの共通の決まり」](#ルートの共通の決まり)にまとめた。
+
 ### ユーザー機能
 
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
-| `/` | GET | HomeController | index | | トップページ表示（おすすめ商品は、おすすめ「はい」の商品からランダムに最大3件。お知らせは作成日の新しい順に最大5件で、同じ日時は新しく作った順、日付も作成日を表示する） |
+| `/` | GET | HomeController | `__invoke`（単一アクション） | | トップページ表示（おすすめ商品は、おすすめ「はい」の商品からランダムに最大3件。お知らせは作成日の新しい順に最大5件で、同じ日時は新しく作った順、日付も作成日を表示する） |
 | `/items` | GET | ItemController | index | | 商品一覧ページ表示 |
 | `/items/{item}` | GET | ItemController | show | | 商品詳細ページ表示 |
 | `/inquiry` | GET | InquiryController | create | | お問い合わせフォームページ表示 |
-| `/inquiry/create` | POST | InquiryController | store | | お問い合わせフォーム送信機能 |
+| `/inquiry/create` | POST | InquiryController | store | | お問い合わせフォーム送信機能（`throttle:inquiry`。IPアドレスごとに1分10回まで。超えたときは入力を残してフォームに戻し、「送信回数が多すぎます。しばらく時間をおいてから再度お試しください。」を表示する） |
 | `/inquiry/thanks` | GET | InquiryController | thanks | | お問い合わせサンクスページ表示 |
 | `/terms-of-service` | VIEW | Route::view | | | 利用規約ページ表示 |
 | `/privacy-policy` | VIEW | Route::view | | | プライバシーポリシーページ表示 |
@@ -24,29 +26,36 @@
 | `/purchase/bank-transfer/confirm` | POST | PurchaseController | confirmBankTransfer | 必須 | 銀行振込の購入履歴作成機能 |
 | `/purchase/thanks` | GET | PurchaseController | thanks | 必須 | 購入完了ページ表示（銀行振込・代金引換） |
 | `/reservation/{item}` | GET | ReservationController | index | 必須 | 予約ページ表示（予約限定の商品のみ。予約可能数に達していたら商品詳細へ戻す） |
-| `/reservation/payment` | POST | ReservationController | payment | 必須 | 予約の決済機能（クレジットカード：決済ページへ、銀行振込：振込先のご案内へ） |
+| `/reservation/payment` | POST | ReservationController | payment | 必須 | 予約の決済機能（クレジットカード：決済ページへ、銀行振込：振込先のご案内へ。購入の `/payment` と同じセッションの排他をかける） |
 | `/reservation/success` | GET | ReservationController | reservationSuccess | 必須 | 予約履歴作成機能（クレジットカード：Stripeの決済後に戻る先） |
 | `/reservation/bank-transfer` | GET | ReservationController | bankTransfer | 必須 | 予約の銀行振込の振込先のご案内ページ表示 |
 | `/reservation/bank-transfer/cancel` | POST | ReservationController | cancelBankTransfer | 必須 | 予約の銀行振込の取り消し機能（予約ページへ戻る） |
 | `/reservation/bank-transfer/confirm` | POST | ReservationController | confirmBankTransfer | 必須 | 予約の銀行振込の予約履歴作成機能 |
 | `/reservation/thanks` | GET | ReservationController | thanks | 必須 | 予約完了ページ表示（銀行振込） |
-| `/payment` | POST | PaymentController | payment | 必須 | 購入の決済機能（代金引換はここで購入履歴を作成） |
+| `/payment` | POST | PaymentController | payment | 必須 | 購入の決済機能（クレジットカード：Stripe Checkoutへ、銀行振込：振込先のご案内へ、代金引換：ここで購入履歴を作成してサンクスページへ。同じセッションの同時リクエストは順番に処理する（セッションの排他。下の「ルートの共通の決まり」を参照）） |
 | `/add-address` | POST | AddAddressController | store | 必須 | 配送先住所追加機能 |
 | `/mypage` | GET | MyPageController | index | 必須 | マイページ表示（ルート名 `shop.mypage.index`。お届け先住所一覧・購入履歴・予約履歴は Livewire で5件ずつページ送り、詳細はモーダル） |
 | `/mypage/edit` | GET | MyPageController | edit | 必須 | 登録情報変更ページ表示（ルート名 `shop.mypage.edit`） |
 | `/mypage/update` | POST | MyPageController | update | 必須 | 登録情報更新機能（ルート名 `shop.mypage.update`。成功したらマイページへ。変更がない場合は保存せず登録情報変更ページに戻り「変更された項目はありません」と表示） |
 | `/mypage/delete` | DELETE | MyPageController | delete | 必須 | 退会機能（ルート名 `shop.mypage.delete`。論理削除してログアウトし、トップページへ） |
+| 上記のどれにも当たらないパス（`{fallbackPlaceholder}`） | GET・HEAD・POST・PUT・PATCH・DELETE | 無名関数（`abort(404)`） | | | 404ページ表示（ルート名 `top.not-found`。詳細は「ルートの共通の決まり」の「存在しないURL（404）」） |
 
 #### 認証（Fortify）
 
-Fortify が登録するルート。ビューは `FortifyServiceProvider` で指定し、入力の検証・応答の一部はアプリ側のクラスに差し替えている（`FortifyServiceProvider` でバインド）。ログイン中に開いた場合（ログアウトを除く）はトップページへ移動する。会員には二段階認証を付けない方針のため無効にしている（`config/fortify.php`。二段階認証は全会員の個人情報・削除・取消を扱う管理者だけに付けている。下の管理者機能を参照）。
+Fortify が登録するルート。ビューは `FortifyServiceProvider` で指定する。
+
+- 入力の検証・応答の一部はアプリ側のクラスに差し替えている（`FortifyServiceProvider` でバインド）。`LoginRequest`、`PasswordResetLinkRequest`、`RegisteredUserController`（登録の `create`・`store` の両方。Fortify の同名のクラスを継承）、`NewPasswordController`（Fortify を継承）、`FailedPasswordResetLinkRequestResponse`。
+- ログイン中に開いた場合（ログアウトを除く）はトップページ（`/`）へ移動する（`bootstrap/app.php` の `redirectUsersTo`。管理者用は `/admin`）。
+- ログイン・会員登録に成功したあとの移動先は、セッションの `url.intended`（ログインページ・登録ページを開く前に見ていた公開ページ。`App\Support\IntendedUrl` が保存する）。無いときは `config/fortify.php` の `home`（値は `/items`＝商品一覧ページ）。`home` は Fortify が `Fortify::redirects('login')`・`Fortify::redirects('register')` の既定として使うので、有効な設定である（ログイン中にログインページを開いたときの移動先（`/`）とは別）。
+- Fortify が登録する、使わないパスワード確認のルート3本（`password.confirm`・`password.confirm.store`・`password.confirmation`）は、`FortifyServiceProvider::removeUnusedRoutes()` でルートから外している。外したパスは存在しないURLと同じく404になる（マイページ・管理画面にパスワード確認の操作がないため）。`route:cache` でも外した状態で保存される。
+- 会員には二段階認証を付けない方針のため無効にしている（`config/fortify.php`。二段階認証は全会員の個人情報・削除・取消を扱う管理者だけに付けている。下の管理者機能を参照）。有効にしていない機能のルート（`/two-factor-challenge`・`/user/two-factor-*`・プロフィール更新・パスワード変更など）は登録されない。
 
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
-| `/register` | GET | Fortify の RegisteredUserController | create | | 会員登録ページ表示（ルート名 `register`） |
+| `/register` | GET | RegisteredUserController（Fortify を継承） | create | | 会員登録ページ表示（ルート名 `register`） |
 | `/register` | POST | RegisteredUserController（Fortify を継承） | store | | 新規会員登録機能（ルート名 `register.store`。登録に成功したら `RegistrationMailService` で会員登録完了メール（下の「会員登録完了メール」）を送る。登録された会員が `User` でないときは、メールを送らず警告をログに残す。IPごとに1分5回まで（上限は設定 `fortify.register_per_minute`＝`REGISTER_THROTTLE_PER_MINUTE` で変えられる。E2E用アプリ（php-e2e）では大きくしている）。超えたときは登録ページに戻して「登録の操作が続いたため、〇秒後に再度お試しください。」（〇は待ち時間の秒数）を表示する） |
 | `/login` | GET | Fortify の AuthenticatedSessionController | create | | ログインページ表示（ルート名 `login`） |
-| `/login` | POST | Fortify の AuthenticatedSessionController | store | | ログイン機能（ルート名 `login.store`。入力の検証は LoginRequest に差し替え。回数制限あり） |
+| `/login` | POST | Fortify の AuthenticatedSessionController | store | | ログイン機能（ルート名 `login.store`。入力の検証は LoginRequest に差し替え。メールアドレスとIPアドレスの組ごとに1分5回まで（`throttle:login`）。超えたときはログインページに「ログイン試行の規定数に達しました。〇秒後に再度お試しください。」） |
 | `/logout` | POST | Fortify の AuthenticatedSessionController | destroy | 必須 | ログアウト機能（ルート名 `logout`） |
 | `/forgot-password` | GET | Fortify の PasswordResetLinkController | create | | パスワード再設定メールの送信ページ表示（ルート名 `password.request`） |
 | `/forgot-password` | POST | Fortify の PasswordResetLinkController | store | | パスワード再設定メール送信機能（ルート名 `password.email`。入力の検証は PasswordResetLinkRequest に差し替え。未登録・退会済みのメールアドレス、1分以内の再送信でも、送れたときと同じ案内を表示する。IPごとに1分5回まで） |
@@ -55,13 +64,15 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 
 ### 管理者機能
 
+管理者用のルートは `/admin` 以下で、会員とは別の `admin` ガードで認証する。ログイン・二段階認証・パスワード再設定の9本（`/admin/login` の GET・POST、`/admin/two-factor` の GET・POST、`/admin/two-factor/resend`、`/admin/forgot-password` の GET・POST、`/admin/reset-password/{token}`、`/admin/reset-password`）は、すべて `guest:admin`（管理者としてログイン中に開くと `/admin` へ移動する）。それ以外（ログアウトを含む）は `auth:admin` と `no-store`（下の「管理画面のキャッシュ」）で、未ログインは `/admin/login` へ移動する。下の表の「認証必須」は、この `auth:admin` の有無を表す。
+
 | パス | メソッド | コントローラー | アクション | 認証必須 | 説明 |
 |---|---|---|---|:---:|---|
 | `/admin/login` | GET | AdminAuthController | create | | ログインページ表示 |
-| `/admin/login` | POST | AdminAuthController | login | | ログイン機能（ルート名 `admin.login.store`。二段階認証がオン（既定）のときは、メールアドレスとパスワードが正しくても、まだログインせず、確認コードをメールで送って `/admin/two-factor` へ移動する。パスワードを通った管理者のIDと、そのときのパスワードの派生値（HMAC。パスワードのハッシュそのものではない）だけをセッションに保存する。メールアドレスとパスワードの照合は `admin` ガードの `validate()`（応答時間をそろえる処理・認証のイベント。ハッシュの再計算も行う）で行う。メールを送れなかったときはログインページに戻して「確認コードのメールを送信できませんでした。時間をおいてもう一度お試しください。」を表示する。オフのときは、今までどおりパスワードだけでログインして `/admin` へ移動する。確認コードの間違いが続いて上限に達した管理者は、その時間が過ぎるまで、正しいパスワードでもコードを送らず、`/admin/login` へ同じ案内（「確認コードの間違いが続いたため、しばらくログインできません。〇分後にもう一度お試しください。」）を出す。パスワードが間違いのときは、今までどおりのエラー） |
+| `/admin/login` | POST | AdminAuthController | login | | ログイン機能（ルート名 `admin.login.store`。二段階認証がオン（既定）のときは、メールアドレスとパスワードが正しくても、まだログインせず、確認コードをメールで送って `/admin/two-factor` へ移動する。パスワードを通った管理者のIDと、そのときのパスワードの派生値（HMAC。パスワードのハッシュそのものではない）だけをセッションに保存する。メールアドレスとパスワードの照合は `admin` ガードの `validate()`（応答時間をそろえる処理・認証のイベント。ハッシュの再計算も行う）で行う。メールを送れなかったときはログインページに戻して「確認コードのメールを送信できませんでした。時間をおいてもう一度お試しください。」を表示する。オフのときは、今までどおりパスワードだけでログインして `/admin` へ移動する。確認コードの間違いが続いて上限に達した管理者は、その時間が過ぎるまで、正しいパスワードでもコードを送らず、`/admin/login` へ同じ案内（「確認コードの間違いが続いたため、しばらくログインできません。〇分後にもう一度お試しください。」）を出す。パスワードが間違いのときは、今までどおりのエラー。メールアドレスとIPアドレスの組ごとに1分5回まで（`throttle:admin-login`。会員のログインとは別に数える。超えたときは管理者用ログインページに「ログイン試行の規定数に達しました。〇秒後に再度お試しください。」）） |
 | `/admin/two-factor` | GET | AdminTwoFactorController | create | | 管理者の確認コードの入力ページ表示（ルート名 `admin.two-factor`。設計書にはなかった追加機能。パスワードを通った管理者がセッションにいないとき（直接開いた・5回間違えた後・二段階認証がオフのとき）は `/admin/login` へ移動する。管理者としてログイン中は `/admin` へ移動する） |
 | `/admin/two-factor` | POST | AdminTwoFactorController | store | | 管理者の確認コードの確認機能（ルート名 `admin.two-factor.store`。数字6桁（全角数字は半角にして受け付ける）。未入力・6桁の数字でない入力は入力エラーにし、失敗回数には数えない。正しければコードを削除（1回限り）して管理者としてログインし、セッションIDとCSRFトークンを作り直して `/admin` へ移動する。コードを比べる前に失敗回数を1つ使う（DB の UPDATE で、5回までしか増やせない）。ルートごとに、入力待ちの管理者（なければIPアドレス）あたり1分10回まで（上限に達したときは入力欄の近くに「確認コードの入力・再送の回数が上限に達しました。〇秒後に再度お試しください。」、JSONを期待するリクエストは429）。入力待ちの途中で管理者のパスワードが変わったとき（再設定されたとき）は、入力待ちを解いて `/admin/login` へ「パスワードが変更されたため、確認コードは使えなくなりました。新しいパスワードでもう一度ログインしてください。」を付けて移動する（確認コードのページの表示・送信・再送のどれでも。入力待ちがもともとないときは案内なし）。有効期限（10分）が切れていれば「確認コードの有効期限が切れました。「コードを再送する」から新しいコードを受け取ってください。」。正しくなければ失敗回数を数えて「確認コードが正しくありません。（あと〇回入力できます）」。5回目の間違いでコードとセッションの保存を消し、`/admin/login` へ「確認コードを5回間違えたため、無効にしました。もう一度ログインしてください。」を付けて移動する。同じ管理者の間違いは、ログインし直しても別のIPからでも、1時間に合計20回まで（`config/auth.php` の `admin_two_factor.miss_limit`・`miss_window_seconds`。RateLimiter で管理者IDごとに数える。期限切れ・形式エラーは数えない。コードの入力に成功しても消さない）。20回目の間違いで、コードと入力待ちを消して `/admin/login` へ「確認コードの間違いが続いたため、しばらくログインできません。〇分後にもう一度お試しください。」（残り時間を分で切り上げ）を付けて移動する。コードの照合・期限の確認・削除は1回の DELETE で行う） |
-| `/admin/two-factor/resend` | POST | AdminTwoFactorController | resend | | 管理者の確認コードの再送機能（ルート名 `admin.two-factor.resend`。前回の送信（ログイン時・再送とも）から1分たっていなければ、メールを送らず「確認コードの再送は、前回の送信から1分たってからお試しください。」。1分以上たっていれば新しいコードに置き換えて（有効期限は数え直すが、失敗回数は引き継ぐ。前のコードは使えなくなる）送り、判定と置き換えは1回の UPDATE で行う（同時に押されてもメールは1通）。置き換えられなかったとき、コードがなければ（ロック・使用済み）、新しく作らず、入力待ちを解いて `/admin/login` へ戻す。上限は確認コードの送信と同じ（1分10回）。「新しい確認コードをお送りしました。前のコードは使えなくなります。」。メールを送れなかったときは `/admin/login` へ戻す。CSRFトークンが古いときは確認コードの送信（`admin.two-factor.store`）とあわせて、エラーページにせず、入力待ちが残っているか（セッションだけで見る。パスワードの変更などは戻り先のページが確かめる）で、残っていれば `/admin/two-factor` へ「ページの有効期限が切れました。もう一度入力してください。」を付けて戻す（コードは置き換えず、メールも送らない。届いているコードをそのまま使える）。入力待ちが残っていなければ `/admin/login` へ「ページの有効期限が切れました。もう一度ログインしてください。」を付けて戻す） |
+| `/admin/two-factor/resend` | POST | AdminTwoFactorController | resend | | 管理者の確認コードの再送機能（ルート名 `admin.two-factor.resend`。前回の送信（ログイン時・再送とも）から1分たっていなければ、メールを送らず「確認コードの再送は、前回の送信から1分たってからお試しください。」。1分以上たっていれば新しいコードに置き換えて（有効期限は数え直すが、失敗回数は引き継ぐ。前のコードは使えなくなる）送り、判定と置き換えは1回の UPDATE で行う（同時に押されてもメールは1通）。置き換えられなかったとき、コードがなければ（ロック・使用済み）、新しく作らず、入力待ちを解いて `/admin/login` へ戻す。上限は確認コードの送信と同じ（1分10回）。「新しい確認コードをお送りしました。前のコードは使えなくなります。」。メールを送れなかったときは `/admin/login` へ戻す。CSRFトークンが古いときは確認コードの送信（`admin.two-factor.store`）とあわせて、エラーページにせず、入力待ちが残っているか（セッションだけで見る。パスワードの変更などは戻り先のページが確かめる）で、残っていれば `/admin/two-factor` へ、確認コードの送信のときは「ページの有効期限が切れました。もう一度入力してください。」、再送のときは「ページの有効期限が切れました。もう一度「コードを再送する」を押してください。」を付けて戻す（どちらもコードは置き換えず、メールも送らない。届いているコードをそのまま使える）。入力待ちが残っていなければ `/admin/login` へ「ページの有効期限が切れました。もう一度ログインしてください。」を付けて戻す） |
 | `/admin/forgot-password` | GET | AdminPasswordResetController | create | | 管理者のパスワード再設定メールの送信ページ表示（ルート名 `admin.password.request`。管理者としてログイン中は `/admin` へ移動する。設計書にはなかった追加機能） |
 | `/admin/forgot-password` | POST | AdminPasswordResetController | store | | 管理者のパスワード再設定メール送信機能（ルート名 `admin.password.email`。会員とは別のパスワードブローカー `admins`。管理者でないメールアドレス（会員を含む）、1分以内の再送信でも、送れたときと同じ案内を表示する。IPごとに1分5回まで） |
 | `/admin/reset-password/{token}` | GET | AdminPasswordResetController | edit | | 管理者の新しいパスワードの設定ページ表示（ルート名 `admin.password.reset`。再設定メールのリンクから開く） |
@@ -91,7 +102,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/inquiries/update` | POST | AdminInquiryController | update | 必須 | お問い合わせ対応チェック機能（`id` と `addressed` を JSON で受け取り JSON（`{"id": 1, "addressed": true}`）を返す。存在しないお問い合わせは404（`{"message": "お問い合わせが見つかりません。"}`）、`addressed` などの不正な値は422。対応済みにしてもお客様にメールは送らない。詳細のモーダルは Livewire の AdminInquiryDetail） |
 | `/admin/items` | GET | AdminItemController | index | 必須 | 管理画面掲載商品一覧ページ表示機能（削除していない商品を全件表示する。検索・ページ送りはない。並び順は商品名ごとにまとめ、まとまりは同じ商品名の最小IDの順、その中は重さの軽い順、同じ重さはID順。列は商品名・商品重量（kg）・商品金額（円・税込。3桁ごとにカンマ）・「詳細」・「修正」・「削除」。0件のときは「掲載中の商品はありません。」。「詳細」は Livewire の `AdminItemDetail` のモーダルで、商品名・商品重量・商品金額・商品画像・商品紹介文・おすすめ商品掲載（掲載 / 未掲載）・通常/予約限定・予約可能数を表示する。予約可能数は、通常の商品は「無」、予約限定で上限がなければ「上限なし」、上限があれば「200（残り150）」の形で、残りは公開側の予約ページと同じ数。「修正」のリンク先は `/admin/items/edit/{item_id}`（ルート名 `admin.items.edit`）） |
 | `/admin/items/create` | GET | AdminItemController | create | 必須 | 掲載商品登録ページ表示（項目は商品名・商品重量（2kg / 5kg / 10kg）・商品金額（円・税込）・商品画像（ドラッグ＆ドロップまたは「画像を選択」。選んだ画像はプレビューに出る）・商品紹介文・おすすめ商品（はい / いいえ）・予約限定（限定 / 通常）・予約可能数（上限なし / 上限あり＋数）。ラジオボタンは最初はすべて未選択。予約限定が「通常」または未選択のあいだは、予約可能数の部品全体を無効（グレー）にする。サイドメニュー・トップページの「掲載商品登録」のリンク先） |
-| `/admin/items/store` | POST | AdminItemController | store | 必須 | 掲載商品登録機能（`name`・`weight`・`price`・`image`（ファイル）・`detail`・`recommend`・`is_reserved_only`・`reservation_limit_type`（`unlimited` / `limited`）・`reservation_limit` を受け取る。成功すると `/admin/items` に戻り、表の上に緑の文字で「商品を登録しました。」（flash の `list_status`）。入力の誤りは登録ページに戻して項目ごとに赤字で案内し、画像以外の入力を残す。検証：商品名は必須・255文字以内、商品重量は 2 / 5 / 10、商品金額は 1〜100,000 の整数（全角数字は半角にし、前後の空白は除いてから検証する。予約可能数の数も同じ）、商品画像は必須・jpeg / png / webp・10MB以下（サーバーで GD を使い、長辺1200px以下に縮小（小さい画像は拡大しない）して webp（品質80）にし、`public` ディスクの `image/product/uploads/` にハッシュ名で保存し、`items.img_url` に `image/product/uploads/xxx.webp` を入れる。jpeg の EXIF の向きは、exif 拡張があれば補正する。GD で読み込めない画像は「画像を読み込めませんでした。別の画像を選んでください」。画像の読み込み・縮小・書き出しは、ロックを取るトランザクションの前に済ませ（縮小してから向きを補正する）、ファイルを書くのは、重複などの確認が通ってから。書いたあとにDBの登録が失敗したときだけそのファイルを消す。ブラウザでも、選んだ・落とした時点で形式と大きさを確かめ、合わなければ選択を取り消して「jpeg・png・webp の10MB以下の画像を選んでください」を画像の欄の下に出す。シードの画像は `image/product/` 直下のまま）、商品紹介文は必須・1,000文字以内、おすすめ商品・予約限定は必須。予約可能数は、予約限定が「限定」のときだけ上限の有無を必須とし、「上限あり」のときだけ数（1〜999 の整数）を必須とする。保存する `reservation_limit` は、限定・上限なしは null、限定・上限ありは数、通常は null（送られてきても捨てる）。削除していない商品に同じ商品名・重さの組み合わせがあれば「{商品名} {重さ}kg はすでに登録されています」で登録しない（削除済みの商品とは重複しない。重複の判定は DB の照合順序 `utf8mb4_unicode_ci` で行うため、ひらがなとカタカナ・濁点の有無・大文字小文字・全角半角は同じとみなす。「じゃがいも」と「ジャガイモ」は重複になる。意図どおり）。重複の判定から保存までは、同じ商品名・重さの行をロックしたトランザクションで行い、ロックした行から重複を判定する（`items` の `name`・`weight` に索引がある）。ページの有効期限切れ（419）のときは登録ページに戻し、「ページの有効期限が切れました。もう一度登録してください。」を赤字で出して画像以外の入力を残す） |
+| `/admin/items/store` | POST | AdminItemController | store | 必須 | 掲載商品登録機能（`name`・`weight`・`price`・`image`（ファイル）・`detail`・`recommend`・`is_reserved_only`・`reservation_limit_type`（`unlimited` / `limited`）・`reservation_limit` を受け取る。成功すると `/admin/items` に戻り、表の上に緑の文字で「商品を登録しました。」（flash の `list_status`）。入力の誤りは登録ページに戻して項目ごとに赤字で案内し、画像以外の入力を残す。検証：商品名は必須・255文字以内、商品重量は 2 / 5 / 10、商品金額は 1〜100,000 の整数（全角数字は半角にし、前後の空白と先頭の0は除いてから検証する。予約可能数の数も同じ）、商品画像は必須・jpeg / png / webp・10MB以下（サーバーで GD を使い、長辺1200px以下に縮小（小さい画像は拡大しない）して webp（品質80）にし、`public` ディスクの `image/product/uploads/` にハッシュ名で保存し、`items.img_url` に `image/product/uploads/xxx.webp` を入れる。jpeg の EXIF の向きは、exif 拡張があれば補正する。GD で読み込めない画像は「画像を読み込めませんでした。別の画像を選んでください」。画像の読み込み・縮小・書き出しは、ロックを取るトランザクションの前に済ませ（縮小してから向きを補正する）、ファイルを書くのは、重複などの確認が通ってから。書いたあとにDBの登録が失敗したときだけそのファイルを消す。ブラウザでも、選んだ・落とした時点で形式と大きさを確かめ、合わなければ選択を取り消して「jpeg・png・webp の10MB以下の画像を選んでください」を画像の欄の下に出す。シードの画像は `image/product/` 直下のまま）、商品紹介文は必須・1,000文字以内、おすすめ商品・予約限定は必須。予約可能数は、予約限定が「限定」のときだけ上限の有無を必須とし、「上限あり」のときだけ数（1〜999 の整数）を必須とする。保存する `reservation_limit` は、限定・上限なしは null、限定・上限ありは数、通常は null（送られてきても捨てる）。削除していない商品に同じ商品名・重さの組み合わせがあれば「{商品名} {重さ}kg はすでに登録されています」で登録しない（削除済みの商品とは重複しない。重複の判定は DB の照合順序 `utf8mb4_unicode_ci` で行うため、ひらがなとカタカナ・濁点の有無・大文字小文字・全角半角は同じとみなす。「じゃがいも」と「ジャガイモ」は重複になる。意図どおり）。重複の判定から保存までは、同じ商品名・重さの行をロックしたトランザクションで行い、ロックした行から重複を判定する（`items` の `name`・`weight` に索引がある）。ページの有効期限切れ（419）のときは登録ページに戻し、「ページの有効期限が切れました。もう一度登録してください。」を赤字で出して画像以外の入力を残す） |
 | `/admin/items/edit/{item_id}` | GET | AdminItemController | edit | 必須 | 掲載商品修正ページ表示（`{item_id}` は数字だけを受け付け、数字以外は404。削除済み・存在しない商品は `/admin/items` に戻り、「商品が見つかりません。」を赤字で表示する。入力欄・ラジオボタン・今の画像のプレビューには今の値が入る。サイドメニューは「掲載商品一覧」が太字。一覧の「修正」のリンク先） |
 | `/admin/items/update` | POST | AdminItemController | update | 必須 | 掲載商品修正機能（商品のIDは hidden の `id` で送る。ほかの項目と検証は登録と同じで、商品画像だけは任意（選ばなければ今の画像のまま。差し替えて更新が確定したあとに、古い画像が `image/product/uploads/` の中のファイルなら消す。シードの画像は消さない。更新が失敗したときも消さない）。成功すると `/admin/items` に戻り、緑の文字で「商品を修正しました。」。入力の誤りは修正ページに戻して赤字で案内し、入力を残す。重複の判定は自分自身を除く。予約可能数の上限を、すでに予約された数（取消済みを除く）より小さくすると「すでに{n}個の予約があるため、{n}以上にしてください」で更新しない（同じ数にはできる）。通常と限定は自由に切り替えられる（限定にした商品は、公開側の既存の仕組みでカートから取り除かれる）。削除済み・存在しない商品、`id` の形が正しくない場合は、何も変えずに `/admin/items` に戻り、「商品が見つかりません。」を赤字で表示する。過去の注文・予約は、注文した時点の商品名・重さ・金額を持っているため、表示は変わらない（画像は今の商品の画像を表示する）。上限を下げる修正と同時に予約が確定すると、予約数が上限を少し超えることがある。予約作成時と同じく許容する（`docs/uat/user/reservation.md` の決定）。画像の読み込み・縮小・書き出しはトランザクションの前に済ませ、ファイルを書くのは、商品の存在・重複・予約済みの数の確認が通ってから。419のときは修正ページに戻し、「もう一度修正してください。」を赤字で出して画像以外の入力を残す） |
 | `/admin/items/delete` | DELETE | AdminItemController | delete | 必須 | 掲載商品削除機能（論理削除。`id` を受け取り、成功しても失敗しても `/admin/items` に戻る。成功の案内「商品を削除しました。」は表の上に緑の文字で表示する（flash の `list_status`）。削除済み・存在しない商品、`id` の形が正しくない場合は、何も変えずに「商品が見つかりません。」を赤字で表示する。削除した商品は公開側の商品一覧・トップのおすすめ・商品詳細・カート・購入・予約から消える。過去の注文・予約は、注文した時点の商品名・重さ（`item_name`・`item_weight`）を持っているため、表示は変わらない。元に戻す機能と物理削除は作らない。一覧の「削除」を押すと「{商品名} {重さ}kg を削除します。よろしいですか？」「公開ページとカートから消えます。過去の注文・予約の記録は残ります。」の確認を出す） |
@@ -104,6 +115,55 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | `/admin/mail/inquiry/{inquiry_id}` | GET | AdminMailController | createInquiryMail | 必須 | メール作成ページ表示 |
 | `/admin/mail/send` | POST | AdminMailController | send | 必須 | メール送信機能 |
 
+## ルートの共通の決まり
+
+### ルートパラメータの制限
+
+数字のIDを受け取るパスは、数字でないものを404にする。
+
+| パラメータ | 使うパス | 制限 |
+|---|---|---|
+| `{item}`（商品ID） | `/items/{item}`・`/purchase/{item?}`・`/reservation/{item}` | 先頭が0でない18桁までの数字（`[1-9][0-9]{0,17}`。PHP の整数の上限を超えないため）。`AppServiceProvider` の `Route::pattern('item', ...)` で全体にかけ、`/purchase`・`/reservation` のルートでも `where` で明示している |
+| `{item_id}` | `/admin/items/edit/{item_id}` | 数字だけ（`whereNumber`） |
+| `{notice_id}` | `/admin/notices/edit/{notice_id}` | 数字だけ（`whereNumber`） |
+| `{user_id}` | `/admin/mail/user/{user_id}` | 数字だけ（`whereNumber`） |
+| `{inquiry_id}` | `/admin/mail/inquiry/{inquiry_id}` | 数字だけ（`whereNumber`） |
+
+`{token}`（パスワード再設定のトークン）は制限しない（形が違うトークンは、再設定の処理が無効なリンクとして扱う）。`/purchase/success` などの固定のパスは、`/purchase/{item?}` に吸われないよう、`routes/web.php` で先に定義している（予約も同じ）。
+
+### 回数制限（throttle）
+
+| limiter | 上限 | 数え方 | かけるルート | かけ方 |
+|---|---|---|---|---|
+| `inquiry` | 1分10回 | IPアドレスごと | `POST /inquiry/create` | ルートの `throttle:inquiry`（`AppServiceProvider`）。超えたときはお問い合わせフォームに戻して入力を残す |
+| `login` | 1分5回 | メールアドレス（小文字）とIPアドレスの組ごと | `POST /login` | Fortify の `config/fortify.php` の `limiters`（`FortifyServiceProvider`）。管理者のログインとは別に数える |
+| `admin-login` | 1分5回 | 同上 | `POST /admin/login` | ルートの `throttle:admin-login`。会員のログインと同じ文言で、管理者用ログインページへ戻す |
+| `register` | 1分5回（`config('fortify.register_per_minute')`＝`REGISTER_THROTTLE_PER_MINUTE`。E2E用アプリでは大きくしている） | IPアドレスごと（入力エラーも数える） | `POST /register` | `ThrottleFortifyRoutes` |
+| `password-reset` | 1分5回 | ルート名とIPアドレスの組ごと（ルートごとに数える） | 会員：`POST /forgot-password`・`POST /reset-password`。管理者：`POST /admin/forgot-password`・`POST /admin/reset-password` | 会員は `ThrottleFortifyRoutes`、管理者はルートの `throttle:password-reset` |
+| `admin-two-factor` | 1分10回 | ルート名と、入力待ちの管理者（いなければIPアドレス）の組ごと | `POST /admin/two-factor`・`POST /admin/two-factor/resend` | ルートの `throttle:admin-two-factor` |
+| `two-factor` | 1分5回 | ログイン中のID | （使わない。Fortify の二段階認証は無効） | 定義だけ残している |
+
+- `ThrottleFortifyRoutes`（`App\Http\Middleware`。`bootstrap/app.php` で `web` グループに追加）は、Fortify のルートには limiter を設定できないため、ルート名で対象を絞って limiter をかける。対応表は `ThrottleFortifyRoutes::LIMITERS`（`password.email`・`password.update` → `password-reset`、`register.store` → `register`）。登録ページの表示（`GET /register`）は制限しない。
+- 上限に達したときの応答は、JSON を期待するリクエストは429、それ以外は入力ページに戻して日本語の案内を出す（`FortifyServiceProvider::limitResponse()`。お問い合わせは入力を残してフォームへ戻す）。文言は `lang/ja/auth.php`・`lang/ja/passwords.php`・`lang/ja/admin_two_factor.php`。
+- このほか、管理者の確認コードの間違いは、管理者ごとに1時間20回まで（`RateLimiter` を直接使う。上の `/admin/two-factor` の行を参照）。
+
+### セッションの排他（`/payment`・`/reservation/payment`）
+
+注文・予約の確定の POST（`shop.checkout.payment`・`shop.reservation.payment`）には、ルートの `->block()` で、同じセッションの同時リクエストを順番に処理する排他をかけている（ロックの有効 `purchase.begin_lock_ttl`＝180秒、待つ時間 `purchase.session_lock_wait`＝15秒。`config/purchase.php`）。後のリクエストが古いセッションを書き戻して、カートの減算や保存待ちの注文を上書きしないようにするため。
+
+待ちきれなかったとき（`LockTimeoutException`）は、`bootstrap/app.php` が、購入の `/payment`（`shop.checkout.payment`）に限り、セッションを使わないレイアウトなしの簡単な案内「ただいまご注文を処理しています。しばらく待ってから、購入ページを開き直してください。」を503で返す。
+
+このほか、会員ごとの排他ロック（`CheckoutService`。注文確定の `purchase.begin_lock_wait`＝10秒、購入・予約の完了処理の `purchase.complete_lock_wait`）があり、取れなかったときは入力エラー（「処理中」の案内）か、支払い確定処理中の案内ページ（[ページ一覧](03-page-list.md)。503）を返す。
+
+### 存在しないURL（404）
+
+`routes/web.php` の最後に、`{fallbackPlaceholder}`（任意のパス）を GET・HEAD・POST・PUT・PATCH・DELETE で受けるルート `top.not-found` を置き、`abort(404)` で `errors/404.blade.php` を描画する。
+
+- 定義のないURLは `web` ミドルウェアを通らずセッションが使えず、ログイン中でも未ログインのヘッダーになってしまうため、`web` を通してから404を返す。ヘッダーのナビは `top.*` と同じ。
+- `Route::fallback()` は GET にしか一致せず、存在しないURLへの POST などが405になるため、OPTIONS 以外のメソッドで受ける（OPTIONS は Laravel が既存のルートに `Allow` ヘッダーで答えるのに任せる）。
+- 404を返すだけなので CSRF の確認は外す（外さないと、トークンなしの POST が404ではなく419になる）。
+- POST専用のURL（例：`/inquiry/create`）を GET で開いたときも、405ではなくこの404になる。数字でない商品IDのURL（`/items/abc`）なども同じ。
+
 ## Model
 
 | 説明 |
@@ -113,6 +173,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | Admin_two_factor_codesテーブル操作用モデル |
 | Itemsテーブル操作用モデル |
 | Noticesテーブル操作用モデル |
+| Materialsテーブル操作用モデル |
 | Inquiriesテーブル操作用モデル |
 | Reservationsテーブル操作用モデル |
 | Purchase_historiesテーブル操作用モデル |
@@ -133,7 +194,6 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 - 商品詳細ページ
 - カートページ
 - 購入ページ
-- 決済ページ
 - 振込先のご案内ページ（shop/bank_transfer。購入・予約で共通）
 - 支払い確定処理中の案内ページ（shop/payment_pending。購入・予約で共通）
 - 購入サンクスページ
@@ -145,6 +205,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 - プライバシーポリシーページ
 - 特定商取引法に基づく表記ページ
 - 送料案内ページ
+- 404ページ（errors/404）
 - 会員登録ページ
 - ログインページ
 - パスワード再設定メールの送信ページ
@@ -179,6 +240,10 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 
 ## Mail
 
+しおや農園から送るメールはすべて、抽象クラス `App\Mail\ShopMail`（`Mailable` を継承）を継承する。ここで、差出人・署名の名前とアドレス（`config('mail.from')`）、件名の先頭の「【しおや農園】」（`SUBJECT_PREFIX`）、お問い合わせページのURLを決める。購入・予約のサンクスメールは、さらに共通の親 `ThanksMail`（宛名・お振込先の判定など）を継承する。
+
+送り方は2通りある。保存のあとに送る通知（サンクスメール・会員登録完了メール）は `App\Support\DeferredMail::send()` で、レスポンスを返した後（`defer`・`always: true`）に送り、失敗しても例外を外に出さずログに残す（保存済みのため）。送信の成否を画面に返す必要があるもの（パスワード再設定・管理者の確認コード・管理画面からのメール）は、同期で `Mail::send()` する。
+
 購入・予約のデータを保存したときに、会員登録のメールアドレスへサンクスメールを送る（Markdownメール。HTML版とテキスト版）。送信はキューを使わず、レスポンスを返した後に同じリクエストの中で行う。送信に失敗しても購入・予約は成立させ、ログに残す。保存しなかった場合（戻る・カードの拒否・再読み込み・二重送信）は送らない。差出人は `config('mail.from')`（しおや農園 / shioyafarm@example.com）。
 
 | Mailable | 送るタイミング | 件名 |
@@ -186,7 +251,7 @@ Fortify が登録するルート。ビューは `FortifyServiceProvider` で指�
 | PurchaseThanksMail | 購入履歴の作成時（`/purchase/success`、`/purchase/bank-transfer/confirm`、`/payment` の代金引換・顧客残高で支払い済みの銀行振込） | 【しおや農園】ご注文ありがとうございます（注文番号：{purchase_histories.id}） |
 | ReservationThanksMail | 予約の作成時（`/reservation/success`、`/reservation/bank-transfer/confirm`、`/reservation/payment` の顧客残高で支払い済みの銀行振込） | 【しおや農園】ご予約ありがとうございます（予約番号：{reservations.id}） |
 
-本文の構成：宛名（会員の氏名）、あいさつ、■ご注文内容／■ご予約内容（番号・日時・お支払方法・商品明細・商品小計・送料・代引手数料（代金引換のみ）・合計。予約は9月からの発送の案内を付ける）、■お届け先（お届け先氏名・住所・電話番号）、■お振込先（銀行振込のみ。銀行名・支店名・口座種別・口座番号・口座名義・お振込金額。顧客残高で支払い済みのときは「お客様の残高からお支払いが完了しています」）、マイページで確認できる案内、送信専用の注意とお問い合わせページのURL、署名。
+本文の構成：宛名（会員の氏名）、あいさつ、■ご注文内容／■ご予約内容（番号・日時・お支払方法・商品明細・商品小計・送料・代引手数料（代金引換のみ）・合計。予約は発送時期（`config('shipping.reservation_ship_period_text')`＝9月中）の案内を付ける）、■お届け先（お届け先氏名・住所・電話番号）、■お振込先（銀行振込のみ。銀行名・支店名・口座種別・口座番号・口座名義・お振込金額。顧客残高で支払い済みのときは「お客様の残高からお支払いが完了しています」）、マイページで確認できる案内、送信専用の注意とお問い合わせページのURL、署名。
 
 農園（管理者）への新規注文の通知、入金確認メール、発送通知メールは作らない（農園への通知は管理画面の実装時に検討する）。
 
@@ -242,7 +307,7 @@ user_idと合計金額はcontrollerで取得
 | 商品数量（items.*.quantity） | 入力必須、整数値、1以上、10以下 |
 | 配送先氏名 | 入力必須、文字列、255文字以下 |
 | 配送先住所 | 入力必須、文字列、接頭辞と正規表現の値 |
-| 配送先電話番号 | 入力必須、数字のみ、10〜11桁、15文字以下 |
+| 配送先電話番号 | 入力必須、数字のみ、10〜11桁 |
 | 支払方法 | 入力必須、文字列、25文字以下、指定の値のみ |
 
 ### InquiryRequest.php（お問い合わせ送信）
@@ -265,7 +330,7 @@ user_idと合計金額はcontrollerで取得
 | 商品数量 | 入力必須、整数値、1以上、10以下（確定時に、予約可能数の残数を超える場合はエラーにする） |
 | 配送先氏名 | 入力必須、文字列、255文字以下 |
 | 配送先住所 | 入力必須、文字列、接頭辞と正規表現の値 |
-| 配送先電話番号 | 入力必須、数字のみ、10〜11桁、15文字以下 |
+| 配送先電話番号 | 入力必須、数字のみ、10〜11桁 |
 | 支払方法 | 入力必須、文字列、25文字以下、指定の値のみ（`card`、`customer_balance`） |
 
 ### DeliveryAddressRequest.php（配送先住所追加）
@@ -283,7 +348,7 @@ user_idと合計金額はcontrollerで取得
 | 名 | 入力必須、文字列、255文字以下 |
 | 住所（都道府県） | 入力必須、テーブルに存在の有無 |
 | 住所（市区町村） | 入力必須、文字列、255文字以下 |
-| 電話番号 | 入力必須、数字のみ、10〜11桁、15文字以下 |
+| 電話番号 | 入力必須、文字列、ハイフンなしの半角数字10〜11桁（正規表現 `\A[0-9]{10,11}\z`） |
 | メールアドレス | 入力必須、重複不可（自分を除く。退会済みの会員のメールアドレスも重複として扱う）、正しいメールアドレス形式、30文字以下 |
 | パスワード | 必須ではない（空のときは変更しない）、入力したときは登録の際と同じFortifyのバリデーションを使用 |
 | 現在のパスワード | メールアドレスまたはパスワードを変更するときだけ入力必須（メールアドレスが今と同じ、または大文字小文字の違いだけなら変更とみなさない）、現在のパスワードと一致 |
@@ -310,20 +375,26 @@ user_idと合計金額はcontrollerで取得
 | 置き場所 | 入力必須、文字列、100文字以下 |
 | 基準値 | 入力必須、整数、0以上、99999以下 |
 
-資材の修正（`MaterialUpdateRequest`）は、同じ項目に、資材のID（必須・1以上の整数。正しくないときは存在しない資材と同じ扱い）を加えたもの。削除（`MaterialDeleteRequest`）は資材のIDだけ。
+資材の修正（`MaterialUpdateRequest`）は、同じ項目に、資材のID（必須・1以上の整数・存在する資材（`exists`））を加えたもの。IDが正しくない・存在しない（削除済みを含む）ときは、ほかの項目（資材名の重複など）の検証より先に、何も変えずに一覧へ戻して「資材が見つかりません。」を表示する（モーダルは開かない）。削除（`MaterialDeleteRequest`）は資材のIDだけ（必須・1以上の整数。形が正しくないときは存在しない資材と同じ扱い。存在するかは削除の処理で判定する）。
 
-### ItemRequest.php（掲載商品登録・修正）
+### ItemStoreRequest.php（掲載商品登録）・ItemUpdateRequest.php（掲載商品修正）・ItemDeleteRequest.php（掲載商品削除）
+
+登録（`ItemStoreRequest`）を元に、修正（`ItemUpdateRequest`。登録を継承）は商品のIDを加えて商品画像を任意にし、削除（`ItemDeleteRequest`）は商品のIDだけを検証する。商品金額・予約可能数は、検証の前に、全角の数字を半角にし、前後の空白（全角を含む）と先頭の0を取り除く（`FormText::number`。「０５００」→「500」）。送られてこなかった項目は、送られていない扱いのままにする（予約可能数は、「上限なし」のとき入力欄が無効で送られない）。
 
 | フォーム | ルール |
 |---|---|
-| 商品名 | 入力必須、文字列、255文字以下 |
-| 商品重量 | 入力必須、指定の値のみ |
-| 商品価格 | 入力必須、整数値 |
-| 商品画像 | 入力必須、文字列、255文字以下 |
-| おすすめ商品 | 入力必須、真偽値 |
-| 商品詳細 | 入力必須、文字列 |
-| 予約限定 | 入力必須、真偽値 |
-| 予約可能数 | 必須ではない、整数値 |
+| 商品名（name） | 入力必須、文字列、255文字以下 |
+| 商品重量（weight） | 入力必須、2・5・10のいずれか |
+| 商品金額（price） | 入力必須、整数、1以上100,000以下 |
+| 商品画像（image） | 登録は入力必須、修正は任意（選ばなければ今の画像のまま）。ファイル、jpeg・png・webp、10MB（10,240KB）以下 |
+| 商品紹介文（detail） | 入力必須、文字列、1,000文字以下 |
+| おすすめ商品（recommend） | 入力必須、真偽値 |
+| 予約限定（is_reserved_only） | 入力必須、真偽値 |
+| 予約可能数の上限の有無（reservation_limit_type） | 予約限定が「限定」のときだけ入力必須、`unlimited`・`limited` のみ |
+| 予約可能数（reservation_limit） | 上限の有無が `limited` のときだけ入力必須、整数、1以上999以下 |
+| 商品（id）※修正・削除 | 入力必須、整数、1以上（存在するか・削除済みかは検証せず、更新・削除の処理で判定する。正しくない値は、削除済み・存在しない商品と同じ扱いで、何も変えずに `/admin/items` へ戻し「商品が見つかりません。」を表示する） |
+
+予約可能数は「上限の有無」と「数」の2項目で受け取り、保存する `reservation_limit` は、限定・上限なしは null、限定・上限ありは数、通常は null（送られてきても捨てる）。同じ商品名・重さの重複と、予約済みの数より小さい予約可能数は、入力の検証ではなく、保存の処理（`AdminItemService`）で判定する（上の `/admin/items/store`・`/admin/items/update` の行を参照）。
 
 ### ExportRequest.php（エクスポート）
 
@@ -337,6 +408,8 @@ user_idと合計金額はcontrollerで取得
 | 注文者名・予約者名（name） | 必須ではない、文字列、100文字以下、正しい UTF-8（壊れた文字を含む値はエラーにする。絞り込みが外れて全件が表示・出力されるのを防ぐため） |
 
 ### PurchaseSearchRequest.php（注文検索）・ReservationSearchRequest.php（予約検索）・AdminPurchaseUpdateRequest.php・AdminReservationUpdateRequest.php（発送済みの更新）
+
+検索は共通の `AdminListSearchRequest`、発送済みの更新は共通の `AdminShippedUpdateRequest`（お問い合わせの対応済みの更新と共通の `AdminCheckUpdateRequest` を継承）を元にする。
 
 | フォーム | ルール |
 |---|---|
@@ -352,7 +425,7 @@ user_idと合計金額はcontrollerで取得
 
 ### AdminPurchaseCancelRequest.php・AdminReservationCancelRequest.php（注文・予約の取消）
 
-入力の誤りは、取消の前に見ていた一覧（直前のページが注文一覧・予約一覧の検索結果のとき。それ以外は一覧の全件）に戻して、エラーを表示する。存在するか・発送済みか・取消済みかは、行をロックするリポジトリで判定する。
+共通の `AdminOrderCancelRequest` を元にする。入力の誤りは、取消の前に見ていた一覧（直前のページが注文一覧・予約一覧の検索結果のとき。それ以外は一覧の全件）に戻して、エラーを表示する。存在するか・発送済みか・取消済みかは、行をロックするリポジトリで判定する。
 
 | フォーム | ルール |
 |---|---|
@@ -401,7 +474,7 @@ user_idと合計金額はcontrollerで取得
 
 ### AdminTwoFactorRequest.php（管理者の確認コードの入力）
 
-入力の誤りは確認コードの入力ページ（`/admin/two-factor`）に戻す。全角数字は半角に、前後の空白（全角を含む）は取り除いてから検証する（`prepareForValidation`）。
+入力の誤りは確認コードの入力ページ（`/admin/two-factor`）に戻す。全角数字は半角に、前後の空白（全角を含む）は取り除いてから検証する（`prepareForValidation`。`FormText::halfWidth`。先頭の0は取り除かない）。
 
 | フォーム | ルール |
 |---|---|
