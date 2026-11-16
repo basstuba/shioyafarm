@@ -124,7 +124,7 @@ E2E の前提と項目は [docs/e2e/](docs/e2e/) にあります。
 - **規約**：[.claude/rules/](.claude/rules/) に、レイヤー構成・フロントエンド・送料・テスト・UAT の書き方の規約を置いています。触るファイルに応じて読み込まれます。
 - **設計書と実装の照合**：読み取り専用の [`doc-diff-checker`](.claude/agents/doc-diff-checker.md) エージェントが、設計書と実装のずれを一覧にします。
 
-節目の確認には、外部のスキル集（ECC）の `laravel-verification` も使いました（このリポジトリには含めていません）。
+節目の確認には、外部のスキル集 [Everything Claude Code](https://github.com/affaan-m/everything-claude-code) の `laravel-verification` も使いました（このリポジトリには含めていません）。
 
 体制を作った経緯、うまくいったこと・いかなかったことは、[振り返り](docs/retrospective.md)にまとめています。
 
