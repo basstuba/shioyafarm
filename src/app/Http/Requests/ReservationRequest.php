@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Override;
 
 /**
  * 予約ページの「予約を確定する」（POST /reservation/payment）のリクエスト
@@ -44,6 +45,7 @@ class ReservationRequest extends FormRequest
      *
      * @return array<string, string>
      */
+    #[Override]
     public function messages(): array
     {
         return [

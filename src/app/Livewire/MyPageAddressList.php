@@ -10,6 +10,7 @@ use App\Services\DeliveryAddressService;
 use App\Support\LoginUser;
 use Illuminate\View\View;
 use Livewire\Component;
+use Override;
 
 /**
  * マイページのお届け先住所一覧（5件ずつのページ送り）と、住所追加モーダル
@@ -28,6 +29,7 @@ class MyPageAddressList extends Component
     /**
      * 追加した住所が先頭に見えるよう、1ページ目に戻る
      */
+    #[Override]
     protected function onAddressAdded(Delivery_address $address, DeliveryAddressService $addressService): void
     {
         $this->resetPage(self::PAGE_NAME);

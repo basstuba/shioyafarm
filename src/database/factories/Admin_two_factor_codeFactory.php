@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\Admin_two_factor_code;
 use App\Support\AdminTwoFactorHash;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Admin_two_factor_code>
@@ -17,6 +18,7 @@ class Admin_two_factor_codeFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function definition(): array
     {
         return [

@@ -8,6 +8,7 @@ use App\Services\CheckoutService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Override;
 
 /**
  * 購入ページの「注文を確定する」（POST /payment）のリクエスト
@@ -47,6 +48,7 @@ class PurchaseRequest extends FormRequest
      *
      * @return array<string, string>
      */
+    #[Override]
     public function messages(): array
     {
         $quantityMessages = [];

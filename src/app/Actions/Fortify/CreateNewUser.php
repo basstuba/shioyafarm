@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
+use Override;
 
 /**
  * 会員登録（Fortifyの新規ユーザー作成処理）
@@ -23,6 +24,7 @@ class CreateNewUser implements CreatesNewUsers
      *
      * @param  array<string, mixed>  $input
      */
+    #[Override]
     public function create(array $input): User
     {
         Validator::make($input, [

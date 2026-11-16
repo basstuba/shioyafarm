@@ -7,6 +7,7 @@ use App\Actions\Fortify\PasswordValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Override;
 
 /**
  * 会員の登録情報変更（マイページ）
@@ -69,6 +70,7 @@ class UserRequest extends FormRequest
      *
      * @return array<string, string>
      */
+    #[Override]
     public function messages(): array
     {
         return CreateNewUser::validationMessages() + [

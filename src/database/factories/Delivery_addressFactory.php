@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Delivery_address;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Delivery_address>
@@ -16,6 +17,7 @@ class Delivery_addressFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function definition(): array
     {
         return [

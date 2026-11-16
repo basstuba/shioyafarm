@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Actions\Fortify\CreateNewUser;
 use Laravel\Fortify\Http\Requests\SendPasswordResetLinkRequest as FortifySendPasswordResetLinkRequest;
+use Override;
 
 /**
  * パスワード再設定メールの送信のリクエスト（FortifyのSendPasswordResetLinkRequestを差し替えて使う）
@@ -17,6 +18,7 @@ class PasswordResetLinkRequest extends FortifySendPasswordResetLinkRequest
      *
      * @return array<string, array<int, string>>
      */
+    #[Override]
     public function rules(): array
     {
         return [
@@ -29,6 +31,7 @@ class PasswordResetLinkRequest extends FortifySendPasswordResetLinkRequest
      *
      * @return array<string, string>
      */
+    #[Override]
     public function messages(): array
     {
         return CreateNewUser::validationMessages();

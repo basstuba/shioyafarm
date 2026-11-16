@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Override;
 
 /**
  * 資材（発送用の化粧箱など。在庫数と置き場所を1行で持つ。設計書にない追加）
@@ -39,6 +40,7 @@ class Material extends Model
     /**
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [

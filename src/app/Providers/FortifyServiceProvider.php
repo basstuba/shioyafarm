@@ -29,6 +29,7 @@ use Laravel\Fortify\Http\Controllers\NewPasswordController as FortifyNewPassword
 use Laravel\Fortify\Http\Controllers\RegisteredUserController as FortifyRegisteredUserController;
 use Laravel\Fortify\Http\Requests\LoginRequest as FortifyLoginRequest;
 use Laravel\Fortify\Http\Requests\SendPasswordResetLinkRequest as FortifySendPasswordResetLinkRequest;
+use Override;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -40,6 +41,7 @@ class FortifyServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
+    #[Override]
     public function register(): void
     {
         // Fortifyのログイン用リクエストを、プロジェクトのFormRequestに差し替える
