@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Actions\Fortify\CreateNewUser;
 use Illuminate\Foundation\Http\FormRequest;
+use Override;
 
 /**
  * 新しいパスワードの設定のリクエスト
@@ -42,6 +43,7 @@ class NewPasswordRequest extends FormRequest
      *
      * @return array<string, string>
      */
+    #[Override]
     public function messages(): array
     {
         return CreateNewUser::validationMessages() + [

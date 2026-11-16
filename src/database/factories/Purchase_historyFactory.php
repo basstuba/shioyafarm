@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Purchase_history;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Purchase_history>
@@ -16,6 +17,7 @@ class Purchase_historyFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function definition(): array
     {
         return [

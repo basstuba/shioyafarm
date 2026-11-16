@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Purchase_history;
 use App\Models\Purchase_history_item;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Purchase_history_item>
@@ -15,6 +16,7 @@ class Purchase_history_itemFactory extends Factory
     /**
      * 注文した時点の商品名・重さは、指定がなければ商品の今の値にする（削除済みの商品も引く。商品の取得は1回）
      */
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (Purchase_history_item $model): void {
@@ -31,6 +33,7 @@ class Purchase_history_itemFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function definition(): array
     {
         return [

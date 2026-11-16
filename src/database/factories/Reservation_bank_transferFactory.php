@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Reservation;
 use App\Models\Reservation_bank_transfer;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Reservation_bank_transfer>
@@ -16,6 +17,7 @@ class Reservation_bank_transferFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function definition(): array
     {
         return [

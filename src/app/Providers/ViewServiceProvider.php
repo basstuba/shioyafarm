@@ -5,12 +5,14 @@ namespace App\Providers;
 use App\View\Composers\HeaderComposer;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Override;
 
 class ViewServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
      */
+    #[Override]
     public function register(): void
     {
         //

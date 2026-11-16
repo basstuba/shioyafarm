@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Laravel\Fortify\Http\Requests\LoginRequest as FortifyLoginRequest;
+use Override;
 
 /**
  * ログインのリクエスト（FortifyのLoginRequestを差し替えて使う）
@@ -14,6 +15,7 @@ class LoginRequest extends FortifyLoginRequest
      *
      * @return array<string, array<int, string>>
      */
+    #[Override]
     public function rules(): array
     {
         return [
@@ -27,6 +29,7 @@ class LoginRequest extends FortifyLoginRequest
      *
      * @return array<string, string>
      */
+    #[Override]
     public function messages(): array
     {
         return [

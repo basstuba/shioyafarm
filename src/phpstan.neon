@@ -12,3 +12,6 @@ parameters:
 
     # モデルの casts() メソッドの中身（return の配列）を読む（既定では戻り値の型宣言しか見ないため、canceled_at が Carbon にならない）
     parseModelCastsMethod: true
+
+    # 親クラス・インターフェースのメソッドを上書きしているのに #[\Override] が無いものを検出する（付け忘れの検査）
+    checkMissingOverrideMethodAttribute: true

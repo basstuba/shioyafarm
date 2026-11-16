@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Override;
 use Throwable;
 
 /**
@@ -55,6 +56,7 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    #[Override]
     protected function casts(): array
     {
         return [
@@ -109,6 +111,7 @@ class User extends Authenticatable
      *
      * @throws Throwable メールの送信に失敗したとき
      */
+    #[Override]
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
         $this->sendPasswordResetMail((string) config('fortify.passwords'), new PasswordResetMail($this, $token));

@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 /**
  * @extends Factory<Reservation>
@@ -15,6 +16,7 @@ class ReservationFactory extends Factory
     /**
      * 予約した時点の商品名・重さは、指定がなければ商品の今の値にする（削除済みの商品も引く。商品の取得は1回）
      */
+    #[Override]
     public function configure(): static
     {
         return $this->afterMaking(function (Reservation $model): void {
@@ -31,6 +33,7 @@ class ReservationFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function definition(): array
     {
         return [
