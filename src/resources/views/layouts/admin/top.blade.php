@@ -11,6 +11,8 @@
     flash の status があれば、ヘッダーの下に案内を出す。
 --}}
 <body class="flex min-h-dvh flex-col bg-white font-sans text-ink">
+    {{-- 公開デモの案内（DEMO_NOTICE がオンのときだけ） --}}
+    <x-demo-notice variant="admin" />
     @include('layouts.admin.header')
     @if (session('status'))
         {{-- 案内（ログアウトの有効期限切れなど）はヘッダーの下に出る。出ている間、カードはその分下がり、残りの領域の上下中央に置かれる --}}

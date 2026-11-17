@@ -40,6 +40,8 @@ docker compose exec node npm run build                  # 本番用にCSS/JSを�
 
 サービス：アプリは http://localhost、phpMyAdmin は :8080、Mailpit は :8025。
 
+公開デモ用の本番構成は `compose.prod.yaml`（Caddy・PHP-FPM・MySQL。イメージは `docker/prod/Dockerfile`）。値は `docker/prod/app.env`（gitignore 対象。見本は `docker/prod/app.env.example`）に書き、compose には `--env-file` で渡す。デモの DB と画像は、サーバーの cron から `scripts/demo/reset.sh` で毎日作り直す（`DemoSeeder` を含む）。デモの案内は `DEMO_NOTICE`、プロキシの信頼は `TRUSTED_PROXIES`（Caddy に直接つなぐ今の構成では空）。サーバーの構築手順はリポジトリに入れていない。
+
 ## アーキテクチャ
 
 レイヤー構成は **Controller → Service → Repository（インターフェース） → Eloquentモデル**。`HomeController` → `HomeService` → `ItemRepository`/`NoticeRepository` が参考実装になる。

@@ -17,6 +17,8 @@
     flash の status があれば、ヘッダーの下に案内を出す。
 --}}
 <body class="flex min-h-dvh flex-col bg-white font-sans text-ink" x-data="{ open: $persist(true).as('admin-sidebar-open'), spOpen: false, ready: false }" x-init="$nextTick(() => ready = true)">
+    {{-- 公開デモの案内（DEMO_NOTICE がオンのときだけ） --}}
+    <x-demo-notice variant="admin" />
     @include('layouts.admin.header', ['withMenu' => true])
     @if (session('status'))
         <div class="flex justify-center px-4 pt-8">

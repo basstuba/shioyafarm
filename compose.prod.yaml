@@ -1,0 +1,112 @@
+# 本番用（公開デモ）の Compose。開発用の compose.yaml とは別のファイルで、単独で使う（override ではない）。
+# サービスは caddy（HTTPS・静的ファイル）・app（PHP-FPM）・mysql の3つだけ。phpMyAdmin・Mailpit・node・E2E 用のサービスはない。
+#
+# 設定：docker/prod/app.env.example を docker/prod/app.env にコピーして値を入れる（app.env は .gitignore 対象）。
+#   このファイルの ${...}（SITE_DOMAIN・DB_*・STORAGE_PUBLIC_DIR など）の値も、同じ app.env から --env-file で渡す。
+#   すべての docker compose コマンドに -f compose.prod.yaml --env-file docker/prod/app.env を付ける（付けないと必須の値が無いと止まる）。
+#
+# 使い方（リポジトリ直下で）：
+#   alias dcp='docker compose -f compose.prod.yaml --env-file docker/prod/app.env'
+#   dcp build                                     # イメージを作る（サーバー自身で。ARM64・x86_64 のどちらでもそのアーキテクチャで作られる）
+#   dcp up -d                                     # 起動（app は起動時に migrate --force だけ流す。データは作り直さない）
+#   ./scripts/demo/reset.sh                       # 初回・毎日の作り直し（migrate:fresh --seed → DemoSeeder → 画像の書き戻し）
+#   dcp logs -f app caddy                         # ログ（Laravel のログは LOG_CHANNEL=stderr でここに出る）
+#
+# ローカルでの確認（開発用の compose.yaml が :80 を使うため、ポートを変える）：
+#   app.env に SITE_DOMAIN=localhost、HTTPS_PORT=8443、HTTP_PORT=8088、APP_URL=https://localhost:8443 を設定する。
+#   → https://localhost:8443 を開く（自己署名の証明書の警告が出る。curl は -k）。
+#
+# 永続化するもの：
+#   - mysql-data（名前付きボリューム）：DB
+#   - caddy-data（名前付きボリューム）：Let's Encrypt の証明書。消すと取り直しになり、回数制限に当たることがある
+#   - STORAGE_PUBLIC_DIR（ホストのディレクトリ）：storage/app/public（商品画像・管理画面でアップロードした画像）。app と caddy が同じものを見る
+#     名前付きボリュームではなくホストのディレクトリにした理由：
+#       1. 作り直しのスクリプト（ホストで動く）が、docker を介さずに rsync で直接書き戻せる
+#       2. 手元のPCから scp・rsync で素材を入れやすく、中身も見える
+#     注意：app のユーザーの UID（既定 1000。ビルド引数 APP_UID）とホストのディレクトリの所有者をそろえる（Ubuntu の最初のユーザーは UID 1000）。
+#           そうしないと管理画面の画像のアップロードが「書き込めない」で失敗する。
+#   - storage のそれ以外（ログ・キャッシュ・コンパイル済みのビュー）：ログは標準エラー出力へ出し、キャッシュ・セッションはDBに入れるので、
+#     コンテナの中のままにする（コンテナを作り直すと消えるが、起動時に作り直される）。
+
+name: shioyafarm-prod
+
+volumes:
+  mysql-data:
+  caddy-data:
+  caddy-config:
+
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/prod/Dockerfile
+      target: caddy
+    image: shioyafarm-caddy:prod
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    environment:
+      # サイトのアドレス（例：xxx.duckdns.org。ローカルの確認は localhost）
+      SITE_DOMAIN: ${SITE_DOMAIN:?docker/prod/app.env に SITE_DOMAIN を設定してください}
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+      # アップロード画像（読み取り専用。Caddy が /storage/... を直接配信する）
+      - ${STORAGE_PUBLIC_DIR:?docker/prod/app.env に STORAGE_PUBLIC_DIR を設定してください}:/var/www/storage/app/public:ro
+    depends_on:
+      app:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/prod/Dockerfile
+      target: app
+      args:
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+    image: shioyafarm-app:prod
+    restart: unless-stopped
+    # ポートは公開しない（Caddy からだけ、Compose のネットワーク内で app:9000 につながる）
+    expose:
+      - "9000"
+    env_file:
+      - docker/prod/app.env
+    volumes:
+      # アップロード画像（書き込める。管理画面の商品画像のアップロード先）
+      - ${STORAGE_PUBLIC_DIR:?docker/prod/app.env に STORAGE_PUBLIC_DIR を設定してください}:/var/www/storage/app/public
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      # PHP-FPM が 9000 で待ち受けていれば正常（起動時の migrate が終わってから待ち受ける）
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9000'"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 120s
+
+  mysql:
+    image: mysql:8.4.13
+    restart: unless-stopped
+    # ポートは公開しない。デモで複製もしないため、バイナリログは切る（毎日の作り直しで増え続けるのを防ぐ）
+    command: ["--skip-log-bin"]
+    environment:
+      # root のパスワードはランダムにする（使わない。アプリは下の MYSQL_USER で接続する。app の環境変数にも root の値を入れないため）
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: ${DB_DATABASE:?docker/prod/app.env に DB_DATABASE を設定してください}
+      MYSQL_USER: ${DB_USERNAME:?docker/prod/app.env に DB_USERNAME を設定してください}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?docker/prod/app.env に DB_PASSWORD を設定してください}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 文字コード（utf8mb4）とタイムゾーン（Asia/Tokyo）。開発と同じ設定
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    healthcheck:
+      # TCP（127.0.0.1）で応答すれば起動済み（初期化中の一時的なサーバーは TCP を待ち受けない）。認証の失敗でも「起動している」とみなされる
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

@@ -1,0 +1,51 @@
+# 本番用の Caddy の設定（公開デモ）。サイトのアドレスは環境変数 SITE_DOMAIN（例：xxx.duckdns.org）。
+# ドメインを指定すると、Caddy が Let's Encrypt の証明書を自動で取得・更新し、HTTP は HTTPS へ転送する（80・443 を外から開けておくこと）。
+# ローカルの確認では SITE_DOMAIN=localhost にすると、Caddy 自身の自己署名の証明書で HTTPS になる（curl は -k）。
+{$SITE_DOMAIN} {
+	root * /var/www/public
+
+	# 圧縮
+	encode zstd gzip
+
+	# アップロードの上限（開発の nginx の client_max_body_size 16m と同じ。PHP の post_max_size も 16M）
+	request_body {
+		max_size 16MiB
+	}
+
+	# 基本的なセキュリティヘッダー（CSP は、Livewire・Alpine のインラインの式を使うため付けていない）
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# アクセスログ（標準エラー出力。docker compose logs caddy で見る）
+	log
+
+	# アップロード画像・商品画像など（/storage/...）。ホストの置き場所を読み取り専用で重ねたディレクトリから直接配信する
+	handle_path /storage/* {
+		root * /var/www/storage/app/public
+		header Cache-Control "public, max-age=3600"
+		file_server
+	}
+
+	handle {
+		# ドットで始まるファイルは見せない（証明書の取得に使う /.well-known は Caddy が先に処理する）
+		@dotfiles {
+			path /.*
+			not path /.well-known/*
+		}
+		respond @dotfiles 404
+
+		# Vite のビルド結果（ファイル名にハッシュが付く）は長く覚えさせてよい
+		@build path /build/*
+		header @build Cache-Control "public, max-age=31536000, immutable"
+
+		# PHP は app コンテナの PHP-FPM へ（存在しないパスは index.php に回す）。それ以外は public/ の静的ファイル
+		php_fastcgi app:9000
+		file_server
+	}
+}

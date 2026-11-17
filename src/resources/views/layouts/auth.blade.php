@@ -15,8 +15,10 @@
     guide セクションを定義しないページ（管理者用ログイン）は、SPで案内の分の余白を出さない（PCはパネルの縦の並びのため、余白は残す）。
     ページ側のセクション：page-title（<title>）、auth-direction、auth-bg、logo-plain、heading（見出し）、form（フォーム）、guide（別ページへの案内）
 --}}
-<body class="font-maru text-ink">
-    <div class="flex min-h-screen flex-col bg-(image:--auth-bg) bg-cover bg-center @yield('auth-direction', 'lg:flex-row') lg:bg-none lg:bg-white" style="--auth-bg: url('{{ asset('storage/image/tool/'.$__env->yieldContent('auth-bg', 'login-page-back-image.webp')) }}')">
+<body class="flex min-h-screen flex-col font-maru text-ink">
+    {{-- 公開デモの案内（DEMO_NOTICE がオンのときだけ。管理者用ログインは管理画面の色調） --}}
+    <x-demo-notice :variant="request()->routeIs('admin.*') ? 'admin' : 'public'" />
+    <div class="flex flex-1 flex-col bg-(image:--auth-bg) bg-cover bg-center @yield('auth-direction', 'lg:flex-row') lg:bg-none lg:bg-white" style="--auth-bg: url('{{ asset('storage/image/tool/'.$__env->yieldContent('auth-bg', 'login-page-back-image.webp')) }}')">
         <main class="order-3 min-w-0 px-4 pt-8 pb-2 lg:order-none lg:flex lg:flex-1 lg:items-center lg:justify-center lg:p-8">
             @yield('form')
         </main>
