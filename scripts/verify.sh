@@ -48,8 +48,11 @@ docker compose exec -T php php artisan view:cache
 step "ビルド"
 docker compose exec -T node npm run build
 
-step "依存の脆弱性（npm audit）"
-docker compose exec -T node npm audit
+# npm audit は脆弱性があると非0で終わるため || true で受け、判定は check-npm-audit.py に任せる。
+# 例外にした脆弱性は scripts/npm-audit-exceptions.json にある。例外にない脆弱性や npm audit 自体のエラー（出力が空・JSONでない）は失敗になる
+step "依存の脆弱性（npm audit。例外は scripts/npm-audit-exceptions.json）"
+audit_json=$(docker compose exec -T node npm audit --json || true)
+printf '%s' "$audit_json" | python3 scripts/check-npm-audit.py
 
 echo "$commit" >> "$(git rev-parse --git-path verified-commits)"
 echo

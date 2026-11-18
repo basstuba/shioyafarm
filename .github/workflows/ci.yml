@@ -67,5 +67,7 @@ jobs:
       - name: ビルド
         run: npm run build
 
-      - name: 依存の脆弱性（npm audit）
-        run: npm audit
+      # 例外にした脆弱性は scripts/npm-audit-exceptions.json にある。
+      # npm audit は脆弱性があると非0で終わるため || true で受け、判定は check-npm-audit.py に任せる（作業ディレクトリは src）
+      - name: 依存の脆弱性（npm audit。例外は scripts/npm-audit-exceptions.json）
+        run: (npm audit --json || true) | python3 ../scripts/check-npm-audit.py
