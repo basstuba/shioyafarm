@@ -1,0 +1,12 @@
+{
+  "説明": "npm audit で例外にする脆弱性の一覧。scripts/check-npm-audit.py が読む。一覧にない脆弱性が1つでもあれば検証（scripts/verify.sh）とCIは失敗する。",
+  "exceptions": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "reason": "picomatch の ReDoS（high、picomatch <=4.0.7）。修正版がまだ出ていない（最新は 4.0.7）。使っているのは Vite・laravel-vite-plugin でビルド時だけ。本番に置くのはビルド済みの CSS/JS なので、実害はほぼない。",
+      "added": "2026-11-18",
+      "remove_when": "picomatch の修正版が出たら npm update して、この例外を外す。"
+    }
+  ]
+}

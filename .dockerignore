@@ -1,0 +1,40 @@
+# 本番用イメージ（docker/prod/Dockerfile）のビルド文脈（リポジトリ直下）から外すもの。
+# 環境変数ファイル・依存・ビルド結果・テスト・storage の中身・履歴などをイメージに入れない。
+
+.git
+.github
+.claude
+.vscode
+.playwright-mcp
+
+# 開発・E2E・ドキュメント・スクリプト（本番のイメージには要らない）
+docs
+e2e
+scripts
+README.md
+LICENSE
+CLAUDE.md
+compose.yaml
+compose.prod.yaml
+docker/mysql
+docker/nginx
+docker/php
+
+# 環境変数ファイル（秘密の値。どこにあっても入れない）
+**/.env
+**/.env.*
+**/*.env
+docker/prod/app.env
+
+# Laravel 本体（src/）
+src/node_modules
+src/vendor
+src/tests
+src/phpunit.xml
+src/.phpunit.cache
+src/.phpunit.result.cache
+src/public/build
+src/public/hot
+src/public/storage
+src/bootstrap/cache
+src/storage

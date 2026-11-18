@@ -8,7 +8,7 @@
     - スロット heading：見出しの中身（画面幅ごとの改行の <br> も含めて渡す）
     - スロット（既定）：本文
 --}}
-<div class="relative flex min-h-screen flex-col items-center overflow-hidden px-4 pt-30 pb-16 text-center md:pt-[209px]">
+<div class="relative flex flex-1 flex-col items-center overflow-hidden px-4 pt-30 pb-16 text-center md:pt-[209px]">
     <img class="absolute inset-0 size-full object-cover object-top" src="{{ asset('storage/image/tool/thanks-page-photo.webp') }}" alt="" aria-hidden="true">
 
     <h1 @class([

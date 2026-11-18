@@ -6,7 +6,7 @@
 
 @section('content')
     {{-- 左上と右下の角に置く三角形（正方形を45度回した形を角で切り取ったように見せる） --}}
-    <div class="relative flex min-h-screen flex-col items-center gap-8 overflow-hidden px-4 pt-[110px] pb-16 text-center md:gap-[61px] md:pt-[147px]">
+    <div class="relative flex flex-1 flex-col items-center gap-8 overflow-hidden px-4 pt-[110px] pb-16 text-center md:gap-[61px] md:pt-[147px]">
         <span class="pointer-events-none absolute top-0 left-0 size-53 bg-cream-200 [clip-path:polygon(0_0,100%_0,0_100%)] md:size-106" aria-hidden="true"></span>
         <span class="pointer-events-none absolute right-0 bottom-0 size-53 bg-cream-200 [clip-path:polygon(100%_0,100%_100%,0_100%)] md:size-106" aria-hidden="true"></span>
 
